@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --glow-color: rgba(250, 204, 21, 0.15);
+  --glow-color-strong: rgba(250, 204, 21, 0.3);
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #e5e5e5;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(250, 204, 21, 0.03), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(34, 197, 94, 0.02), transparent);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #303030;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
+}
+
+/* Selection */
+::selection {
+  background: #facc15;
+  color: #0a0a0a;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid #facc15;
+  outline-offset: 2px;
+}
+
+/* Input styling */
+input, textarea, select {
+  background-color: #171717;
+  border: 1px solid #262626;
+  color: #e5e5e5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.1);
+  outline: none;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #525252;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--glow-color);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--glow-color-strong);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: #facc15 }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes progress-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Stagger animations */
+.stagger-1 { animation: fade-in-up 0.4s ease-out 0.1s forwards; }
+.stagger-2 { animation: fade-in-up 0.4s ease-out 0.2s forwards; }
+.stagger-3 { animation: fade-in-up 0.4s ease-out 0.3s forwards; }
+.stagger-4 { animation: fade-in-up 0.4s ease-out 0.4s forwards; }
+.stagger-5 { animation: fade-in-up 0.4s ease-out 0.5s forwards; }
+
+/* Animate classes */
+.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
+.animate-slide-in-right { animation: slide-in-right 0.3s ease-out forwards; }
+.animate-scale-in { animation: scale-in 0.2s ease-out forwards; }
+.animate-shimmer { animation: shimmer 2s infinite linear; }
+.animate-gradient { animation: gradient-shift 3s ease infinite; background-size: 200% 200%; }
+.animate-progress { animation: progress-pulse 2s ease-in-out infinite; }
+
+/* Card styles - GPU accelerated */
+.card-glow {
+  position: relative;
+  transform: translateZ(0);
+  transition: border-color 0.15s ease;
+}
+
+.card-glow:hover {
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+@media (hover: hover) {
+  .card-glow {
+    will-change: border-color;
+  }
+}
+
+/* Glass effect - simplified, no blur */
+.glass {
+  background: rgba(23, 23, 23, 0.95);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #facc15, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Terminal effect - simplified */
+.terminal-cursor::after {
+  content: '_';
+  color: #facc15;
+}
+
+/* Progress bar - simplified */
+.progress-glow {
+  /* glow disabled */
+}
+
+/* Button hover effects - optimized */
+.btn-glow {
+  transition: background-color 0.1s ease;
+  transform: translateZ(0);
+}
+
+/* Stat card - simplified */
+.stat-card {
+  position: relative;
+}
+
+/* Grid pattern background - GPU optimized */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(38, 38, 38, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(38, 38, 38, 0.2) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+/* Noise texture overlay - disabled for performance */
+.noise::before {
+  display: none;
+}
+
+/* Divider with gradient */
+.divider-gradient {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #262626, transparent);
+}
+
+/* Badge pulse - disabled */
+.badge-pulse {
+  position: relative;
+}
+
+/* Smooth number transitions */
+.number-transition {
+  transition: color 0.15s ease;
+}
+
+/* Mobile touch states */
+@media (hover: none) {
+  .card-glow:active {
+    opacity: 0.9;
+  }
+
+  /* Better touch targets on mobile */
+  button, a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on buttons */
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for 100vh on iOS */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent overscroll bounce on iOS */
+html, body {
+  overscroll-behavior: none;
+}
