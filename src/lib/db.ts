@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import type { User } from "@supabase/supabase-js";
 import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "./types";
 import { normalizeProjectData } from "./db/normalize";
+import { roundCurrency, calculateAmount, sumCurrency, calculatePercent } from "./format";
 
 /**
  * Generates a cryptographically secure URL-safe hash
@@ -265,6 +266,18 @@ export async function deleteOrganization(id: string): Promise<boolean> {
 // Payment Methods
 export async function getPaymentMethods(orgId: string): Promise<PaymentMethod[]> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  // Verify user owns the organization
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!org) return [];
 
   const { data } = await supabase
     .from("payment_methods")
@@ -276,6 +289,18 @@ export async function getPaymentMethods(orgId: string): Promise<PaymentMethod[]>
 
 export async function addPaymentMethod(orgId: string, data: Omit<PaymentMethod, "id" | "organization_id" | "created_at">): Promise<PaymentMethod | null> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  // Verify user owns the organization
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!org) return null;
 
   const { data: pm, error } = await supabase
     .from("payment_methods")
@@ -292,6 +317,18 @@ export async function addPaymentMethod(orgId: string, data: Omit<PaymentMethod, 
 
 export async function updatePaymentMethod(orgId: string, pmId: string, data: Partial<Omit<PaymentMethod, "id" | "organization_id" | "created_at">>): Promise<PaymentMethod | null> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  // Verify user owns the organization
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!org) return null;
 
   const { data: pm, error } = await supabase
     .from("payment_methods")
@@ -307,6 +344,18 @@ export async function updatePaymentMethod(orgId: string, pmId: string, data: Par
 
 export async function deletePaymentMethod(orgId: string, pmId: string): Promise<boolean> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return false;
+
+  // Verify user owns the organization
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", orgId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!org) return false;
 
   const { error } = await supabase
     .from("payment_methods")
@@ -659,10 +708,10 @@ export async function deleteMilestone(projectId: string, milestoneId: string): P
 export function getProjectSummary(project: Project): ProjectSummary {
   const milestones = project.milestones || [];
 
-  // Calculate totals for fixed milestones
+  // Calculate totals for fixed milestones (with proper currency rounding)
   const fixedMilestones = milestones.filter(m => m.type === "fixed" || !m.type);
-  const fixedTotal = fixedMilestones.reduce((sum, m) => sum + Number(m.amount), 0);
-  const fixedPaid = fixedMilestones.reduce((sum, m) => sum + Number(m.paid_amount || 0), 0);
+  const fixedTotal = sumCurrency(fixedMilestones.map(m => Number(m.amount)));
+  const fixedPaid = sumCurrency(fixedMilestones.map(m => Number(m.paid_amount || 0)));
 
   // Calculate totals for hourly milestones
   const hourlyMilestones = milestones.filter(m => m.type === "hourly");
@@ -674,11 +723,16 @@ export function getProjectSummary(project: Project): ProjectSummary {
     const entries = m.time_entries || [];
     const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
     totalHours += hours;
-    const amount = hours * Number(m.hourly_rate || 0);
+    // Use calculateAmount for proper rounding: hours * hourly_rate
+    const amount = calculateAmount(Number(m.hourly_rate || 0), hours);
     hourlyAmount += amount;
     // Sum paid_amount from all time entries
-    hourlyPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+    hourlyPaid += sumCurrency(entries.map(e => Number(e.paid_amount || 0)));
   });
+
+  // Round hourly totals
+  hourlyAmount = roundCurrency(hourlyAmount);
+  hourlyPaid = roundCurrency(hourlyPaid);
 
   // Calculate totals for per-unit milestones
   const perUnitMilestones = milestones.filter(m => m.type === "per_unit");
@@ -690,27 +744,32 @@ export function getProjectSummary(project: Project): ProjectSummary {
     const entries = m.time_entries || [];
     const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
     totalUnits += units;
-    const amount = units * Number(m.unit_rate || 0);
+    // Use calculateAmount for proper rounding: units * unit_rate
+    const amount = calculateAmount(Number(m.unit_rate || 0), units);
     unitAmount += amount;
     // Sum paid_amount from all entries
-    unitPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+    unitPaid += sumCurrency(entries.map(e => Number(e.paid_amount || 0)));
   });
+
+  // Round per-unit totals
+  unitAmount = roundCurrency(unitAmount);
+  unitPaid = roundCurrency(unitPaid);
 
   // Calculate total operating expenses
   const expenses = project.operating_expenses || [];
-  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalExpenses = sumCurrency(expenses.map(e => Number(e.amount || 0)));
 
-  const totalAmount = fixedTotal + hourlyAmount + unitAmount;
-  const paidAmount = fixedPaid + hourlyPaid + unitPaid;
+  const totalAmount = roundCurrency(fixedTotal + hourlyAmount + unitAmount);
+  const paidAmount = roundCurrency(fixedPaid + hourlyPaid + unitPaid);
   const paidMilestones = milestones.filter((m) => m.is_paid).length;
 
   return {
     totalAmount,
     paidAmount,
-    remainingAmount: totalAmount - paidAmount,
+    remainingAmount: roundCurrency(totalAmount - paidAmount),
     paidMilestones,
     totalMilestones: milestones.length,
-    percentPaid: totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0,
+    percentPaid: calculatePercent(paidAmount, totalAmount),
     totalHours,
     hourlyAmount,
     totalUnits,

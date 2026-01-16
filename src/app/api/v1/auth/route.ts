@@ -97,9 +97,15 @@ export async function POST(request: NextRequest) {
     // Check rate limit
     const rateLimit = await checkLoginRateLimit(ip, email);
     if (rateLimit === null) {
-      // Fail open for auth to prevent lockout, but log the issue
-      console.warn("Rate limit check unavailable for auth, proceeding without limit");
-    } else if (!rateLimit.allowed) {
+      // Fail closed - don't allow login attempts when rate limiting is unavailable
+      // This prevents brute-force attacks during database outages
+      console.error("Rate limit check unavailable for auth - failing closed");
+      return NextResponse.json(
+        { error: "Service temporarily unavailable. Please try again later." },
+        { status: 503, headers: { "Retry-After": "60" } }
+      );
+    }
+    if (!rateLimit.allowed) {
       return NextResponse.json(
         {
           error: "Too many login attempts. Please try again later.",

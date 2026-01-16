@@ -41,12 +41,38 @@ export async function POST(
       if (numHours > 24) {
         return NextResponse.json({ error: "Hours cannot exceed 24 per entry" }, { status: 400 });
       }
+      // Validate against hours_limit if set
+      if (milestone.hours_limit && milestone.hours_limit > 0) {
+        const existingHours = (milestone.time_entries || []).reduce(
+          (sum, e) => sum + Number(e.hours || 0), 0
+        );
+        if (existingHours + numHours > milestone.hours_limit) {
+          const remaining = Math.max(0, milestone.hours_limit - existingHours);
+          return NextResponse.json(
+            { error: `Would exceed hours limit. Remaining: ${remaining.toFixed(1)}h of ${milestone.hours_limit}h` },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     if (units !== undefined) {
       numUnits = Number(units);
       if (!Number.isFinite(numUnits) || numUnits <= 0) {
         return NextResponse.json({ error: "Units must be a positive number" }, { status: 400 });
+      }
+      // Validate against units_limit if set
+      if (milestone.units_limit && milestone.units_limit > 0) {
+        const existingUnits = (milestone.time_entries || []).reduce(
+          (sum, e) => sum + Number(e.units || 0), 0
+        );
+        if (existingUnits + numUnits > milestone.units_limit) {
+          const remaining = Math.max(0, milestone.units_limit - existingUnits);
+          return NextResponse.json(
+            { error: `Would exceed units limit. Remaining: ${remaining} of ${milestone.units_limit}` },
+            { status: 400 }
+          );
+        }
       }
     }
 

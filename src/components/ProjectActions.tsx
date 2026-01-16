@@ -3,11 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AlertDialog } from "./AlertDialog";
-
-interface Organization {
-  id: string;
-  name: string;
-}
+import type { Organization } from "@/lib/types";
 
 export function ProjectActions({ projectId, organizationId }: { projectId: string; organizationId: string }) {
   const router = useRouter();
@@ -23,25 +19,40 @@ export function ProjectActions({ projectId, organizationId }: { projectId: strin
   const [orgsLoaded, setOrgsLoaded] = useState(false);
 
   useEffect(() => {
-    if (showTransfer && !orgsLoaded) {
-      setLoadingOrgs(true);
-      fetch("/api/organizations")
-        .then((res) => res.json())
-        .then((data) => {
-          const otherOrgs = data.filter((org: Organization) => org.id !== organizationId);
-          setOrganizations(otherOrgs);
-          setOrgsLoaded(true);
-          if (otherOrgs.length > 0) {
-            setSelectedOrgId(otherOrgs[0].id);
-          }
-        })
-        .catch(() => {
-          setTransferError("Failed to load organizations");
-        })
-        .finally(() => {
+    // Don't fetch if not showing transfer or already loaded
+    if (!showTransfer || orgsLoaded) return;
+
+    const abortController = new AbortController();
+    setLoadingOrgs(true);
+
+    fetch("/api/organizations", { signal: abortController.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        // Check if component is still mounted (abort wasn't called)
+        if (abortController.signal.aborted) return;
+
+        const otherOrgs = (data as Organization[]).filter((org) => org.id !== organizationId);
+        setOrganizations(otherOrgs);
+        setOrgsLoaded(true);
+        if (otherOrgs.length > 0) {
+          setSelectedOrgId(otherOrgs[0].id);
+        }
+      })
+      .catch((err) => {
+        // Ignore abort errors
+        if (err.name === "AbortError") return;
+        setTransferError("Failed to load organizations");
+      })
+      .finally(() => {
+        if (!abortController.signal.aborted) {
           setLoadingOrgs(false);
-        });
-    }
+        }
+      });
+
+    // Cleanup: abort fetch if component unmounts or dependencies change
+    return () => {
+      abortController.abort();
+    };
   }, [showTransfer, organizationId, orgsLoaded]);
 
   const handleDelete = async () => {

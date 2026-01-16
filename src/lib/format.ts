@@ -1,14 +1,62 @@
+/**
+ * Rounds a number to 2 decimal places for currency calculations.
+ * Uses Math.round to avoid floating point precision issues.
+ * Example: 1.005 * 100 = 100.49999... → roundCurrency rounds to 100.50
+ */
+export function roundCurrency(amount: number): number {
+  if (typeof amount !== "number" || !Number.isFinite(amount)) {
+    return 0;
+  }
+  // Multiply by 100, round, then divide to get 2 decimal places
+  // Adding Number.EPSILON handles edge cases like 1.005
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+/**
+ * Safely multiplies rate by quantity and rounds to 2 decimal places.
+ * Use this for hourly_rate * hours or unit_rate * units calculations.
+ */
+export function calculateAmount(rate: number, quantity: number): number {
+  if (typeof rate !== "number" || !Number.isFinite(rate)) return 0;
+  if (typeof quantity !== "number" || !Number.isFinite(quantity)) return 0;
+  return roundCurrency(rate * quantity);
+}
+
+/**
+ * Safely sums an array of currency amounts with proper rounding.
+ */
+export function sumCurrency(amounts: number[]): number {
+  const sum = amounts.reduce((acc, val) => {
+    if (typeof val !== "number" || !Number.isFinite(val)) return acc;
+    return acc + val;
+  }, 0);
+  return roundCurrency(sum);
+}
+
+/**
+ * Calculates percentage with proper handling of edge cases.
+ * Returns 0-100 integer value.
+ */
+export function calculatePercent(paid: number, total: number): number {
+  if (typeof paid !== "number" || !Number.isFinite(paid)) return 0;
+  if (typeof total !== "number" || !Number.isFinite(total) || total <= 0) return 0;
+  // Use floor to be conservative (don't show 100% until fully paid)
+  return Math.min(100, Math.floor((paid / total) * 100));
+}
+
 export function formatCurrency(amount: number): string {
   // Handle invalid numbers gracefully
   if (typeof amount !== "number" || !Number.isFinite(amount)) {
     return "$0";
   }
+  // Round before formatting to ensure consistency
+  const rounded = roundCurrency(amount);
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(rounded);
 }
 
 /**

@@ -29,9 +29,11 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
     if (!content.trim()) return;
 
     const trimmedContent = content.trim();
+    const previousComments = [...comments]; // Store for rollback
 
     if (editingId) {
       // Optimistic update for edit
+      const originalComment = comments.find((c) => c.id === editingId);
       setComments(comments.map((c) =>
         c.id === editingId ? { ...c, content: trimmedContent, updated_at: new Date().toISOString() } : c
       ));
@@ -45,6 +47,14 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
       if (res.ok) {
         const updated = await res.json();
         setComments((prev) => prev.map((c) => (c.id === editingId ? updated : c)));
+      } else {
+        // Rollback on failure
+        setComments(previousComments);
+        if (originalComment) {
+          setEditingId(editingId);
+          setContent(trimmedContent);
+          setShowForm(true);
+        }
       }
     } else {
       // Optimistic update for create
@@ -67,6 +77,11 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
       if (res.ok) {
         const comment = await res.json();
         setComments((prev) => prev.map((c) => (c.id === tempId ? comment : c)));
+      } else {
+        // Rollback on failure - remove the optimistic comment
+        setComments(previousComments);
+        setContent(trimmedContent);
+        setShowForm(true);
       }
     }
   };

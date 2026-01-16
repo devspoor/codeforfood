@@ -1,4 +1,5 @@
 import type { Milestone, TimeEntry } from "@/lib/types";
+import { calculateAmount, sumCurrency, calculatePercent, roundCurrency } from "@/lib/format";
 
 /**
  * Calculate payment percentage for a milestone
@@ -7,34 +8,34 @@ export function getPaymentPercent(m: Milestone): number {
   if (m.type === "hourly") {
     const entries = m.time_entries || [];
     const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-    const total = hours * Number(m.hourly_rate || 0);
-    const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-    return total > 0 ? Math.round((paid / total) * 100) : 0;
+    const total = calculateAmount(Number(m.hourly_rate || 0), hours);
+    const paid = sumCurrency(entries.map(e => Number(e.paid_amount || 0)));
+    return calculatePercent(paid, total);
   }
   if (m.type === "per_unit") {
     const entries = m.time_entries || [];
     const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
-    const total = units * Number(m.unit_rate || 0);
-    const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-    return total > 0 ? Math.round((paid / total) * 100) : 0;
+    const total = calculateAmount(Number(m.unit_rate || 0), units);
+    const paid = sumCurrency(entries.map(e => Number(e.paid_amount || 0)));
+    return calculatePercent(paid, total);
   }
-  const paid = m.paid_amount || 0;
-  return m.amount > 0 ? Math.round((paid / m.amount) * 100) : 0;
+  const paid = Number(m.paid_amount || 0);
+  return calculatePercent(paid, Number(m.amount));
 }
 
 /**
- * Calculate total amount for a milestone
+ * Calculate total amount for a milestone (with proper rounding)
  */
 export function getMilestoneTotal(m: Milestone): number {
   if (m.type === "hourly") {
     const hours = (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours || 0), 0);
-    return hours * Number(m.hourly_rate || 0);
+    return calculateAmount(Number(m.hourly_rate || 0), hours);
   }
   if (m.type === "per_unit") {
     const units = (m.time_entries || []).reduce((sum, e) => sum + Number(e.units || 0), 0);
-    return units * Number(m.unit_rate || 0);
+    return calculateAmount(Number(m.unit_rate || 0), units);
   }
-  return m.amount;
+  return roundCurrency(Number(m.amount));
 }
 
 /**
@@ -52,19 +53,19 @@ export function getTotalUnits(m: Milestone): number {
 }
 
 /**
- * Get paid amount for a milestone
+ * Get paid amount for a milestone (with proper rounding)
  */
 export function getPaidAmount(m: Milestone): number {
   if (m.type === "hourly" || m.type === "per_unit") {
-    return (m.time_entries || []).reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+    return sumCurrency((m.time_entries || []).map(e => Number(e.paid_amount || 0)));
   }
-  return m.paid_amount || 0;
+  return roundCurrency(Number(m.paid_amount || 0));
 }
 
 /**
- * Get remaining amount for a time entry
+ * Get remaining amount for a time entry (with proper rounding)
  */
 export function getEntryRemaining(entry: TimeEntry, rate: number): number {
-  const total = (entry.hours || entry.units || 0) * rate;
-  return total - (entry.paid_amount || 0);
+  const total = calculateAmount(rate, entry.hours || entry.units || 0);
+  return roundCurrency(total - Number(entry.paid_amount || 0));
 }
