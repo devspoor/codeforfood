@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError } from "@/lib/api-auth";
 import { addAttachment } from "@/lib/api-db";
+import { MAX_LENGTHS } from "@/lib/validation";
 
 const VALID_TYPES = ["figma", "github", "demo", "document", "link"] as const;
 
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest) {
       const trimmedLabel = label.trim();
       if (!trimmedLabel) {
         return apiError("Label cannot be empty");
+      }
+
+      if (trimmedLabel.length > MAX_LENGTHS.label) {
+        return apiError(`Label is too long (max ${MAX_LENGTHS.label} characters)`);
       }
 
       if (!url || typeof url !== "string") {

@@ -25,6 +25,17 @@ export async function POST(
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
 
+    // Validate date format (YYYY-MM-DD)
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return NextResponse.json({ error: "Date must be in YYYY-MM-DD format" }, { status: 400 });
+    }
+
+    // Validate date is a real date
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
+
     // Either hours or units must be provided
     if (hours === undefined && units === undefined) {
       return NextResponse.json({ error: "Either hours or units required" }, { status: 400 });

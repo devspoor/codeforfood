@@ -303,6 +303,15 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           : m
       ));
       router.refresh(); // Update summary stats (hours/units)
+    } else {
+      // Rollback optimistic update on error
+      const errorData = await res.json().catch(() => ({}));
+      console.error("Failed to add time entry:", errorData.error || "Unknown error");
+      setMilestones((prev) => prev.map((m) =>
+        m.id === milestoneId
+          ? { ...m, time_entries: (m.time_entries || []).filter((e) => e.id !== tempId) }
+          : m
+      ));
     }
   };
 
@@ -361,6 +370,18 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           : ml
       ));
       router.refresh(); // Update summary stats
+    } else {
+      // Rollback optimistic update on error
+      setMilestones((prev) => prev.map((ml) =>
+        ml.id === milestoneId
+          ? {
+              ...ml,
+              time_entries: (ml.time_entries || []).map((e) =>
+                e.id === entry.id ? { ...e, paid_amount: entry.paid_amount } : e
+              ),
+            }
+          : ml
+      ));
     }
   };
 

@@ -113,6 +113,9 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
     if (res.ok) {
       const attachment = await res.json();
       setAttachments((prev) => prev.map((a) => (a.id === tempId ? attachment : a)));
+    } else {
+      // Rollback optimistic update on error
+      setAttachments((prev) => prev.filter((a) => a.id !== tempId));
     }
   };
 

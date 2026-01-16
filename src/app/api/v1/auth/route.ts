@@ -126,9 +126,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
+      // Never expose specific error messages to prevent user enumeration
+      // Supabase may return "User not found" or "Invalid credentials" which reveals info
       return NextResponse.json(
         {
-          error: error.message,
+          error: "Invalid email or password",
           attemptsRemaining: rateLimit?.remaining_attempts,
         },
         { status: 401 }

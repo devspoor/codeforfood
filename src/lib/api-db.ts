@@ -44,21 +44,27 @@ export async function updateProfile(supabase: SupabaseClientType, userId: string
 // ============== ORGANIZATIONS ==============
 
 export async function getOrganizations(supabase: SupabaseClientType, userId: string): Promise<Organization[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("organizations")
     .select("*, payment_methods(*)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (error) {
+    logDbError("getOrganizations", error);
+  }
   return data || [];
 }
 
 export async function getOrganizationById(supabase: SupabaseClientType, userId: string, id: string): Promise<Organization | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("organizations")
     .select("*, payment_methods(*)")
     .eq("id", id)
     .eq("user_id", userId)
     .single();
+  if (error && error.code !== "PGRST116") { // PGRST116 = no rows returned (not found)
+    logDbError("getOrganizationById", error);
+  }
   return data;
 }
 
@@ -253,13 +259,16 @@ export async function getProjectsByOrganization(supabase: SupabaseClientType, us
 const PROJECT_SELECT_QUERY = `*, milestones(*, time_entries(*), payment_history(*)), comments(*), attachments(*)`;
 
 export async function getProjectById(supabase: SupabaseClientType, userId: string, id: string): Promise<Project | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_SELECT_QUERY + ", organizations!inner(user_id)")
     .eq("id", id)
     .eq("organizations.user_id", userId)
     .single();
 
+  if (error && error.code !== "PGRST116") {
+    logDbError("getProjectById", error);
+  }
   if (!data) return null;
   return normalizeProjectData(data);
 }
@@ -465,12 +474,15 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
 }
 
 export async function getMilestoneById(supabase: SupabaseClientType, userId: string, milestoneId: string): Promise<Milestone | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("milestones")
     .select("*, time_entries(*), payment_history(*), projects!inner(organization_id, organizations!inner(user_id))")
     .eq("id", milestoneId)
     .eq("projects.organizations.user_id", userId)
     .single();
+  if (error && error.code !== "PGRST116") {
+    logDbError("getMilestoneById", error);
+  }
   return data;
 }
 
@@ -576,12 +588,15 @@ export async function addTimeEntry(supabase: SupabaseClientType, userId: string,
 }
 
 export async function getTimeEntryById(supabase: SupabaseClientType, userId: string, entryId: string): Promise<TimeEntry | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("time_entries")
     .select("*, milestones!inner(project_id, projects!inner(organization_id, organizations!inner(user_id)))")
     .eq("id", entryId)
     .eq("milestones.projects.organizations.user_id", userId)
     .single();
+  if (error && error.code !== "PGRST116") {
+    logDbError("getTimeEntryById", error);
+  }
   return data;
 }
 
@@ -643,12 +658,15 @@ export async function addComment(supabase: SupabaseClientType, userId: string, p
 }
 
 export async function getCommentById(supabase: SupabaseClientType, userId: string, commentId: string): Promise<Comment | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("comments")
     .select("*, projects!inner(organization_id, organizations!inner(user_id))")
     .eq("id", commentId)
     .eq("projects.organizations.user_id", userId)
     .single();
+  if (error && error.code !== "PGRST116") {
+    logDbError("getCommentById", error);
+  }
   return data;
 }
 
@@ -717,12 +735,15 @@ export async function addAttachment(supabase: SupabaseClientType, userId: string
 }
 
 export async function getAttachmentById(supabase: SupabaseClientType, userId: string, attachmentId: string): Promise<Attachment | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("attachments")
     .select("*, projects!inner(organization_id, organizations!inner(user_id))")
     .eq("id", attachmentId)
     .eq("projects.organizations.user_id", userId)
     .single();
+  if (error && error.code !== "PGRST116") {
+    logDbError("getAttachmentById", error);
+  }
   return data;
 }
 
@@ -941,11 +962,25 @@ export async function recordPaymentAtomically(
     return null;
   }
 
-  // 4. Fetch updated milestone with all relations
-  const updatedMilestone = await getMilestoneById(supabase, userId, milestoneId);
-  if (!updatedMilestone) return null;
+  // 4. Return result with data from RPC response (avoid redundant fetch)
+  // The RPC already returns updated values, so we update the milestone in-place
+  const updatedMilestone: Milestone = {
+    ...milestone,
+    paid_amount: result.paid_amount,
+    is_paid: result.is_paid,
+    paid_at: result.paid_at,
+    payment_history: [
+      {
+        id: result.entry_id,
+        milestone_id: milestoneId,
+        amount: data.amount,
+        note: data.note || null,
+        created_at: new Date().toISOString(),
+      } as PaymentHistoryEntry,
+      ...(milestone.payment_history || []),
+    ],
+  };
 
-  // 5. Return result with entry data from RPC response
   return {
     milestone: updatedMilestone,
     entry: {

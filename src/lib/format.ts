@@ -1,3 +1,6 @@
+// Maximum safe currency value to prevent overflow (10 trillion)
+const MAX_CURRENCY_VALUE = 10_000_000_000_000;
+
 /**
  * Rounds a number to 2 decimal places for currency calculations.
  * Uses Math.round to avoid floating point precision issues.
@@ -7,18 +10,29 @@ export function roundCurrency(amount: number): number {
   if (typeof amount !== "number" || !Number.isFinite(amount)) {
     return 0;
   }
+  // Clamp to maximum safe currency value to prevent overflow
+  const clamped = Math.min(Math.max(amount, -MAX_CURRENCY_VALUE), MAX_CURRENCY_VALUE);
   // Multiply by 100, round, then divide to get 2 decimal places
   // Adding Number.EPSILON handles edge cases like 1.005
-  return Math.round((amount + Number.EPSILON) * 100) / 100;
+  return Math.round((clamped + Number.EPSILON) * 100) / 100;
 }
 
 /**
  * Safely multiplies rate by quantity and rounds to 2 decimal places.
  * Use this for hourly_rate * hours or unit_rate * units calculations.
+ * Includes overflow protection for very large values.
  */
 export function calculateAmount(rate: number, quantity: number): number {
   if (typeof rate !== "number" || !Number.isFinite(rate)) return 0;
   if (typeof quantity !== "number" || !Number.isFinite(quantity)) return 0;
+  // Check for potential overflow before multiplication
+  // Use absolute values to handle negative numbers
+  const absRate = Math.abs(rate);
+  const absQuantity = Math.abs(quantity);
+  if (absRate > 0 && absQuantity > MAX_CURRENCY_VALUE / absRate) {
+    // Would overflow, return max value with correct sign
+    return rate * quantity > 0 ? MAX_CURRENCY_VALUE : -MAX_CURRENCY_VALUE;
+  }
   return roundCurrency(rate * quantity);
 }
 
