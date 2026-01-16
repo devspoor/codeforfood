@@ -8,6 +8,7 @@ import { SecureNoteEditor } from "@/components/SecureNoteEditor";
 import { CommentsEditor } from "@/components/CommentsEditor";
 import { AttachmentsEditor } from "@/components/AttachmentsEditor";
 import { ProjectSettingsEditor } from "@/components/ProjectSettingsEditor";
+import { OperatingExpensesEditor } from "@/components/OperatingExpensesEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +143,12 @@ export default async function ProjectDetailPage({
             <MilestonesEditor projectId={project.id} milestones={project.milestones || []} />
           </div>
 
+          {/* Operating Expenses */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Operating Expenses</h2>
+            <OperatingExpensesEditor projectId={project.id} expenses={project.operating_expenses || []} />
+          </div>
+
           {/* Comments */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Comments</h2>
@@ -172,6 +179,7 @@ export default async function ProjectDetailPage({
               hideAmounts={project.hide_amounts}
               hidePaid={project.hide_paid}
               showPaymentHistory={project.show_payment_history}
+              showExpenses={project.show_expenses}
               hasPassword={!!project.public_password_hash}
             />
           </div>

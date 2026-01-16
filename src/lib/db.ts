@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import type { User } from "@supabase/supabase-js";
-import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry } from "./types";
+import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "./types";
 
 /**
  * Generates a cryptographically secure URL-safe hash
@@ -28,6 +28,7 @@ function normalizeProjectData(data: any, isPublic = false): Project {
     hide_amounts: data.hide_amounts || false,
     hide_paid: data.hide_paid || false,
     show_payment_history: data.show_payment_history || false,
+    show_expenses: data.show_expenses || false,
     milestones: ((data.milestones as Milestone[]) || [])
       .sort((a: Milestone, b: Milestone) => a.order - b.order)
       .map((m: Milestone & { time_entries?: TimeEntry[]; payment_history?: PaymentHistoryEntry[] }) => ({
@@ -43,7 +44,10 @@ function normalizeProjectData(data: any, isPublic = false): Project {
     comments: ((data.comments as Comment[]) || []).sort((a: Comment, b: Comment) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     ),
-    attachments: data.attachments || []
+    attachments: data.attachments || [],
+    operating_expenses: ((data.operating_expenses as OperatingExpense[]) || []).sort((a: OperatingExpense, b: OperatingExpense) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
   };
 
   if (isPublic) {
@@ -393,7 +397,7 @@ export async function getProjectsByOrganization(orgId: string): Promise<Project[
   }));
 }
 
-const PROJECT_SELECT_QUERY = "*, milestones(*, time_entries(*), payment_history(*)), comments(*), attachments(*)";
+const PROJECT_SELECT_QUERY = "*, milestones(*, time_entries(*), payment_history(*)), comments(*), attachments(*), operating_expenses(*)";
 
 export async function getProjectById(id: string): Promise<Project | null> {
   const supabase = await createClient();
@@ -445,7 +449,7 @@ export async function createProject(data: { organizationId: string; name: string
   return { ...project, milestones: [] };
 }
 
-export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history">>): Promise<Project | null> {
+export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses">>): Promise<Project | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return null;
@@ -712,6 +716,10 @@ export function getProjectSummary(project: Project): ProjectSummary {
     unitPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
   });
 
+  // Calculate total operating expenses
+  const expenses = project.operating_expenses || [];
+  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
   const totalAmount = fixedTotal + hourlyAmount + unitAmount;
   const paidAmount = fixedPaid + hourlyPaid + unitPaid;
   const paidMilestones = milestones.filter((m) => m.is_paid).length;
@@ -727,6 +735,7 @@ export function getProjectSummary(project: Project): ProjectSummary {
     hourlyAmount,
     totalUnits,
     unitAmount,
+    totalExpenses,
   };
 }
 
@@ -939,4 +948,84 @@ export async function deletePaymentHistoryEntry(entryId: string): Promise<boolea
     .eq("id", entryId);
 
   return !error;
+}
+
+// Operating Expense CRUD
+export async function addOperatingExpense(projectId: string, data: {
+  name: string;
+  amount: number;
+  date: string;
+  description?: string;
+}): Promise<OperatingExpense | null> {
+  const supabase = await createClient();
+
+  const { data: expense, error } = await supabase
+    .from("operating_expenses")
+    .insert({
+      project_id: projectId,
+      name: data.name,
+      amount: data.amount,
+      date: data.date,
+      description: data.description,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating operating expense:", error.code || "unknown");
+    return null;
+  }
+
+  return expense;
+}
+
+export async function updateOperatingExpense(expenseId: string, data: Partial<{
+  name: string;
+  amount: number;
+  date: string;
+  description: string;
+}>): Promise<OperatingExpense | null> {
+  const supabase = await createClient();
+
+  const { data: expense, error } = await supabase
+    .from("operating_expenses")
+    .update(data)
+    .eq("id", expenseId)
+    .select()
+    .single();
+
+  if (error) return null;
+  return expense;
+}
+
+export async function deleteOperatingExpense(expenseId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("operating_expenses")
+    .delete()
+    .eq("id", expenseId);
+
+  return !error;
+}
+
+/**
+ * Verifies that the current user owns the operating expense through project->organization chain
+ * Returns the expense if authorized, null otherwise
+ */
+export async function verifyOperatingExpenseOwnership(expenseId: string, existingUser?: User | null): Promise<OperatingExpense | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: expense } = await supabase
+    .from("operating_expenses")
+    .select("*, projects!inner(organization_id, organizations!inner(user_id))")
+    .eq("id", expenseId)
+    .eq("projects.organizations.user_id", user.id)
+    .single();
+
+  if (!expense) return null;
+
+  return expense;
 }

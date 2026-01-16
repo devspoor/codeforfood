@@ -238,7 +238,7 @@ export async function createProject(supabase: SupabaseClientType, userId: string
   return { ...project, milestones: [], comments: [], attachments: [], has_password: false, has_secure_note: false };
 }
 
-export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history">>): Promise<Project | null> {
+export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses">>): Promise<Project | null> {
   const { data: project } = await supabase
     .from("projects")
     .select("id, organizations!inner(user_id)")
@@ -877,6 +877,10 @@ export function getProjectSummary(project: Project): ProjectSummary {
     unitPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
   });
 
+  // Calculate total operating expenses
+  const expenses = project.operating_expenses || [];
+  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
   const totalAmount = fixedTotal + hourlyAmount + unitAmount;
   const paidAmountTotal = fixedPaid + hourlyPaid + unitPaid;
   const paidMilestones = milestones.filter((m) => m.is_paid).length;
@@ -892,5 +896,6 @@ export function getProjectSummary(project: Project): ProjectSummary {
     hourlyAmount,
     totalUnits,
     unitAmount,
+    totalExpenses,
   };
 }

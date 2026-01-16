@@ -9,6 +9,7 @@ interface Props {
   hideAmounts: boolean;
   hidePaid: boolean;
   showPaymentHistory: boolean;
+  showExpenses: boolean;
   hasPassword: boolean;
 }
 
@@ -25,12 +26,14 @@ export function ProjectSettingsEditor({
   hideAmounts: initialHideAmounts,
   hidePaid: initialHidePaid,
   showPaymentHistory: initialShowPaymentHistory,
+  showExpenses: initialShowExpenses,
   hasPassword: initialHasPassword,
 }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [hideAmounts, setHideAmounts] = useState(initialHideAmounts);
   const [hidePaid, setHidePaid] = useState(initialHidePaid);
   const [showPaymentHistory, setShowPaymentHistory] = useState(initialShowPaymentHistory);
+  const [showExpenses, setShowExpenses] = useState(initialShowExpenses);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState("");
@@ -51,12 +54,13 @@ export function ProjectSettingsEditor({
     }
   };
 
-  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history", value: boolean) => {
+  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses", value: boolean) => {
     // Optimistic update
-    const previousValues = { hideAmounts, hidePaid, showPaymentHistory };
+    const previousValues = { hideAmounts, hidePaid, showPaymentHistory, showExpenses };
     if (field === "hide_amounts") setHideAmounts(value);
     if (field === "hide_paid") setHidePaid(value);
     if (field === "show_payment_history") setShowPaymentHistory(value);
+    if (field === "show_expenses") setShowExpenses(value);
 
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
@@ -68,6 +72,7 @@ export function ProjectSettingsEditor({
       setHideAmounts(previousValues.hideAmounts);
       setHidePaid(previousValues.hidePaid);
       setShowPaymentHistory(previousValues.showPaymentHistory);
+      setShowExpenses(previousValues.showExpenses);
     }
   };
 
@@ -162,6 +167,18 @@ export function ProjectSettingsEditor({
             <div>
               <span className="text-sm">Show payment history</span>
               <p className="text-xs text-muted">Show payment dates and amounts on public page</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showExpenses}
+              onChange={(e) => handleVisibilityChange("show_expenses", e.target.checked)}
+              className="w-4 h-4 rounded border-border bg-background accent-accent"
+            />
+            <div>
+              <span className="text-sm">Show operating expenses</span>
+              <p className="text-xs text-muted">Show project expenses on public page</p>
             </div>
           </label>
         </div>

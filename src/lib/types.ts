@@ -72,6 +72,16 @@ export interface Attachment {
   created_at: string;
 }
 
+export interface OperatingExpense {
+  id: string;
+  project_id: string;
+  name: string;
+  amount: number;
+  date: string;
+  description?: string;
+  created_at: string;
+}
+
 export type ProjectStatus = "in_progress" | "awaiting_payment" | "completed" | "on_hold";
 
 export interface Project {
@@ -84,10 +94,12 @@ export interface Project {
   hide_amounts: boolean;
   hide_paid: boolean;
   show_payment_history: boolean;
+  show_expenses: boolean;
   public_password_hash?: string | null;
   milestones?: Milestone[];
   comments?: Comment[];
   attachments?: Attachment[];
+  operating_expenses?: OperatingExpense[];
   secure_note_encrypted?: string | null;
   secure_note_password_hash?: string | null;
   created_at: string;
@@ -134,6 +146,8 @@ export interface ProjectSummary {
   // Per-unit stats
   totalUnits: number;
   unitAmount: number;
+  // Operating expenses
+  totalExpenses: number;
 }
 
 export interface OrganizationWithProjects extends Organization {

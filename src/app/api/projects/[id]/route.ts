@@ -41,7 +41,7 @@ export async function PATCH(
     const data = await request.json();
 
     // Validate and sanitize input
-    const allowedFields = ["name", "description", "status", "hide_amounts", "hide_paid", "show_payment_history"];
+    const allowedFields = ["name", "description", "status", "hide_amounts", "hide_paid", "show_payment_history", "show_expenses"];
     const sanitizedData: Record<string, unknown> = {};
 
     for (const key of allowedFields) {
@@ -49,7 +49,7 @@ export async function PATCH(
         if (key === "status" && !VALID_STATUSES.includes(data[key])) {
           return NextResponse.json({ error: "Invalid status" }, { status: 400 });
         }
-        if ((key === "hide_amounts" || key === "hide_paid" || key === "show_payment_history") && typeof data[key] !== "boolean") {
+        if ((key === "hide_amounts" || key === "hide_paid" || key === "show_payment_history" || key === "show_expenses") && typeof data[key] !== "boolean") {
           return NextResponse.json({ error: `${key} must be a boolean` }, { status: 400 });
         }
         sanitizedData[key] = data[key];

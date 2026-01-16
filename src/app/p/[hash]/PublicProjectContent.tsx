@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry } from "@/lib/types";
+import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
@@ -78,6 +78,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo, 
   const hideAmounts = project.hide_amounts;
   const hidePaid = project.hide_paid;
   const showPaymentHistory = project.show_payment_history;
+  const showExpenses = project.show_expenses;
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -358,6 +359,46 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo, 
                 })}
             </div>
           </div>
+
+          {/* Operating Expenses */}
+          {showExpenses && (project.operating_expenses || []).length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                </svg>
+                Operating Expenses
+              </h2>
+              <div className="space-y-2">
+                {(project.operating_expenses || []).map((exp: OperatingExpense) => (
+                  <div key={exp.id} className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{exp.name}</span>
+                          <span className="text-xs text-muted">{formatDate(exp.date)}</span>
+                        </div>
+                        {exp.description && (
+                          <p className="text-sm text-muted mt-1">{exp.description}</p>
+                        )}
+                      </div>
+                      {!hideAmounts && (
+                        <span className="font-bold text-danger ml-4">
+                          {formatCurrency(exp.amount)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {!hideAmounts && (
+                <div className="mt-4 flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
+                  <span className="text-sm text-muted">Total Expenses</span>
+                  <span className="font-bold text-danger">{formatCurrency(summary.totalExpenses)}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Comments */}
           {(project.comments || []).length > 0 && (
