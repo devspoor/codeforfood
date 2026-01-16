@@ -725,6 +725,79 @@ export async function deletePaymentHistoryEntry(supabase: SupabaseClientType, us
   return !error;
 }
 
+/**
+ * Records a payment atomically - adds to payment history and recalculates milestone paid_amount
+ * Uses sum of all payment history entries instead of increment to avoid race conditions
+ * @returns Updated milestone or null if failed
+ */
+export async function recordPaymentAtomically(
+  supabase: SupabaseClientType,
+  userId: string,
+  milestoneId: string,
+  data: { amount: number; note?: string }
+): Promise<{ milestone: Milestone; entry: PaymentHistoryEntry } | null> {
+  // 1. Verify ownership and get milestone
+  const milestone = await getMilestoneById(supabase, userId, milestoneId);
+  if (!milestone) return null;
+
+  // 2. Validate amount
+  if (typeof data.amount !== "number" || !Number.isFinite(data.amount) || data.amount === 0) {
+    return null;
+  }
+
+  // 3. Add payment history entry
+  const { data: entry, error: entryError } = await supabase
+    .from("payment_history")
+    .insert({
+      milestone_id: milestoneId,
+      amount: data.amount,
+      note: data.note,
+    })
+    .select()
+    .single();
+
+  if (entryError || !entry) {
+    console.error("Failed to add payment history entry:", entryError?.message);
+    return null;
+  }
+
+  // 4. Recalculate paid_amount from all payment history entries (avoids race condition)
+  const { data: historyEntries } = await supabase
+    .from("payment_history")
+    .select("amount")
+    .eq("milestone_id", milestoneId);
+
+  const totalPaid = (historyEntries || []).reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
+
+  // 5. Update milestone with recalculated amount
+  const milestoneAmount = Number(milestone.amount) || 0;
+  const clampedPaidAmount = Math.min(Math.max(0, totalPaid), milestoneAmount);
+  const isPaid = milestoneAmount > 0 && clampedPaidAmount >= milestoneAmount;
+
+  const { data: updatedMilestone, error: updateError } = await supabase
+    .from("milestones")
+    .update({
+      paid_amount: clampedPaidAmount,
+      is_paid: isPaid,
+      paid_at: isPaid ? new Date().toISOString() : null,
+    })
+    .eq("id", milestoneId)
+    .select()
+    .single();
+
+  if (updateError || !updatedMilestone) {
+    // Rollback: delete the payment history entry we just created
+    console.error("Failed to update milestone, rolling back payment history entry:", updateError?.message);
+    await supabase.from("payment_history").delete().eq("id", entry.id);
+    return null;
+  }
+
+  return { milestone: updatedMilestone, entry };
+}
+
 // ============== DASHBOARD ==============
 
 export async function getDashboardStats(supabase: SupabaseClientType, userId: string) {

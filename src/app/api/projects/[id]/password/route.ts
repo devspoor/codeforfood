@@ -26,14 +26,15 @@ export async function POST(
 
     if (password && password.trim()) {
       // Validate password strength
-      if (password.length < 4) {
-        return NextResponse.json({ error: "Password must be at least 4 characters" }, { status: 400 });
+      if (password.length < 12) {
+        return NextResponse.json({ error: "Password must be at least 12 characters" }, { status: 400 });
       }
       if (password.length > 100) {
         return NextResponse.json({ error: "Password too long" }, { status: 400 });
       }
 
-      passwordHash = bcrypt.hashSync(password, 10);
+      // Use async hash instead of blocking hashSync
+      passwordHash = await bcrypt.hash(password, 12);
     }
 
     const success = await setProjectPassword(id, passwordHash);

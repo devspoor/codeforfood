@@ -3,8 +3,34 @@ import Link from "next/link";
 import { getOrganizationByHash, getProjectsByOrganization, getProjectSummary } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ hash: string }>;
+}): Promise<Metadata> {
+  const { hash } = await params;
+  const org = await getOrganizationByHash(hash);
+
+  if (!org) {
+    return {
+      title: "Organization Not Found | codeforfood",
+    };
+  }
+
+  return {
+    title: `${org.name} | codeforfood`,
+    description: org.description || `Projects and billing for ${org.name}`,
+    openGraph: {
+      title: `${org.name} | codeforfood`,
+      description: org.description || `Projects and billing for ${org.name}`,
+      type: "website",
+    },
+  };
+}
 
 export default async function PublicOrganizationPage({
   params,

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError, apiNotFound } from "@/lib/api-auth";
-import { getPaymentHistory, addPaymentHistoryEntry, getMilestoneById, updateMilestonePaidAmount } from "@/lib/api-db";
+import { getPaymentHistory, addPaymentHistoryEntry, getMilestoneById, recordPaymentAtomically } from "@/lib/api-db";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -49,7 +49,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
 /**
  * PATCH /api/v1/milestones/[id]/payment-history
- * Record payment - adds to payment history and updates milestone paid_amount
+ * Record payment - adds to payment history and updates milestone paid_amount atomically
+ * Uses sum of all payment history entries to avoid race conditions
  * Used by iOS app - returns updated milestone
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
@@ -62,24 +63,18 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         return apiError("Amount is required and must be a number");
       }
 
-      // Get current milestone to calculate new paid_amount
-      const milestone = await getMilestoneById(supabase, user.id, id);
-      if (!milestone) {
-        return apiNotFound("Milestone");
+      if (!Number.isFinite(amount) || amount === 0) {
+        return apiError("Amount must be a non-zero finite number");
       }
 
-      // Add payment history entry
-      await addPaymentHistoryEntry(supabase, user.id, id, { amount, note });
+      // Record payment atomically (adds to history + recalculates paid_amount)
+      const result = await recordPaymentAtomically(supabase, user.id, id, { amount, note });
 
-      // Update milestone paid_amount
-      const newPaidAmount = Number(milestone.paid_amount || 0) + amount;
-      const updated = await updateMilestonePaidAmount(supabase, user.id, id, newPaidAmount);
-
-      if (!updated) {
-        return apiError("Failed to update milestone");
+      if (!result) {
+        return apiNotFound("Milestone not found or payment failed");
       }
 
-      return apiSuccess(updated);
+      return apiSuccess(result.milestone);
     } catch {
       return apiError("Invalid request");
     }

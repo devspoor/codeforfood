@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props {
   projectHash: string;
@@ -13,6 +13,18 @@ export function ProjectPasswordUnlock({ projectHash, projectName, onUnlock }: Pr
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+
+  // Clear retryAfter after the specified time
+  useEffect(() => {
+    if (retryAfter === null) return;
+
+    const timer = setTimeout(() => {
+      setRetryAfter(null);
+      setError("");
+    }, retryAfter * 1000);
+
+    return () => clearTimeout(timer);
+  }, [retryAfter]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

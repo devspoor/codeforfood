@@ -20,8 +20,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       const { password } = await request.json();
 
-      if (!password || typeof password !== "string" || password.length < 4) {
-        return apiError("Password must be at least 4 characters");
+      if (!password || typeof password !== "string" || password.length < 12) {
+        return apiError("Password must be at least 12 characters");
       }
 
       const passwordHash = await bcrypt.hash(password, 10);

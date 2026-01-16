@@ -9,6 +9,19 @@ interface Props {
   attachments: Attachment[];
 }
 
+/**
+ * Validates URL to prevent XSS via javascript: protocol
+ * Only allows http:// and https:// URLs
+ */
+function isValidUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const TYPE_OPTIONS = [
   { value: "figma", label: "Figma", icon: "🎨" },
   { value: "github", label: "GitHub", icon: "📦" },
@@ -69,6 +82,11 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!label.trim() || !url.trim()) return;
+
+    // Validate URL to prevent XSS
+    if (!isValidUrl(url.trim())) {
+      return;
+    }
 
     // Optimistic update
     const tempId = `temp-${Date.now()}`;
@@ -143,14 +161,18 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
                   {TYPE_OPTIONS.find(t => t.value === a.type)?.icon || "🔗"}
                 </span>
                 <div className="min-w-0">
-                  <a
-                    href={a.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-accent hover:text-accent-hover transition-colors"
-                  >
-                    {a.label}
-                  </a>
+                  {isValidUrl(a.url) ? (
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-accent hover:text-accent-hover transition-colors"
+                    >
+                      {a.label}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-muted">{a.label}</span>
+                  )}
                   <p className="text-xs text-muted truncate">{a.url}</p>
                 </div>
               </div>

@@ -21,8 +21,28 @@ export async function POST(request: NextRequest) {
         return apiError("Label is required");
       }
 
+      const trimmedLabel = label.trim();
+      if (!trimmedLabel) {
+        return apiError("Label cannot be empty");
+      }
+
       if (!url || typeof url !== "string") {
         return apiError("URL is required");
+      }
+
+      const trimmedUrl = url.trim();
+      if (!trimmedUrl) {
+        return apiError("URL cannot be empty");
+      }
+
+      // Validate URL format and protocol to prevent XSS
+      try {
+        const parsedUrl = new URL(trimmedUrl);
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+          return apiError("URL must use http or https protocol");
+        }
+      } catch {
+        return apiError("Invalid URL format");
       }
 
       const attachmentType = type || "link";
@@ -31,8 +51,8 @@ export async function POST(request: NextRequest) {
       }
 
       const attachment = await addAttachment(supabase, user.id, project_id, {
-        label,
-        url,
+        label: trimmedLabel,
+        url: trimmedUrl,
         type: attachmentType,
         milestone_id,
       });

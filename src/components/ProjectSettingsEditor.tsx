@@ -209,16 +209,16 @@ export function ProjectSettingsEditor({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter a password"
-                minLength={4}
+                minLength={12}
                 className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
                 autoFocus
               />
-              <p className="text-xs text-muted mt-1">Minimum 4 characters</p>
+              <p className="text-xs text-muted mt-1">Minimum 12 characters</p>
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
-                disabled={password.length < 4}
+                disabled={password.length < 12}
                 className="px-4 py-2 bg-accent text-background font-semibold rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
               >
                 Set Password

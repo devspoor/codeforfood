@@ -2,8 +2,34 @@ import { notFound } from "next/navigation";
 import { getProjectByHash, getProjectSummary } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { PublicProjectContent } from "./PublicProjectContent";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ hash: string }>;
+}): Promise<Metadata> {
+  const { hash } = await params;
+  const project = await getProjectByHash(hash);
+
+  if (!project) {
+    return {
+      title: "Project Not Found | codeforfood",
+    };
+  }
+
+  return {
+    title: `${project.name} | codeforfood`,
+    description: project.description || `Project billing details for ${project.name}`,
+    openGraph: {
+      title: `${project.name} | codeforfood`,
+      description: project.description || `Project billing details for ${project.name}`,
+      type: "website",
+    },
+  };
+}
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   in_progress: { label: "In Progress", color: "bg-blue-500/20 text-blue-400" },
@@ -34,7 +60,8 @@ export default async function PublicProjectPage({
 
   const summary = getProjectSummary(project);
   const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.in_progress;
-  const isProtected = project.public_password_hash === "protected";
+  // Check if project has password protection (any truthy value means protected)
+  const isProtected = !!project.public_password_hash;
 
   // If password protected, render client component that handles unlock
   if (isProtected) {

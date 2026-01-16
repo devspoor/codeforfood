@@ -47,8 +47,8 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters");
       return;
     }
 
@@ -250,7 +250,7 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 8 chars, letter + number"
+                placeholder="Min 12 chars, letter + number"
                 className="w-full px-3 py-2 pr-10 bg-background border border-border rounded focus:outline-none focus:border-accent"
               />
               <button

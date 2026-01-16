@@ -2,6 +2,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { LogoutButton } from "@/components/LogoutButton";
 import { getCurrentProfile } from "@/lib/db";
+import type { Metadata } from "next";
+
+// Prevent admin pages from being indexed by search engines
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default async function AdminLayout({
   children,

@@ -666,13 +666,43 @@ export async function updateMilestonePaidAmount(projectId: string, milestoneId: 
 export async function deleteMilestone(projectId: string, milestoneId: string): Promise<boolean> {
   const supabase = await createClient();
 
+  // Get the milestone to know its order
+  const { data: milestone } = await supabase
+    .from("milestones")
+    .select("order")
+    .eq("id", milestoneId)
+    .eq("project_id", projectId)
+    .single();
+
+  if (!milestone) return false;
+
   const { error } = await supabase
     .from("milestones")
     .delete()
     .eq("id", milestoneId)
     .eq("project_id", projectId);
 
-  return !error;
+  if (error) return false;
+
+  // Reorder remaining milestones to fill the gap
+  const { data: remaining } = await supabase
+    .from("milestones")
+    .select("id, order")
+    .eq("project_id", projectId)
+    .gt("order", milestone.order)
+    .order("order", { ascending: true });
+
+  if (remaining && remaining.length > 0) {
+    // Decrement order of all milestones after the deleted one
+    for (const m of remaining) {
+      await supabase
+        .from("milestones")
+        .update({ order: m.order - 1 })
+        .eq("id", m.id);
+    }
+  }
+
+  return true;
 }
 
 // Summary calculations
@@ -882,6 +912,10 @@ export async function setProjectPassword(projectId: string, passwordHash: string
   const user = await getCurrentUser();
   if (!user) return false;
 
+  // Verify project ownership before setting password
+  const project = await verifyProjectOwnership(projectId, user);
+  if (!project) return false;
+
   const { error } = await supabase
     .from("projects")
     .update({ public_password_hash: passwordHash })
@@ -902,7 +936,8 @@ export async function verifyProjectPassword(hash: string, password: string): Pro
 
   if (!data || !data.public_password_hash) return true; // No password set
 
-  return bcrypt.compareSync(password, data.public_password_hash);
+  // Use async compare instead of blocking compareSync
+  return bcrypt.compare(password, data.public_password_hash);
 }
 
 // Payment History CRUD

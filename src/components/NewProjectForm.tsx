@@ -9,33 +9,43 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || isSubmitting) return;
 
-    // Close form immediately
+    setIsSubmitting(true);
+    setError(null);
+
     const projectName = name.trim();
     const projectDescription = description.trim() || undefined;
-    setShowForm(false);
-    setName("");
-    setDescription("");
-    setIsSubmitting(true);
 
-    const res = await fetch("/api/projects", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        organizationId,
-        name: projectName,
-        description: projectDescription,
-      }),
-    });
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId,
+          name: projectName,
+          description: projectDescription,
+        }),
+      });
 
-    if (res.ok) {
-      const project = await res.json();
-      router.push(`/admin/projects/${project.id}`);
-    } else {
+      if (res.ok) {
+        const project = await res.json();
+        // Only reset form and navigate on success
+        setShowForm(false);
+        setName("");
+        setDescription("");
+        router.push(`/admin/projects/${project.id}`);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Failed to create project");
+        setIsSubmitting(false);
+      }
+    } catch {
+      setError("Network error. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -53,6 +63,11 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-4 space-y-4">
+      {error && (
+        <div className="p-3 bg-danger/10 border border-danger/30 rounded text-danger text-sm">
+          {error}
+        </div>
+      )}
       <div>
         <label className="block text-sm text-muted mb-1">Project Name</label>
         <input

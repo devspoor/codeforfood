@@ -19,8 +19,17 @@ export async function POST(request: NextRequest) {
         return apiError("Content is required");
       }
 
+      const trimmedContent = content.trim();
+      if (!trimmedContent) {
+        return apiError("Content cannot be empty");
+      }
+
+      if (trimmedContent.length > 10000) {
+        return apiError("Content is too long (max 10000 characters)");
+      }
+
       const comment = await addComment(supabase, user.id, project_id, {
-        content,
+        content: trimmedContent,
         milestone_id,
       });
 

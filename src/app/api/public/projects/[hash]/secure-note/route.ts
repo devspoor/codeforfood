@@ -13,7 +13,7 @@ interface RateLimitResult {
   is_blocked: boolean;
 }
 
-async function checkRateLimit(supabase: Awaited<ReturnType<typeof createClient>>, key: string): Promise<RateLimitResult> {
+async function checkRateLimit(supabase: Awaited<ReturnType<typeof createClient>>, key: string): Promise<RateLimitResult | null> {
   const { data, error } = await supabase.rpc("check_rate_limit", {
     p_key: key,
     p_max_attempts: MAX_ATTEMPTS,
@@ -21,9 +21,9 @@ async function checkRateLimit(supabase: Awaited<ReturnType<typeof createClient>>
   });
 
   if (error || !data || data.length === 0) {
-    // On error, allow the request but log it (without exposing error details)
+    // SECURITY: Deny by default if rate limit check fails (fail closed)
     console.error("Rate limit check error: database unavailable");
-    return { allowed: true, remaining_attempts: MAX_ATTEMPTS - 1, reset_in_seconds: WINDOW_SECONDS, is_blocked: false };
+    return null;
   }
 
   return data[0];
@@ -46,8 +46,14 @@ export async function POST(
   const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
   const rateLimitKey = `secure_note:${ip}:${hash}`;
 
-  // Check rate limit using database
+  // Check rate limit using database - deny if check fails (fail closed)
   const rateLimit = await checkRateLimit(supabase, rateLimitKey);
+  if (!rateLimit) {
+    return NextResponse.json(
+      { error: "Service temporarily unavailable. Please try again later." },
+      { status: 503 }
+    );
+  }
   if (!rateLimit.allowed) {
     return NextResponse.json(
       {
