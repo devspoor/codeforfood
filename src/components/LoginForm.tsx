@@ -26,7 +26,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-dvh relative overflow-hidden flex items-center justify-center p-4">
       {/* Background */}
       <div className="absolute inset-0 grid-pattern opacity-30" />
 
@@ -35,17 +35,17 @@ export function LoginForm() {
         {/* Logo section */}
         <div className="text-center mb-8">
           <div className="inline-block mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
+            <div className="size-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
               <span className="text-accent text-xl font-bold">{"</>"}</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold gradient-text mb-2">{"<codeforfood/>"}</h1>
+          <h1 className="text-3xl font-bold gradient-text mb-2 text-balance">{"<codeforfood/>"}</h1>
           <p className="text-muted text-sm">Project billing tracker</p>
         </div>
 
         {/* Card */}
         <div className="bg-card border border-border rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-center mb-6">Welcome back</h2>
+          <h2 className="text-lg font-semibold text-center mb-6 text-balance">Welcome back</h2>
 
           <div className="space-y-3">
             {/* Google button */}

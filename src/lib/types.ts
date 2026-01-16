@@ -11,7 +11,8 @@ export interface TimeEntry {
   id: string;
   milestone_id: string;
   date: string;
-  hours: number;
+  hours?: number;
+  units?: number;
   description?: string;
   paid_amount: number;
   created_at: string;
@@ -30,7 +31,7 @@ export interface Milestone {
   project_id: string;
   title: string;
   description?: string;
-  type: "fixed" | "hourly";
+  type: "fixed" | "hourly" | "per_unit";
   // Fixed milestone fields
   amount: number;
   paid_amount: number;
@@ -40,6 +41,12 @@ export interface Milestone {
   hourly_rate?: number;
   estimated_hours?: number;
   hours_limit?: number;
+  // Per-unit milestone fields
+  unit_rate?: number;
+  unit_label?: string;
+  estimated_units?: number;
+  units_limit?: number;
+  // Entries (used by both hourly and per_unit)
   time_entries?: TimeEntry[];
   payment_history?: PaymentHistoryEntry[];
   order: number;
@@ -124,6 +131,9 @@ export interface ProjectSummary {
   // Hourly stats
   totalHours: number;
   hourlyAmount: number;
+  // Per-unit stats
+  totalUnits: number;
+  unitAmount: number;
 }
 
 export interface OrganizationWithProjects extends Organization {

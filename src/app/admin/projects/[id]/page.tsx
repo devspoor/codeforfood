@@ -106,6 +106,20 @@ export default async function ProjectDetailPage({
         </div>
       )}
 
+      {/* Units stats (if any per_unit milestones) */}
+      {summary.totalUnits > 0 && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-card border border-border rounded-lg p-4">
+            <p className="text-muted text-sm mb-1">Units Logged</p>
+            <p className="text-2xl font-bold">{summary.totalUnits}</p>
+          </div>
+          <div className="bg-card border border-border rounded-lg p-4">
+            <p className="text-muted text-sm mb-1">Per-Unit Revenue</p>
+            <p className="text-2xl font-bold text-accent">{formatCurrency(summary.unitAmount)}</p>
+          </div>
+        </div>
+      )}
+
       {/* Progress bar */}
       <div>
         <div className="h-4 bg-border rounded-full overflow-hidden">

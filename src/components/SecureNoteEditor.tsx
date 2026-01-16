@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AlertDialog } from "./AlertDialog";
 
 interface SecureNoteEditorProps {
   projectId: string;
@@ -16,6 +17,8 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const checkNote = async () => {
@@ -95,12 +98,11 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete the secure note? This cannot be undone.")) {
-      return;
-    }
+    setDeleting(true);
 
     // Optimistic update
     setHasNote(false);
+    setShowDeleteDialog(false);
     setSuccess("Secure note deleted");
     setTimeout(() => setSuccess(null), 3000);
 
@@ -115,6 +117,7 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
       const data = await res.json();
       setError(data.error || "Failed to delete secure note");
     }
+    setDeleting(false);
   };
 
   const handleCancel = () => {
@@ -171,13 +174,24 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
               Update
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
               className="text-sm text-danger hover:text-danger/80"
             >
               Delete
             </button>
           </div>
         )}
+        <AlertDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Delete secure note?"
+          description="This action cannot be undone. The encrypted note will be permanently deleted."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDelete}
+          loading={deleting}
+          variant="danger"
+        />
       </div>
 
       {success && (

@@ -281,6 +281,50 @@ export async function deleteProject(supabase: SupabaseClientType, userId: string
   return !error;
 }
 
+/**
+ * Transfer a project to a different organization
+ * Both the source and target organizations must belong to the current user
+ */
+export async function transferProject(supabase: SupabaseClientType, userId: string, projectId: string, targetOrganizationId: string): Promise<Project | null> {
+  // Verify project belongs to user's organization
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, organization_id, organizations!inner(user_id)")
+    .eq("id", projectId)
+    .eq("organizations.user_id", userId)
+    .single();
+
+  if (!project) return null;
+
+  // Verify target organization belongs to user
+  const { data: targetOrg } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", targetOrganizationId)
+    .eq("user_id", userId)
+    .single();
+
+  if (!targetOrg) return null;
+
+  // Don't transfer to the same organization
+  if (project.organization_id === targetOrganizationId) return null;
+
+  // Update the project's organization_id
+  const { data: updated, error } = await supabase
+    .from("projects")
+    .update({ organization_id: targetOrganizationId })
+    .eq("id", projectId)
+    .select()
+    .single();
+
+  if (error) return null;
+  return {
+    ...updated,
+    has_password: !!updated.public_password_hash,
+    has_secure_note: !!updated.secure_note_encrypted,
+  };
+}
+
 // ============== MILESTONES ==============
 
 export async function verifyProjectOwnership(supabase: SupabaseClientType, userId: string, projectId: string): Promise<Project | null> {
@@ -296,11 +340,15 @@ export async function verifyProjectOwnership(supabase: SupabaseClientType, userI
 export async function addMilestone(supabase: SupabaseClientType, userId: string, projectId: string, data: {
   title: string;
   description?: string;
-  type?: "fixed" | "hourly";
+  type?: "fixed" | "hourly" | "per_unit";
   amount?: number;
   hourly_rate?: number;
   estimated_hours?: number;
   hours_limit?: number;
+  unit_rate?: number;
+  unit_label?: string;
+  estimated_units?: number;
+  units_limit?: number;
 }): Promise<Milestone | null> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
   if (!project) return null;
@@ -327,10 +375,19 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
     insertData.amount = data.amount || 0;
     insertData.paid_amount = 0;
     insertData.is_paid = false;
-  } else {
+  } else if (milestoneType === "hourly") {
     insertData.hourly_rate = data.hourly_rate || 0;
     insertData.estimated_hours = data.estimated_hours;
     insertData.hours_limit = data.hours_limit;
+    insertData.amount = 0;
+    insertData.paid_amount = 0;
+    insertData.is_paid = false;
+  } else {
+    // per_unit
+    insertData.unit_rate = data.unit_rate || 0;
+    insertData.unit_label = data.unit_label || "unit";
+    insertData.estimated_units = data.estimated_units;
+    insertData.units_limit = data.units_limit;
     insertData.amount = 0;
     insertData.paid_amount = 0;
     insertData.is_paid = false;
@@ -407,7 +464,7 @@ export async function deleteMilestone(supabase: SupabaseClientType, userId: stri
 
 // ============== TIME ENTRIES ==============
 
-export async function addTimeEntry(supabase: SupabaseClientType, userId: string, milestoneId: string, data: { date: string; hours: number; description?: string; paid_amount?: number }): Promise<TimeEntry | null> {
+export async function addTimeEntry(supabase: SupabaseClientType, userId: string, milestoneId: string, data: { date: string; hours?: number; units?: number; description?: string; paid_amount?: number }): Promise<TimeEntry | null> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
   if (!milestone) return null;
 
@@ -416,7 +473,8 @@ export async function addTimeEntry(supabase: SupabaseClientType, userId: string,
     .insert({
       milestone_id: milestoneId,
       date: data.date,
-      hours: data.hours,
+      hours: data.hours || null,
+      units: data.units || null,
       description: data.description,
       paid_amount: data.paid_amount || 0,
     })
@@ -437,7 +495,7 @@ export async function getTimeEntryById(supabase: SupabaseClientType, userId: str
   return data;
 }
 
-export async function updateTimeEntry(supabase: SupabaseClientType, userId: string, entryId: string, data: Partial<{ date: string; hours: number; description: string; paid_amount: number }>): Promise<TimeEntry | null> {
+export async function updateTimeEntry(supabase: SupabaseClientType, userId: string, entryId: string, data: Partial<{ date: string; hours: number; units: number; description: string; paid_amount: number }>): Promise<TimeEntry | null> {
   const entry = await getTimeEntryById(supabase, userId, entryId);
   if (!entry) return null;
 
@@ -685,6 +743,8 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
       percentPaid: 0,
       totalHours: 0,
       hourlyAmount: 0,
+      totalUnits: 0,
+      unitAmount: 0,
       projectsByStatus: {
         in_progress: 0,
         awaiting_payment: 0,
@@ -711,6 +771,8 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
       percentPaid: 0,
       totalHours: 0,
       hourlyAmount: 0,
+      totalUnits: 0,
+      unitAmount: 0,
       projectsByStatus: {
         in_progress: 0,
         awaiting_payment: 0,
@@ -724,6 +786,8 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
   let paidAmount = 0;
   let totalHours = 0;
   let hourlyAmount = 0;
+  let totalUnits = 0;
+  let unitAmount = 0;
 
   const projectsByStatus = {
     in_progress: 0,
@@ -740,10 +804,18 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
     milestones.forEach((m: Milestone) => {
       if (m.type === "hourly") {
         const entries = (m.time_entries || []) as TimeEntry[];
-        const hours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+        const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
         totalHours += hours;
         const amount = hours * Number(m.hourly_rate || 0);
         hourlyAmount += amount;
+        totalAmount += amount;
+        paidAmount += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+      } else if (m.type === "per_unit") {
+        const entries = (m.time_entries || []) as TimeEntry[];
+        const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
+        totalUnits += units;
+        const amount = units * Number(m.unit_rate || 0);
+        unitAmount += amount;
         totalAmount += amount;
         paidAmount += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
       } else {
@@ -762,6 +834,8 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
     percentPaid: totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0,
     totalHours,
     hourlyAmount,
+    totalUnits,
+    unitAmount,
     projectsByStatus,
   };
 }
@@ -781,15 +855,30 @@ export function getProjectSummary(project: Project): ProjectSummary {
 
   hourlyMilestones.forEach(m => {
     const entries = m.time_entries || [];
-    const hours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+    const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
     totalHours += hours;
     const amount = hours * Number(m.hourly_rate || 0);
     hourlyAmount += amount;
     hourlyPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
   });
 
-  const totalAmount = fixedTotal + hourlyAmount;
-  const paidAmountTotal = fixedPaid + hourlyPaid;
+  // Calculate totals for per-unit milestones
+  const perUnitMilestones = milestones.filter(m => m.type === "per_unit");
+  let totalUnits = 0;
+  let unitAmount = 0;
+  let unitPaid = 0;
+
+  perUnitMilestones.forEach(m => {
+    const entries = m.time_entries || [];
+    const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
+    totalUnits += units;
+    const amount = units * Number(m.unit_rate || 0);
+    unitAmount += amount;
+    unitPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+  });
+
+  const totalAmount = fixedTotal + hourlyAmount + unitAmount;
+  const paidAmountTotal = fixedPaid + hourlyPaid + unitPaid;
   const paidMilestones = milestones.filter((m) => m.is_paid).length;
 
   return {
@@ -801,5 +890,7 @@ export function getProjectSummary(project: Project): ProjectSummary {
     percentPaid: totalAmount > 0 ? Math.round((paidAmountTotal / totalAmount) * 100) : 0,
     totalHours,
     hourlyAmount,
+    totalUnits,
+    unitAmount,
   };
 }

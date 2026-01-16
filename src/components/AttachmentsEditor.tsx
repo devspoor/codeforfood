@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { Attachment } from "@/lib/types";
+import { AlertDialog } from "./AlertDialog";
 
 interface Props {
   projectId: string;
@@ -40,6 +41,8 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
   const [type, setType] = useState<typeof TYPE_OPTIONS[number]["value"]>("link");
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,9 +99,11 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
   };
 
   const handleDelete = async (attachmentId: string) => {
+    setDeleting(true);
     // Optimistic update
     const previousAttachments = attachments;
     setAttachments(attachments.filter((a) => a.id !== attachmentId));
+    setDeleteDialogId(null);
 
     const res = await fetch(`/api/projects/${projectId}/attachments/${attachmentId}`, {
       method: "DELETE",
@@ -106,6 +111,7 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
     if (!res.ok) {
       setAttachments(previousAttachments);
     }
+    setDeleting(false);
   };
 
   const detectType = (inputUrl: string) => {
@@ -149,8 +155,9 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
                 </div>
               </div>
               <button
-                onClick={() => handleDelete(a.id)}
+                onClick={() => setDeleteDialogId(a.id)}
                 className="text-muted hover:text-danger transition-colors ml-2 flex-shrink-0"
+                aria-label="Delete attachment"
               >
                 ×
               </button>
@@ -269,6 +276,18 @@ export function AttachmentsEditor({ projectId, attachments: initialAttachments }
       {attachments.length === 0 && !showForm && (
         <p className="text-center text-muted text-sm py-4">No links yet</p>
       )}
+
+      <AlertDialog
+        open={deleteDialogId !== null}
+        onOpenChange={(open) => !open && setDeleteDialogId(null)}
+        title="Delete attachment?"
+        description="This will remove this link from the project."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => deleteDialogId && handleDelete(deleteDialogId)}
+        loading={deleting}
+        variant="danger"
+      />
     </div>
   );
 }

@@ -20,7 +20,7 @@ export async function POST(
     }
 
     const data = await request.json();
-    const { title, description, type = "fixed", amount, hourly_rate, estimated_hours, hours_limit } = data;
+    const { title, description, type = "fixed", amount, hourly_rate, estimated_hours, hours_limit, unit_rate, unit_label, estimated_units, units_limit } = data;
 
     if (!title) {
       return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -61,6 +61,29 @@ export async function POST(
         hourly_rate: numRate,
         estimated_hours: estimated_hours ? Number(estimated_hours) : undefined,
         hours_limit: hours_limit ? Number(hours_limit) : undefined,
+      });
+      if (!milestone) {
+        return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });
+      }
+      return NextResponse.json(milestone, { status: 201 });
+
+    } else if (type === "per_unit") {
+      if (unit_rate === undefined) {
+        return NextResponse.json({ error: "Unit rate required for per_unit milestone" }, { status: 400 });
+      }
+      const numRate = Number(unit_rate);
+      if (!Number.isFinite(numRate) || numRate < 0) {
+        return NextResponse.json({ error: "Unit rate must be a valid non-negative number" }, { status: 400 });
+      }
+
+      const milestone = await addMilestone(id, {
+        title,
+        description,
+        type: "per_unit",
+        unit_rate: numRate,
+        unit_label: unit_label || "unit",
+        estimated_units: estimated_units ? Number(estimated_units) : undefined,
+        units_limit: units_limit ? Number(units_limit) : undefined,
       });
       if (!milestone) {
         return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });

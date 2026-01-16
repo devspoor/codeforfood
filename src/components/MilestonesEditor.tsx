@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { Milestone, TimeEntry, PaymentHistoryEntry } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { AlertDialog } from "./AlertDialog";
 
 interface Props {
   projectId: string;
@@ -13,8 +14,15 @@ interface Props {
 const getPaymentPercent = (m: Milestone) => {
   if (m.type === "hourly") {
     const entries = m.time_entries || [];
-    const hours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+    const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
     const total = hours * Number(m.hourly_rate || 0);
+    const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+    return total > 0 ? Math.round((paid / total) * 100) : 0;
+  }
+  if (m.type === "per_unit") {
+    const entries = m.time_entries || [];
+    const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
+    const total = units * Number(m.unit_rate || 0);
     const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
     return total > 0 ? Math.round((paid / total) * 100) : 0;
   }
@@ -24,18 +32,26 @@ const getPaymentPercent = (m: Milestone) => {
 
 const getMilestoneTotal = (m: Milestone) => {
   if (m.type === "hourly") {
-    const hours = (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours), 0);
+    const hours = (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours || 0), 0);
     return hours * Number(m.hourly_rate || 0);
+  }
+  if (m.type === "per_unit") {
+    const units = (m.time_entries || []).reduce((sum, e) => sum + Number(e.units || 0), 0);
+    return units * Number(m.unit_rate || 0);
   }
   return m.amount;
 };
 
 const getTotalHours = (m: Milestone) => {
-  return (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours), 0);
+  return (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours || 0), 0);
+};
+
+const getTotalUnits = (m: Milestone) => {
+  return (m.time_entries || []).reduce((sum, e) => sum + Number(e.units || 0), 0);
 };
 
 const getPaidAmount = (m: Milestone) => {
-  if (m.type === "hourly") {
+  if (m.type === "hourly" || m.type === "per_unit") {
     return (m.time_entries || []).reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
   }
   return m.paid_amount || 0;
@@ -45,21 +61,30 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   const [milestones, setMilestones] = useState(initialMilestones);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [milestoneType, setMilestoneType] = useState<"fixed" | "hourly">("fixed");
+  const [milestoneType, setMilestoneType] = useState<"fixed" | "hourly" | "per_unit">("fixed");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [hourlyRate, setHourlyRate] = useState("");
   const [estimatedHours, setEstimatedHours] = useState("");
   const [hoursLimit, setHoursLimit] = useState("");
+  // Per-unit fields
+  const [unitRate, setUnitRate] = useState("");
+  const [unitLabel, setUnitLabel] = useState("unit");
+  const [estimatedUnits, setEstimatedUnits] = useState("");
+  const [unitsLimit, setUnitsLimit] = useState("");
   const [paymentInputs, setPaymentInputs] = useState<Record<string, string>>({});
   const [timeEntryPaymentInputs, setTimeEntryPaymentInputs] = useState<Record<string, string>>({});
   const [showTimeEntry, setShowTimeEntry] = useState<string | null>(null);
   const [timeEntryDate, setTimeEntryDate] = useState(new Date().toISOString().split("T")[0]);
   const [timeEntryHours, setTimeEntryHours] = useState("");
+  const [timeEntryUnits, setTimeEntryUnits] = useState("");
   const [timeEntryDesc, setTimeEntryDesc] = useState("");
   const [timeEntryPaidAmount, setTimeEntryPaidAmount] = useState("");
   const [showPaymentHistory, setShowPaymentHistory] = useState<string | null>(null);
+  const [deleteDialogMilestoneId, setDeleteDialogMilestoneId] = useState<string | null>(null);
+  const [deleteDialogEntryId, setDeleteDialogEntryId] = useState<{ milestoneId: string; entryId: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const resetForm = () => {
     setShowForm(false);
@@ -72,6 +97,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       setHourlyRate("");
       setEstimatedHours("");
       setHoursLimit("");
+      setUnitRate("");
+      setUnitLabel("unit");
+      setEstimatedUnits("");
+      setUnitsLimit("");
       setMilestoneType("fixed");
     }, 0);
   };
@@ -87,10 +116,16 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       };
       if (milestoneType === "fixed") {
         updateData.amount = Number(amount);
-      } else {
+      } else if (milestoneType === "hourly") {
         updateData.hourly_rate = Number(hourlyRate);
         updateData.estimated_hours = estimatedHours ? Number(estimatedHours) : undefined;
         updateData.hours_limit = hoursLimit ? Number(hoursLimit) : undefined;
+      } else {
+        // per_unit
+        updateData.unit_rate = Number(unitRate);
+        updateData.unit_label = unitLabel.trim() || "unit";
+        updateData.estimated_units = estimatedUnits ? Number(estimatedUnits) : undefined;
+        updateData.units_limit = unitsLimit ? Number(unitsLimit) : undefined;
       }
 
       // Optimistic update for edit
@@ -116,10 +151,16 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       };
       if (milestoneType === "fixed") {
         createData.amount = Number(amount);
-      } else {
+      } else if (milestoneType === "hourly") {
         createData.hourly_rate = Number(hourlyRate);
         createData.estimated_hours = estimatedHours ? Number(estimatedHours) : undefined;
         createData.hours_limit = hoursLimit ? Number(hoursLimit) : undefined;
+      } else {
+        // per_unit
+        createData.unit_rate = Number(unitRate);
+        createData.unit_label = unitLabel.trim() || "unit";
+        createData.estimated_units = estimatedUnits ? Number(estimatedUnits) : undefined;
+        createData.units_limit = unitsLimit ? Number(unitsLimit) : undefined;
       }
 
       // Optimistic update for create
@@ -134,6 +175,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
         hourly_rate: milestoneType === "hourly" ? Number(hourlyRate) : undefined,
         estimated_hours: milestoneType === "hourly" && estimatedHours ? Number(estimatedHours) : undefined,
         hours_limit: milestoneType === "hourly" && hoursLimit ? Number(hoursLimit) : undefined,
+        unit_rate: milestoneType === "per_unit" ? Number(unitRate) : undefined,
+        unit_label: milestoneType === "per_unit" ? (unitLabel.trim() || "unit") : undefined,
+        estimated_units: milestoneType === "per_unit" && estimatedUnits ? Number(estimatedUnits) : undefined,
+        units_limit: milestoneType === "per_unit" && unitsLimit ? Number(unitsLimit) : undefined,
         paid_amount: 0,
         is_paid: false,
         paid_at: undefined,
@@ -170,11 +215,28 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
         setEstimatedHours(m.estimated_hours ? String(m.estimated_hours) : "");
         setHoursLimit(m.hours_limit ? String(m.hours_limit) : "");
         setAmount("");
+        setUnitRate("");
+        setUnitLabel("unit");
+        setEstimatedUnits("");
+        setUnitsLimit("");
+      } else if (m.type === "per_unit") {
+        setUnitRate(String(m.unit_rate || ""));
+        setUnitLabel(m.unit_label || "unit");
+        setEstimatedUnits(m.estimated_units ? String(m.estimated_units) : "");
+        setUnitsLimit(m.units_limit ? String(m.units_limit) : "");
+        setAmount("");
+        setHourlyRate("");
+        setEstimatedHours("");
+        setHoursLimit("");
       } else {
         setAmount(String(m.amount));
         setHourlyRate("");
         setEstimatedHours("");
         setHoursLimit("");
+        setUnitRate("");
+        setUnitLabel("unit");
+        setEstimatedUnits("");
+        setUnitsLimit("");
       }
     }, 0);
   };
@@ -232,9 +294,11 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   };
 
   const handleDelete = async (milestoneId: string) => {
+    setDeleting(true);
     // Optimistic update
     const previousMilestones = milestones;
     setMilestones(milestones.filter((m) => m.id !== milestoneId));
+    setDeleteDialogMilestoneId(null);
 
     const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}`, {
       method: "DELETE",
@@ -243,17 +307,21 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       // Rollback on error
       setMilestones(previousMilestones);
     }
+    setDeleting(false);
   };
 
-  const handleAddTimeEntry = async (milestoneId: string) => {
-    if (!timeEntryDate || !timeEntryHours) return;
+  const handleAddTimeEntry = async (milestoneId: string, isUnitEntry: boolean = false) => {
+    const hasHours = !isUnitEntry && timeEntryHours;
+    const hasUnits = isUnitEntry && timeEntryUnits;
+    if (!timeEntryDate || (!hasHours && !hasUnits)) return;
 
     const tempId = `temp-${Date.now()}`;
     const optimisticEntry: TimeEntry = {
       id: tempId,
       milestone_id: milestoneId,
       date: timeEntryDate,
-      hours: Number(timeEntryHours),
+      hours: hasHours ? Number(timeEntryHours) : undefined,
+      units: hasUnits ? Number(timeEntryUnits) : undefined,
       description: timeEntryDesc.trim() || undefined,
       paid_amount: timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0,
       created_at: new Date().toISOString(),
@@ -266,19 +334,23 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
         : m
     ));
     setTimeEntryHours("");
+    setTimeEntryUnits("");
     setTimeEntryDesc("");
     setTimeEntryPaidAmount("");
     setShowTimeEntry(null);
 
+    const body: Record<string, unknown> = {
+      date: timeEntryDate,
+      description: timeEntryDesc.trim() || undefined,
+      paid_amount: timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0,
+    };
+    if (hasHours) body.hours = Number(timeEntryHours);
+    if (hasUnits) body.units = Number(timeEntryUnits);
+
     const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}/time-entries`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: timeEntryDate,
-        hours: Number(timeEntryHours),
-        description: timeEntryDesc.trim() || undefined,
-        paid_amount: timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (res.ok) {
@@ -293,6 +365,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   };
 
   const handleDeleteTimeEntry = async (milestoneId: string, entryId: string) => {
+    setDeleting(true);
     // Optimistic update
     const previousMilestones = milestones;
     setMilestones(milestones.map((m) =>
@@ -300,6 +373,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
         ? { ...m, time_entries: (m.time_entries || []).filter((e) => e.id !== entryId) }
         : m
     ));
+    setDeleteDialogEntryId(null);
 
     const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}/time-entries/${entryId}`, {
       method: "DELETE",
@@ -308,6 +382,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       // Rollback on error
       setMilestones(previousMilestones);
     }
+    setDeleting(false);
   };
 
   const handleUpdateTimeEntryPayment = async (milestoneId: string, entry: TimeEntry, newPaidAmount: number) => {
@@ -367,14 +442,17 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           <div className="space-y-3">
             {sortedMilestones.map((m, index) => {
                 const isHourly = m.type === "hourly";
+                const isPerUnit = m.type === "per_unit";
+                const isTracked = isHourly || isPerUnit;
                 const total = getMilestoneTotal(m);
                 const paidAmount = getPaidAmount(m);
                 const remaining = total - paidAmount;
                 const percent = getPaymentPercent(m);
                 const inputValue = paymentInputs[m.id] ?? "";
                 const totalHours = getTotalHours(m);
+                const totalUnits = getTotalUnits(m);
 
-                const isFullyPaid = isHourly ? (paidAmount >= total && total > 0) : m.is_paid;
+                const isFullyPaid = isTracked ? (paidAmount >= total && total > 0) : m.is_paid;
                 const isPartiallyPaid = paidAmount > 0 && paidAmount < total;
 
                 return (
@@ -395,6 +473,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                           {isHourly ? (
                             <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
                               HOURLY
+                            </span>
+                          ) : isPerUnit ? (
+                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
+                              PER {(m.unit_label || "unit").toUpperCase()}
                             </span>
                           ) : (
                             <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
@@ -423,9 +505,17 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                             {` · Logged: ${totalHours.toFixed(1)}h`}
                           </p>
                         )}
+                        {isPerUnit && (
+                          <p className="text-xs text-muted mt-1">
+                            {formatCurrency(Number(m.unit_rate || 0))}/{m.unit_label || "unit"}
+                            {m.estimated_units && ` · Est. ${m.estimated_units}`}
+                            {m.units_limit && ` · Max ${m.units_limit}`}
+                            {` · Logged: ${totalUnits}`} {m.unit_label || "unit"}{totalUnits !== 1 ? "s" : ""}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg">{formatCurrency(total)}</p>
+                        <p className="font-bold text-lg tabular-nums">{formatCurrency(total)}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <button
                             onClick={() => handleEdit(m)}
@@ -434,7 +524,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDelete(m.id)}
+                            onClick={() => setDeleteDialogMilestoneId(m.id)}
                             className="text-xs text-muted hover:text-danger transition-colors"
                           >
                             Delete
@@ -446,13 +536,13 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     {/* Progress bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-success">{formatCurrency(paidAmount)} paid</span>
-                        <span className="text-muted">{formatCurrency(remaining)} remaining</span>
+                        <span className="text-success tabular-nums">{formatCurrency(paidAmount)} paid</span>
+                        <span className="text-muted tabular-nums">{formatCurrency(remaining)} remaining</span>
                       </div>
                       <div className="h-2 bg-border rounded-full overflow-hidden">
                         <div
-                          className={`h-full ${isFullyPaid ? "bg-success" : "bg-accent"}`}
-                          style={{ width: `${percent}%` }}
+                          className={`h-full w-full origin-left ${isFullyPaid ? "bg-success" : "bg-accent"}`}
+                          style={{ transform: `scaleX(${percent / 100})` }}
                         />
                       </div>
                     </div>
@@ -499,7 +589,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                               />
                               <button
-                                onClick={() => handleAddTimeEntry(m.id)}
+                                onClick={() => handleAddTimeEntry(m.id, false)}
                                 disabled={!timeEntryHours}
                                 className="px-3 py-1 text-sm bg-accent text-background rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
                               >
@@ -519,7 +609,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         {(m.time_entries || []).length > 0 && (
                           <div className="space-y-2 max-h-60 overflow-y-auto">
                             {(m.time_entries || []).map((entry: TimeEntry) => {
-                              const entryAmount = Number(entry.hours) * Number(m.hourly_rate || 0);
+                              const entryAmount = Number(entry.hours || 0) * Number(m.hourly_rate || 0);
                               const entryPaid = Number(entry.paid_amount || 0);
                               const entryRemaining = entryAmount - entryPaid;
                               const isPaid = entryPaid >= entryAmount && entryAmount > 0;
@@ -532,7 +622,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                   <div className="flex items-center justify-between text-xs">
                                     <div className="flex items-center gap-3">
                                       <span className="text-muted">{entry.date}</span>
-                                      <span className="font-medium">{Number(entry.hours).toFixed(2)}h</span>
+                                      <span className="font-medium">{Number(entry.hours || 0).toFixed(2)}h</span>
                                       <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>
@@ -541,8 +631,147 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                       )}
                                     </div>
                                     <button
-                                      onClick={() => handleDeleteTimeEntry(m.id, entry.id)}
+                                      onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
                                       className="text-muted hover:text-danger transition-colors"
+                                      aria-label="Delete entry"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                  {!isPaid && entryAmount > 0 && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <span className="text-xs text-muted">$</span>
+                                      <input
+                                        type="number"
+                                        value={inputValue}
+                                        onChange={(e) => setTimeEntryPaymentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
+                                        placeholder={entryRemaining.toFixed(2)}
+                                        min="0"
+                                        max={entryAmount}
+                                        step="0.01"
+                                        className="flex-1 px-2 py-1 text-xs rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                      />
+                                      <button
+                                        onClick={() => {
+                                          const addAmount = Number(inputValue) || entryRemaining;
+                                          const newPaid = Math.min(entryPaid + addAmount, entryAmount);
+                                          handleUpdateTimeEntryPayment(m.id, entry, newPaid);
+                                        }}
+                                        className="px-2 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                      >
+                                        +Add
+                                      </button>
+                                      <button
+                                        onClick={() => handleUpdateTimeEntryPayment(m.id, entry, entryAmount)}
+                                        className="px-2 py-1 text-xs border border-success text-success rounded hover:bg-success/10 transition-colors"
+                                        title="Pay full amount"
+                                      >
+                                        Full
+                                      </button>
+                                      {entryPaid > 0 && (
+                                        <button
+                                          onClick={() => handleUpdateTimeEntryPayment(m.id, entry, 0)}
+                                          className="px-2 py-1 text-xs border border-border text-muted rounded hover:border-danger hover:text-danger transition-colors"
+                                        >
+                                          Clear
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Unit entries for per_unit milestones */}
+                    {isPerUnit && (
+                      <div className="mb-3 border-t border-border pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">{m.unit_label || "Unit"} Log</span>
+                          <button
+                            onClick={() => setShowTimeEntry(showTimeEntry === m.id ? null : m.id)}
+                            className="text-xs text-accent hover:text-accent-hover transition-colors"
+                          >
+                            + Log {m.unit_label || "Unit"}
+                          </button>
+                        </div>
+
+                        {showTimeEntry === m.id && (
+                          <div className="bg-background border border-border rounded p-3 mb-3 space-y-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              <input
+                                type="date"
+                                value={timeEntryDate}
+                                onChange={(e) => setTimeEntryDate(e.target.value)}
+                                className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                              />
+                              <input
+                                type="number"
+                                value={timeEntryUnits}
+                                onChange={(e) => setTimeEntryUnits(e.target.value)}
+                                placeholder={`# of ${m.unit_label || "unit"}s`}
+                                min="1"
+                                step="1"
+                                className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                              />
+                              <input
+                                type="number"
+                                value={timeEntryPaidAmount}
+                                onChange={(e) => setTimeEntryPaidAmount(e.target.value)}
+                                placeholder={timeEntryUnits ? `$${(Number(timeEntryUnits) * Number(m.unit_rate || 0)).toFixed(0)} paid` : "Paid $"}
+                                min="0"
+                                step="0.01"
+                                className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                              />
+                              <button
+                                onClick={() => handleAddTimeEntry(m.id, true)}
+                                disabled={!timeEntryUnits}
+                                className="px-3 py-1 text-sm bg-accent text-background rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+                              >
+                                Add
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={timeEntryDesc}
+                              onChange={(e) => setTimeEntryDesc(e.target.value)}
+                              placeholder="Description (optional)"
+                              className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        {(m.time_entries || []).length > 0 && (
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {(m.time_entries || []).map((entry: TimeEntry) => {
+                              const entryAmount = Number(entry.units || 0) * Number(m.unit_rate || 0);
+                              const entryPaid = Number(entry.paid_amount || 0);
+                              const entryRemaining = entryAmount - entryPaid;
+                              const isPaid = entryPaid >= entryAmount && entryAmount > 0;
+                              const inputValue = timeEntryPaymentInputs[entry.id] ?? "";
+                              return (
+                                <div
+                                  key={entry.id}
+                                  className={`bg-background rounded px-2 py-2 ${isPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
+                                >
+                                  <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-muted">{entry.date}</span>
+                                      <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
+                                      <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
+                                        {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                      </span>
+                                      {entry.description && (
+                                        <span className="text-muted truncate max-w-[150px]">{entry.description}</span>
+                                      )}
+                                    </div>
+                                    <button
+                                      onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
+                                      className="text-muted hover:text-danger transition-colors"
+                                      aria-label="Delete entry"
                                     >
                                       ×
                                     </button>
@@ -596,7 +825,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     )}
 
                     {/* Payment controls - only for fixed milestones */}
-                    {!isHourly && !m.is_paid && total > 0 && (
+                    {!isTracked && !m.is_paid && total > 0 && (
                       <div className="flex items-center gap-2">
                         <div className="flex-1 flex items-center gap-2">
                           <span className="text-sm text-muted">$</span>
@@ -638,7 +867,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     )}
 
                     {/* Paid info - only for fixed milestones */}
-                    {!isHourly && m.is_paid && m.paid_at && (
+                    {!isTracked && m.is_paid && m.paid_at && (
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted">Paid on {formatDate(m.paid_at)}</p>
                         <button
@@ -651,7 +880,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     )}
 
                     {/* Payment History */}
-                    {!isHourly && (m.payment_history || []).length > 0 && (
+                    {!isTracked && (m.payment_history || []).length > 0 && (
                       <div className="border-t border-border pt-3 mt-3">
                         <button
                           onClick={() => setShowPaymentHistory(showPaymentHistory === m.id ? null : m.id)}
@@ -720,6 +949,17 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
               >
                 Hourly Rate
               </button>
+              <button
+                type="button"
+                onClick={() => setMilestoneType("per_unit")}
+                className={`flex-1 py-2 text-sm rounded border transition-colors ${
+                  milestoneType === "per_unit"
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-border text-muted hover:border-muted"
+                }`}
+              >
+                Per Unit
+              </button>
             </div>
           )}
 
@@ -735,7 +975,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                 autoFocus
               />
             </div>
-            {milestoneType === "fixed" ? (
+            {milestoneType === "fixed" && (
               <div>
                 <label className="block text-sm text-muted mb-1">Amount ($)</label>
                 <input
@@ -748,7 +988,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                   className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
                 />
               </div>
-            ) : (
+            )}
+            {milestoneType === "hourly" && (
               <div>
                 <label className="block text-sm text-muted mb-1">Hourly Rate ($)</label>
                 <input
@@ -756,6 +997,20 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                   value={hourlyRate}
                   onChange={(e) => setHourlyRate(e.target.value)}
                   placeholder="0"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+                />
+              </div>
+            )}
+            {milestoneType === "per_unit" && (
+              <div>
+                <label className="block text-sm text-muted mb-1">Rate per Unit ($)</label>
+                <input
+                  type="number"
+                  value={unitRate}
+                  onChange={(e) => setUnitRate(e.target.value)}
+                  placeholder="e.g. 30"
                   min="0"
                   step="0.01"
                   className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
@@ -793,6 +1048,45 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
             </div>
           )}
 
+          {milestoneType === "per_unit" && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm text-muted mb-1">Unit Name</label>
+                <input
+                  type="text"
+                  value={unitLabel}
+                  onChange={(e) => setUnitLabel(e.target.value)}
+                  placeholder="e.g. app, screen, widget"
+                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted mb-1">Estimated Units (optional)</label>
+                <input
+                  type="number"
+                  value={estimatedUnits}
+                  onChange={(e) => setEstimatedUnits(e.target.value)}
+                  placeholder="e.g. 5"
+                  min="0"
+                  step="1"
+                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted mb-1">Units Limit (optional)</label>
+                <input
+                  type="number"
+                  value={unitsLimit}
+                  onChange={(e) => setUnitsLimit(e.target.value)}
+                  placeholder="e.g. 10"
+                  min="0"
+                  step="1"
+                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm text-muted mb-1">Description (optional)</label>
             <input
@@ -806,7 +1100,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={!title.trim() || (milestoneType === "fixed" && !amount) || (milestoneType === "hourly" && !hourlyRate)}
+              disabled={!title.trim() || (milestoneType === "fixed" && !amount) || (milestoneType === "hourly" && !hourlyRate) || (milestoneType === "per_unit" && !unitRate)}
               className="px-4 py-2 bg-accent text-background font-semibold rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {editingId ? "Update" : "Add Milestone"}
@@ -821,6 +1115,30 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           </div>
         </form>
       )}
+
+      <AlertDialog
+        open={deleteDialogMilestoneId !== null}
+        onOpenChange={(open) => !open && setDeleteDialogMilestoneId(null)}
+        title="Delete milestone?"
+        description="This will permanently delete the milestone and all its time entries and payment history."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => deleteDialogMilestoneId && handleDelete(deleteDialogMilestoneId)}
+        loading={deleting}
+        variant="danger"
+      />
+
+      <AlertDialog
+        open={deleteDialogEntryId !== null}
+        onOpenChange={(open) => !open && setDeleteDialogEntryId(null)}
+        title="Delete entry?"
+        description="This will permanently delete this time/unit entry."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => deleteDialogEntryId && handleDeleteTimeEntry(deleteDialogEntryId.milestoneId, deleteDialogEntryId.entryId)}
+        loading={deleting}
+        variant="danger"
+      />
     </div>
   );
 }

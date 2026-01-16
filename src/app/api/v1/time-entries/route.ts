@@ -9,7 +9,7 @@ import { addTimeEntry } from "@/lib/api-db";
 export async function POST(request: NextRequest) {
   return withAuth(request, async ({ user, supabase }) => {
     try {
-      const { milestone_id, date, hours, description, paid_amount } = await request.json();
+      const { milestone_id, date, hours, units, description, paid_amount } = await request.json();
 
       if (!milestone_id) {
         return apiError("milestone_id is required");
@@ -19,13 +19,23 @@ export async function POST(request: NextRequest) {
         return apiError("Date is required");
       }
 
-      if (hours === undefined || typeof hours !== "number" || hours <= 0) {
+      // Either hours or units must be provided
+      if (hours === undefined && units === undefined) {
+        return apiError("Either hours or units is required");
+      }
+
+      if (hours !== undefined && (typeof hours !== "number" || hours <= 0)) {
         return apiError("Hours must be a positive number");
+      }
+
+      if (units !== undefined && (typeof units !== "number" || units <= 0)) {
+        return apiError("Units must be a positive number");
       }
 
       const entry = await addTimeEntry(supabase, user.id, milestone_id, {
         date,
-        hours,
+        hours: hours || undefined,
+        units: units || undefined,
         description,
         paid_amount,
       });

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AlertDialog } from "./AlertDialog";
 
 export function OrganizationActions({ orgId }: { orgId: string }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -16,39 +17,36 @@ export function OrganizationActions({ orgId }: { orgId: string }) {
       });
       if (res.ok) {
         router.push("/admin/organizations");
+      } else {
+        setDeleting(false);
+        setShowDeleteDialog(false);
       }
     } catch {
       setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
-  if (showConfirm) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted">Delete org and all projects?</span>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="px-3 py-1 bg-danger text-white text-sm rounded hover:bg-danger/80 transition-colors disabled:opacity-50"
-        >
-          {deleting ? "..." : "Yes"}
-        </button>
-        <button
-          onClick={() => setShowConfirm(false)}
-          className="px-3 py-1 border border-border text-sm rounded hover:border-muted transition-colors"
-        >
-          No
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={() => setShowConfirm(true)}
-      className="text-sm text-muted hover:text-danger transition-colors"
-    >
-      Delete
-    </button>
+    <>
+      <button
+        onClick={() => setShowDeleteDialog(true)}
+        className="text-sm text-muted hover:text-danger transition-colors"
+      >
+        Delete
+      </button>
+
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete organization?"
+        description="This will permanently delete the organization and all its projects, milestones, attachments, and comments. This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDelete}
+        loading={deleting}
+        variant="danger"
+      />
+    </>
   );
 }

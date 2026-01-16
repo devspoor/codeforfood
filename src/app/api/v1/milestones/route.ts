@@ -18,6 +18,10 @@ export async function POST(request: NextRequest) {
         hourly_rate,
         estimated_hours,
         hours_limit,
+        unit_rate,
+        unit_label,
+        estimated_units,
+        units_limit,
       } = await request.json();
 
       if (!project_id) {
@@ -36,6 +40,10 @@ export async function POST(request: NextRequest) {
         hourly_rate,
         estimated_hours,
         hours_limit,
+        unit_rate,
+        unit_label,
+        estimated_units,
+        units_limit,
       });
 
       if (!milestone) {

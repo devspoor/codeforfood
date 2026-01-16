@@ -494,17 +494,66 @@ export async function deleteProject(id: string): Promise<boolean> {
   return !error;
 }
 
+/**
+ * Transfer a project to a different organization
+ * Both the source and target organizations must belong to the current user
+ */
+export async function transferProject(projectId: string, targetOrganizationId: string): Promise<Project | null> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  // Verify project belongs to user's organization
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, organization_id, organizations!inner(user_id)")
+    .eq("id", projectId)
+    .eq("organizations.user_id", user.id)
+    .single();
+
+  if (!project) return null;
+
+  // Verify target organization belongs to user
+  const { data: targetOrg } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("id", targetOrganizationId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!targetOrg) return null;
+
+  // Don't transfer to the same organization
+  if (project.organization_id === targetOrganizationId) return null;
+
+  // Update the project's organization_id
+  const { data: updated, error } = await supabase
+    .from("projects")
+    .update({ organization_id: targetOrganizationId })
+    .eq("id", projectId)
+    .select()
+    .single();
+
+  if (error) return null;
+  return updated;
+}
+
 // Milestone CRUD
 export async function addMilestone(projectId: string, data: {
   title: string;
   description?: string;
-  type?: "fixed" | "hourly";
+  type?: "fixed" | "hourly" | "per_unit";
   // Fixed milestone
   amount?: number;
   // Hourly milestone
   hourly_rate?: number;
   estimated_hours?: number;
   hours_limit?: number;
+  // Per-unit milestone
+  unit_rate?: number;
+  unit_label?: string;
+  estimated_units?: number;
+  units_limit?: number;
 }): Promise<Milestone | null> {
   const supabase = await createClient();
 
@@ -531,11 +580,20 @@ export async function addMilestone(projectId: string, data: {
     insertData.amount = data.amount || 0;
     insertData.paid_amount = 0;
     insertData.is_paid = false;
-  } else {
+  } else if (milestoneType === "hourly") {
     // Hourly milestone
     insertData.hourly_rate = data.hourly_rate || 0;
     insertData.estimated_hours = data.estimated_hours;
     insertData.hours_limit = data.hours_limit;
+    insertData.amount = 0;
+    insertData.paid_amount = 0;
+    insertData.is_paid = false;
+  } else {
+    // Per-unit milestone
+    insertData.unit_rate = data.unit_rate || 0;
+    insertData.unit_label = data.unit_label || "unit";
+    insertData.estimated_units = data.estimated_units;
+    insertData.units_limit = data.units_limit;
     insertData.amount = 0;
     insertData.paid_amount = 0;
     insertData.is_paid = false;
@@ -630,7 +688,7 @@ export function getProjectSummary(project: Project): ProjectSummary {
 
   hourlyMilestones.forEach(m => {
     const entries = m.time_entries || [];
-    const hours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+    const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
     totalHours += hours;
     const amount = hours * Number(m.hourly_rate || 0);
     hourlyAmount += amount;
@@ -638,8 +696,24 @@ export function getProjectSummary(project: Project): ProjectSummary {
     hourlyPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
   });
 
-  const totalAmount = fixedTotal + hourlyAmount;
-  const paidAmount = fixedPaid + hourlyPaid;
+  // Calculate totals for per-unit milestones
+  const perUnitMilestones = milestones.filter(m => m.type === "per_unit");
+  let totalUnits = 0;
+  let unitAmount = 0;
+  let unitPaid = 0;
+
+  perUnitMilestones.forEach(m => {
+    const entries = m.time_entries || [];
+    const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
+    totalUnits += units;
+    const amount = units * Number(m.unit_rate || 0);
+    unitAmount += amount;
+    // Sum paid_amount from all entries
+    unitPaid += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
+  });
+
+  const totalAmount = fixedTotal + hourlyAmount + unitAmount;
+  const paidAmount = fixedPaid + hourlyPaid + unitPaid;
   const paidMilestones = milestones.filter((m) => m.is_paid).length;
 
   return {
@@ -651,11 +725,13 @@ export function getProjectSummary(project: Project): ProjectSummary {
     percentPaid: totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0,
     totalHours,
     hourlyAmount,
+    totalUnits,
+    unitAmount,
   };
 }
 
-// Time Entry CRUD
-export async function addTimeEntry(milestoneId: string, data: { date: string; hours: number; description?: string; paid_amount?: number }): Promise<TimeEntry | null> {
+// Time Entry CRUD (used for both hourly and per_unit milestones)
+export async function addTimeEntry(milestoneId: string, data: { date: string; hours?: number; units?: number; description?: string; paid_amount?: number }): Promise<TimeEntry | null> {
   const supabase = await createClient();
 
   const { data: entry, error } = await supabase
@@ -663,7 +739,8 @@ export async function addTimeEntry(milestoneId: string, data: { date: string; ho
     .insert({
       milestone_id: milestoneId,
       date: data.date,
-      hours: data.hours,
+      hours: data.hours || null,
+      units: data.units || null,
       description: data.description,
       paid_amount: data.paid_amount || 0,
     })
@@ -678,7 +755,7 @@ export async function addTimeEntry(milestoneId: string, data: { date: string; ho
   return entry;
 }
 
-export async function updateTimeEntry(entryId: string, data: Partial<{ date: string; hours: number; description: string; paid_amount: number }>): Promise<TimeEntry | null> {
+export async function updateTimeEntry(entryId: string, data: Partial<{ date: string; hours: number; units: number; description: string; paid_amount: number }>): Promise<TimeEntry | null> {
   const supabase = await createClient();
 
   const { data: entry, error } = await supabase

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Comment } from "@/lib/types";
 import { formatDate } from "@/lib/format";
+import { AlertDialog } from "./AlertDialog";
 
 interface Props {
   projectId: string;
@@ -14,6 +15,8 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [content, setContent] = useState("");
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const resetForm = () => {
     setShowForm(false);
@@ -75,9 +78,11 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
   };
 
   const handleDelete = async (commentId: string) => {
+    setDeleting(true);
     // Optimistic update
     const previousComments = comments;
     setComments(comments.filter((c) => c.id !== commentId));
+    setDeleteDialogId(null);
 
     const res = await fetch(`/api/projects/${projectId}/comments/${commentId}`, {
       method: "DELETE",
@@ -85,6 +90,7 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
     if (!res.ok) {
       setComments(previousComments);
     }
+    setDeleting(false);
   };
 
   return (
@@ -147,7 +153,7 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(c.id)}
+                    onClick={() => setDeleteDialogId(c.id)}
                     className="text-xs text-muted hover:text-danger transition-colors"
                   >
                     Delete
@@ -163,6 +169,18 @@ export function CommentsEditor({ projectId, comments: initialComments }: Props) 
       {comments.length === 0 && !showForm && (
         <p className="text-center text-muted text-sm py-4">No comments yet</p>
       )}
+
+      <AlertDialog
+        open={deleteDialogId !== null}
+        onOpenChange={(open) => !open && setDeleteDialogId(null)}
+        title="Delete comment?"
+        description="This will permanently delete this comment."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => deleteDialogId && handleDelete(deleteDialogId)}
+        loading={deleting}
+        variant="danger"
+      />
     </div>
   );
 }

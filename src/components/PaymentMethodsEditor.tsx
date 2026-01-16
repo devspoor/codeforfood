@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PaymentMethod } from "@/lib/types";
+import { AlertDialog } from "./AlertDialog";
 
 interface Props {
   organizationId: string;
@@ -15,6 +16,8 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
   const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [type, setType] = useState<"crypto" | "bank" | "other">("crypto");
+  const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const resetForm = () => {
     setShowForm(false);
@@ -75,9 +78,11 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
   };
 
   const handleDelete = async (pmId: string) => {
+    setDeleting(true);
     // Optimistic update
     const previousMethods = methods;
     setMethods(methods.filter((m) => m.id !== pmId));
+    setDeleteDialogId(null);
 
     const res = await fetch(`/api/organizations/${organizationId}/payment-methods/${pmId}`, {
       method: "DELETE",
@@ -86,6 +91,7 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
       // Rollback on error
       setMethods(previousMethods);
     }
+    setDeleting(false);
   };
 
   return (
@@ -123,7 +129,7 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(pm.id)}
+                    onClick={() => setDeleteDialogId(pm.id)}
                     className="text-sm text-muted hover:text-danger transition-colors"
                   >
                     Delete
@@ -198,6 +204,18 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
           </div>
         </form>
       )}
+
+      <AlertDialog
+        open={deleteDialogId !== null}
+        onOpenChange={(open) => !open && setDeleteDialogId(null)}
+        title="Delete payment method?"
+        description="This will remove this payment method from your organization."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => deleteDialogId && handleDelete(deleteDialogId)}
+        loading={deleting}
+        variant="danger"
+      />
     </div>
   );
 }

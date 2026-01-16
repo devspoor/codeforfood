@@ -1,12 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AlertDialog } from "./AlertDialog";
+
+interface Organization {
+  id: string;
+  name: string;
+}
 
 export function ProjectActions({ projectId, organizationId }: { projectId: string; organizationId: string }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferring, setTransferring] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
+  const [transferError, setTransferError] = useState<string>("");
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+
+  useEffect(() => {
+    if (showTransfer && organizations.length === 0) {
+      setLoadingOrgs(true);
+      fetch("/api/organizations")
+        .then((res) => res.json())
+        .then((data) => {
+          const otherOrgs = data.filter((org: Organization) => org.id !== organizationId);
+          setOrganizations(otherOrgs);
+          if (otherOrgs.length > 0) {
+            setSelectedOrgId(otherOrgs[0].id);
+          }
+        })
+        .catch(() => {
+          setTransferError("Failed to load organizations");
+        })
+        .finally(() => {
+          setLoadingOrgs(false);
+        });
+    }
+  }, [showTransfer, organizationId, organizations.length]);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -16,39 +49,118 @@ export function ProjectActions({ projectId, organizationId }: { projectId: strin
       });
       if (res.ok) {
         router.push(`/admin/organizations/${organizationId}`);
+      } else {
+        setDeleting(false);
+        setShowDeleteDialog(false);
       }
     } catch {
       setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
-  if (showConfirm) {
+  const handleTransfer = async () => {
+    if (!selectedOrgId) return;
+
+    setTransferring(true);
+    setTransferError("");
+
+    try {
+      const res = await fetch(`/api/projects/${projectId}/transfer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetOrganizationId: selectedOrgId }),
+      });
+
+      if (res.ok) {
+        router.push(`/admin/organizations/${selectedOrgId}`);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        setTransferError(data.error || "Transfer failed");
+      }
+    } catch {
+      setTransferError("Transfer failed");
+    } finally {
+      setTransferring(false);
+    }
+  };
+
+  if (showTransfer) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted">Delete this project?</span>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="px-3 py-1 bg-danger text-white text-sm rounded hover:bg-danger/80 transition-colors disabled:opacity-50"
-        >
-          {deleting ? "..." : "Yes"}
-        </button>
-        <button
-          onClick={() => setShowConfirm(false)}
-          className="px-3 py-1 border border-border text-sm rounded hover:border-muted transition-colors"
-        >
-          No
-        </button>
+      <div className="flex flex-col gap-2 p-4 bg-card border border-border rounded-lg min-w-[280px]">
+        <span className="text-sm font-medium">Transfer to organization:</span>
+        {loadingOrgs ? (
+          <span className="text-sm text-muted">Loading...</span>
+        ) : organizations.length === 0 ? (
+          <span className="text-sm text-muted">No other organizations available</span>
+        ) : (
+          <select
+            value={selectedOrgId}
+            onChange={(e) => setSelectedOrgId(e.target.value)}
+            className="w-full px-3 py-2 bg-background border border-border rounded text-sm focus:outline-none focus:border-accent"
+            disabled={transferring}
+          >
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>
+                {org.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {transferError && (
+          <span className="text-sm text-danger">{transferError}</span>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            onClick={handleTransfer}
+            disabled={transferring || !selectedOrgId || organizations.length === 0}
+            className="px-3 py-1 bg-accent text-white text-sm rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+          >
+            {transferring ? "Transferring..." : "Transfer"}
+          </button>
+          <button
+            onClick={() => {
+              setShowTransfer(false);
+              setTransferError("");
+            }}
+            className="px-3 py-1 border border-border text-sm rounded hover:border-muted transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <button
-      onClick={() => setShowConfirm(true)}
-      className="text-sm text-muted hover:text-danger transition-colors"
-    >
-      Delete
-    </button>
+    <>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setShowTransfer(true)}
+          className="text-sm text-muted hover:text-accent transition-colors"
+        >
+          Transfer
+        </button>
+        <button
+          onClick={() => setShowDeleteDialog(true)}
+          className="text-sm text-muted hover:text-danger transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete project?"
+        description="This action cannot be undone. All milestones, attachments, and comments will be permanently deleted."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDelete}
+        loading={deleting}
+        variant="danger"
+      />
+    </>
   );
 }

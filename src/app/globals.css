@@ -196,11 +196,7 @@ input::placeholder, textarea::placeholder {
   border-color: rgba(250, 204, 21, 0.3);
 }
 
-@media (hover: hover) {
-  .card-glow {
-    will-change: border-color;
-  }
-}
+/* will-change removed - only apply during active animation */
 
 /* Glass effect - simplified, no blur */
 .glass {
@@ -302,6 +298,18 @@ input::placeholder, textarea::placeholder {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Prevent overscroll bounce on iOS */
