@@ -618,6 +618,54 @@ export async function updateTimeEntry(supabase: SupabaseClientType, userId: stri
   return updated;
 }
 
+/**
+ * Updates a time entry atomically with limit validation
+ * Uses RPC function with FOR UPDATE lock to prevent race conditions on hours/units limits
+ * @returns Object with success status, updated entry or error details
+ */
+export async function updateTimeEntryAtomic(
+  supabase: SupabaseClientType,
+  userId: string,
+  entryId: string,
+  data: Partial<{ date: string; hours: number; units: number; description: string; paid_amount: number }>
+): Promise<{ success: true; entry: TimeEntry } | { success: false; error: string; remaining?: number; limit?: number } | null> {
+  // 1. Verify ownership first
+  const entry = await getTimeEntryById(supabase, userId, entryId);
+  if (!entry) return null; // Not found or unauthorized
+
+  // 2. Call atomic RPC function
+  const { data: result, error } = await supabase.rpc("update_time_entry_atomic", {
+    p_entry_id: entryId,
+    p_date: data.date || null,
+    p_hours: data.hours || null,
+    p_units: data.units || null,
+    p_description: data.description !== undefined ? data.description : null,
+    p_paid_amount: data.paid_amount !== undefined ? data.paid_amount : null,
+  });
+
+  if (error) {
+    console.error("Atomic time entry update failed:", error.message);
+    return { success: false, error: "Failed to update time entry" };
+  }
+
+  if (!result?.success) {
+    return {
+      success: false,
+      error: result?.error || "Update failed",
+      remaining: result?.remaining,
+      limit: result?.limit,
+    };
+  }
+
+  // 3. Fetch updated entry to return full data
+  const updated = await getTimeEntryById(supabase, userId, entryId);
+  if (!updated) {
+    return { success: false, error: "Failed to fetch updated entry" };
+  }
+
+  return { success: true, entry: updated };
+}
+
 export async function deleteTimeEntry(supabase: SupabaseClientType, userId: string, entryId: string): Promise<boolean> {
   const entry = await getTimeEntryById(supabase, userId, entryId);
   if (!entry) return false; // Not found or unauthorized - intentionally silent

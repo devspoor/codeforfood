@@ -20,8 +20,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       const { password } = await request.json();
 
-      if (!password || typeof password !== "string" || password.length < 12) {
-        return apiError("Password must be at least 12 characters");
+      if (!password || typeof password !== "string" || password.length < 12 || password.length > 128) {
+        return apiError("Password must be 12-128 characters");
       }
 
       const passwordHash = await hashPassword(password);

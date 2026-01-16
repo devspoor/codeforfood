@@ -48,8 +48,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         return apiError("encrypted_note and password are required");
       }
 
-      if (password.length < 12) {
-        return apiError("Password must be at least 12 characters");
+      if (password.length < 12 || password.length > 128) {
+        return apiError("Password must be 12-128 characters");
       }
 
       const passwordHash = await hashPassword(password);

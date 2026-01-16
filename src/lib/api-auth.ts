@@ -59,10 +59,15 @@ export function createApiClient(accessToken: string) {
 
 /**
  * Extracts Bearer token from Authorization header
+ * Limits token length to prevent DoS attacks with oversized tokens
  */
 export function extractBearerToken(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+  // JWT tokens are typically <2KB, reject anything larger
+  if (authHeader.length > 2100) {
     return null;
   }
   return authHeader.slice(7);

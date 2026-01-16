@@ -4,6 +4,8 @@ import { createClient as createServerClient } from "@/lib/supabase/server";
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_WINDOW_SECONDS = 15 * 60; // 15 minutes
+const MAX_REFRESH_ATTEMPTS = 10;
+const REFRESH_WINDOW_SECONDS = 5 * 60; // 5 minutes
 
 function getSupabaseClient() {
   return createClient(
@@ -50,6 +52,28 @@ async function resetLoginRateLimit(ip: string, email: string): Promise<void> {
   }
 }
 
+async function checkRefreshRateLimit(ip: string): Promise<RateLimitResult | null> {
+  try {
+    const supabase = await createServerClient();
+    const rateLimitKey = `auth_refresh:${ip}`;
+
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_key: rateLimitKey,
+      p_max_attempts: MAX_REFRESH_ATTEMPTS,
+      p_window_seconds: REFRESH_WINDOW_SECONDS,
+    });
+
+    if (error || !data || data.length === 0) {
+      console.error("Refresh rate limit check error:", error?.message);
+      return null;
+    }
+
+    return data[0];
+  } catch {
+    return null;
+  }
+}
+
 /**
  * POST /api/v1/auth
  * Login with email/password and get access/refresh tokens
@@ -59,21 +83,45 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient();
     const { email, password, refresh_token } = await request.json();
 
-    // Refresh token flow - no rate limiting needed (already authenticated)
+    // Refresh token flow
     if (refresh_token) {
+      // Basic validation of refresh token format and length
+      if (typeof refresh_token !== "string" || refresh_token.length < 10 || refresh_token.length > 2048) {
+        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      }
+
+      // Apply rate limiting to prevent abuse of compromised refresh tokens
+      const forwardedFor = request.headers.get("x-forwarded-for");
+      const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+
+      const refreshRateLimit = await checkRefreshRateLimit(ip);
+      if (refreshRateLimit === null) {
+        return NextResponse.json(
+          { error: "Service temporarily unavailable. Please try again later." },
+          { status: 503, headers: { "Retry-After": "60" } }
+        );
+      }
+      if (!refreshRateLimit.allowed) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(refreshRateLimit.reset_in_seconds) } }
+        );
+      }
+
       const { data, error } = await supabase.auth.refreshSession({
         refresh_token,
       });
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 401 });
+      if (error || !data.session) {
+        // Don't expose specific error messages - could reveal token state
+        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
       }
 
       return NextResponse.json({
-        access_token: data.session?.access_token,
-        refresh_token: data.session?.refresh_token,
-        expires_in: data.session?.expires_in,
-        expires_at: data.session?.expires_at,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_in: data.session.expires_in,
+        expires_at: data.session.expires_at,
         user: {
           id: data.user?.id,
           email: data.user?.email,
@@ -126,13 +174,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      // Never expose specific error messages to prevent user enumeration
+      // Never expose specific error messages or attempt counts to prevent user enumeration
       // Supabase may return "User not found" or "Invalid credentials" which reveals info
+      // attemptsRemaining was removed as it helps attackers calibrate brute-force attacks
       return NextResponse.json(
-        {
-          error: "Invalid email or password",
-          attemptsRemaining: rateLimit?.remaining_attempts,
-        },
+        { error: "Invalid email or password" },
         { status: 401 }
       );
     }
@@ -180,7 +226,8 @@ export async function DELETE(request: NextRequest) {
   const { error } = await client.auth.signOut();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    // Don't expose specific error messages
+    return NextResponse.json({ error: "Logout failed" }, { status: 400 });
   }
 
   return NextResponse.json({ success: true });

@@ -77,11 +77,10 @@ export async function POST(
     const valid = await verifyProjectPassword(hash, password);
 
     if (!valid) {
+      // Note: attemptsRemaining intentionally not returned to prevent
+      // attackers from calibrating brute-force attacks
       return NextResponse.json(
-        {
-          error: "Invalid password",
-          attemptsRemaining: rateLimit.remaining_attempts,
-        },
+        { error: "Invalid password" },
         { status: 401 }
       );
     }

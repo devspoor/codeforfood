@@ -26,6 +26,36 @@ const nextConfig: NextConfig = {
   },
   // Security headers
   async headers() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const supabaseHost = supabaseUrl ? new URL(supabaseUrl).host : "*.supabase.co";
+
+    // Content Security Policy - defense in depth against XSS
+    const cspDirectives = [
+      "default-src 'self'",
+      // Scripts: self + inline for Next.js hydration + eval for dev mode
+      process.env.NODE_ENV === "production"
+        ? "script-src 'self' 'unsafe-inline'"
+        : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Styles: self + inline for Tailwind/CSS-in-JS
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Fonts: self + Google Fonts
+      "font-src 'self' https://fonts.gstatic.com",
+      // Images: self + Supabase storage + avatars
+      `img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com`,
+      // Connect: API calls to self + Supabase
+      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+      // Frame ancestors: none (same as X-Frame-Options: DENY)
+      "frame-ancestors 'none'",
+      // Form actions: only to self
+      "form-action 'self'",
+      // Base URI: only self
+      "base-uri 'self'",
+      // Object sources: none (no Flash/plugins)
+      "object-src 'none'",
+      // Upgrade insecure requests in production
+      ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
+    ].join("; ");
+
     return [
       {
         source: "/:path*",
@@ -49,6 +79,10 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: cspDirectives,
           },
         ],
       },

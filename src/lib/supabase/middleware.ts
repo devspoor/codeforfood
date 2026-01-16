@@ -17,10 +17,41 @@ function validateCsrf(request: NextRequest): boolean {
   }
 
   // Skip CSRF for public API endpoints (they use other protections like rate limiting)
-  // Skip CSRF for mobile API v1 (protected by Bearer token authentication)
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith("/api/public/") || pathname.startsWith("/api/v1/")) {
+  if (pathname.startsWith("/api/public/")) {
     return true;
+  }
+
+  // Mobile API v1 uses Bearer token authentication (not cookies)
+  // Bearer tokens are passed via Authorization header which browsers don't auto-include
+  // in cross-origin requests, making traditional CSRF attacks impossible.
+  // However, we still validate Origin as defense-in-depth against misconfiguration.
+  if (pathname.startsWith("/api/v1/")) {
+    const origin = request.headers.get("origin");
+    // If no origin (direct API call from mobile app / curl), allow
+    if (!origin) {
+      return true;
+    }
+    // If origin present (browser request), validate it
+    try {
+      const originUrl = new URL(origin);
+      const originHost = originUrl.host;
+      const host = request.headers.get("host");
+      const isValidLocalhost = !IS_PRODUCTION && /^localhost(:\d+)?$/.test(originHost);
+
+      if (
+        originHost === host ||
+        originHost === ADMIN_DOMAIN ||
+        originHost === `www.${ADMIN_DOMAIN}` ||
+        isValidLocalhost
+      ) {
+        return true;
+      }
+    } catch {
+      return false;
+    }
+    // Reject browser requests from unknown origins
+    return false;
   }
 
   const origin = request.headers.get("origin");
@@ -38,13 +69,16 @@ function validateCsrf(request: NextRequest): boolean {
       const originHost = originUrl.host;
 
       // Allow if origin matches current host or known domains
+      // Note: localhost check uses regex to ensure it's actually localhost (not localhost.evil.com)
+      const isValidLocalhost = !IS_PRODUCTION && /^localhost(:\d+)?$/.test(originHost);
+
       if (
         originHost === host ||
         originHost === ADMIN_DOMAIN ||
         originHost === PUBLIC_DOMAIN ||
         originHost === `www.${ADMIN_DOMAIN}` ||
         originHost === `www.${PUBLIC_DOMAIN}` ||
-        (!IS_PRODUCTION && originHost.startsWith("localhost"))
+        isValidLocalhost
       ) {
         return true;
       }
