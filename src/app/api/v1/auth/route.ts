@@ -1,11 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_WINDOW_SECONDS = 15 * 60; // 15 minutes
 
 function getSupabaseClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+
+interface RateLimitResult {
+  allowed: boolean;
+  remaining_attempts: number;
+  reset_in_seconds: number;
+}
+
+async function checkLoginRateLimit(ip: string, email: string): Promise<RateLimitResult | null> {
+  try {
+    const supabase = await createServerClient();
+    const rateLimitKey = `auth_login:${ip}:${email.toLowerCase()}`;
+
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_key: rateLimitKey,
+      p_max_attempts: MAX_LOGIN_ATTEMPTS,
+      p_window_seconds: LOGIN_WINDOW_SECONDS,
+    });
+
+    if (error || !data || data.length === 0) {
+      console.error("Rate limit check error:", error?.message);
+      return null;
+    }
+
+    return data[0];
+  } catch {
+    return null;
+  }
+}
+
+async function resetLoginRateLimit(ip: string, email: string): Promise<void> {
+  try {
+    const supabase = await createServerClient();
+    const rateLimitKey = `auth_login:${ip}:${email.toLowerCase()}`;
+    await supabase.rpc("reset_rate_limit", { p_key: rateLimitKey });
+  } catch {
+    // Ignore reset errors
+  }
 }
 
 /**
@@ -17,7 +59,7 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient();
     const { email, password, refresh_token } = await request.json();
 
-    // Refresh token flow
+    // Refresh token flow - no rate limiting needed (already authenticated)
     if (refresh_token) {
       const { data, error } = await supabase.auth.refreshSession({
         refresh_token,
@@ -40,11 +82,35 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Email/password login
+    // Email/password login - apply rate limiting
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 }
+      );
+    }
+
+    // Get client IP for rate limiting
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+
+    // Check rate limit
+    const rateLimit = await checkLoginRateLimit(ip, email);
+    if (rateLimit === null) {
+      // Fail open for auth to prevent lockout, but log the issue
+      console.warn("Rate limit check unavailable for auth, proceeding without limit");
+    } else if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Too many login attempts. Please try again later.",
+          retryAfter: rateLimit.reset_in_seconds,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.reset_in_seconds),
+          },
+        }
       );
     }
 
@@ -54,8 +120,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: error.message,
+          attemptsRemaining: rateLimit?.remaining_attempts,
+        },
+        { status: 401 }
+      );
     }
+
+    // Reset rate limit on successful login
+    await resetLoginRateLimit(ip, email);
 
     return NextResponse.json({
       access_token: data.session?.access_token,

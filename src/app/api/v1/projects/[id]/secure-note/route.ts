@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
 import { withAuth, apiSuccess, apiError, apiNotFound } from "@/lib/api-auth";
 import { setSecureNote, deleteSecureNote, verifyProjectOwnership } from "@/lib/api-db";
+import { hashPassword } from "@/lib/crypto";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         return apiError("Password must be at least 12 characters");
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await hashPassword(password);
       const success = await setSecureNote(supabase, user.id, id, encrypted_note, passwordHash);
 
       if (!success) {

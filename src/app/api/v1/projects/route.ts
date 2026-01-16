@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError } from "@/lib/api-auth";
 import { getProjects, createProject, getProjectSummary } from "@/lib/api-db";
+import { validateRequiredString, validateOptionalString, MAX_LENGTHS } from "@/lib/validation";
 
 /**
  * GET /api/v1/projects
@@ -33,14 +34,20 @@ export async function POST(request: NextRequest) {
         return apiError("organization_id is required");
       }
 
-      if (!name || typeof name !== "string") {
-        return apiError("Name is required");
+      const nameValidation = validateRequiredString(name, "Name", MAX_LENGTHS.name);
+      if (!nameValidation.valid) {
+        return apiError(nameValidation.error!);
+      }
+
+      const descValidation = validateOptionalString(description, "Description", MAX_LENGTHS.description);
+      if (!descValidation.valid) {
+        return apiError(descValidation.error!);
       }
 
       const project = await createProject(supabase, user.id, {
         organizationId: organization_id,
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim(),
       });
 
       if (!project) {

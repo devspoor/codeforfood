@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addPaymentHistoryEntry, getPaymentHistory, getCurrentUser, verifyProjectOwnership, verifyMilestoneOwnership } from "@/lib/db";
+import { getPaymentHistory, getCurrentUser, verifyProjectOwnership, verifyMilestoneOwnership, recordPaymentAtomically } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
@@ -50,24 +50,35 @@ export async function POST(
     }
 
     const numAmount = Number(data.amount);
-    if (!Number.isFinite(numAmount) || numAmount === 0) {
-      return NextResponse.json({ error: "Amount must be a valid non-zero number" }, { status: 400 });
+    if (!Number.isFinite(numAmount) || numAmount <= 0) {
+      return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 });
     }
-    if (Math.abs(numAmount) > 999999999999) {
+    if (numAmount > 999999999999) {
       return NextResponse.json({ error: "Amount exceeds maximum allowed value" }, { status: 400 });
     }
 
-    const entry = await addPaymentHistoryEntry(milestoneId, {
+    // Always use atomic operation to prevent race conditions
+    // Legacy non-atomic path has been removed for data integrity
+    const result = await recordPaymentAtomically(milestoneId, {
       amount: numAmount,
       note: data.note,
-    });
+    }, user);
 
-    if (!entry) {
-      return NextResponse.json({ error: "Failed to add payment history" }, { status: 500 });
+    if (!result) {
+      return NextResponse.json({ error: "Failed to record payment" }, { status: 500 });
     }
 
-    return NextResponse.json(entry);
-  } catch {
+    return NextResponse.json({
+      entry: result.entry,
+      milestone: {
+        id: result.milestone.id,
+        paid_amount: result.milestone.paid_amount,
+        is_paid: result.milestone.is_paid,
+        paid_at: result.milestone.paid_at,
+      },
+    });
+  } catch (err) {
+    console.error("Payment history POST error:", err);
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

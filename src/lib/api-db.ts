@@ -1,47 +1,17 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { randomBytes } from "crypto";
-import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry } from "./types";
+import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, PaginationParams, PaginatedResult } from "./types";
+import { normalizeProjectData } from "./db/normalize";
+
+// Error logging helper for database operations
+function logDbError(operation: string, error: { message: string; code?: string } | null): void {
+  if (error) {
+    console.error(`[DB] ${operation} failed:`, error.message, error.code ? `(code: ${error.code})` : "");
+  }
+}
 
 function generateHash(): string {
   return randomBytes(12).toString("base64url");
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeProjectData(data: any, isPublic = false): Project & { has_password: boolean; has_secure_note: boolean } {
-  const normalized = {
-    ...data,
-    status: data.status || "in_progress",
-    hide_amounts: data.hide_amounts || false,
-    hide_paid: data.hide_paid || false,
-    show_payment_history: data.show_payment_history || false,
-    // Add boolean flags for iOS compatibility
-    has_password: !!data.public_password_hash,
-    has_secure_note: !!data.secure_note_encrypted,
-    milestones: ((data.milestones as Milestone[]) || [])
-      .sort((a: Milestone, b: Milestone) => a.order - b.order)
-      .map((m: Milestone & { time_entries?: TimeEntry[]; payment_history?: PaymentHistoryEntry[] }) => ({
-        ...m,
-        type: m.type || "fixed",
-        time_entries: (m.time_entries || []).sort((a: TimeEntry, b: TimeEntry) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ),
-        payment_history: (m.payment_history || []).sort((a: PaymentHistoryEntry, b: PaymentHistoryEntry) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-      })),
-    comments: ((data.comments as Comment[]) || []).sort((a: Comment, b: Comment) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    ),
-    attachments: data.attachments || []
-  };
-
-  if (isPublic) {
-    normalized.public_password_hash = data.public_password_hash ? "protected" : null;
-    normalized.secure_note_encrypted = data.secure_note_encrypted ? "exists" : null;
-    normalized.secure_note_password_hash = undefined;
-  }
-
-  return normalized as Project & { has_password: boolean; has_secure_note: boolean };
 }
 
 type SupabaseClientType = SupabaseClient;
@@ -64,7 +34,10 @@ export async function updateProfile(supabase: SupabaseClientType, userId: string
     .eq("id", userId)
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    logDbError("updateProfile", error);
+    return null;
+  }
   return profile;
 }
 
@@ -100,7 +73,10 @@ export async function createOrganization(supabase: SupabaseClientType, userId: s
     })
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    logDbError("createOrganization", error);
+    return null;
+  }
   return org;
 }
 
@@ -112,7 +88,10 @@ export async function updateOrganization(supabase: SupabaseClientType, userId: s
     .eq("user_id", userId)
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    logDbError("updateOrganization", error);
+    return null;
+  }
   return org;
 }
 
@@ -122,7 +101,11 @@ export async function deleteOrganization(supabase: SupabaseClientType, userId: s
     .delete()
     .eq("id", id)
     .eq("user_id", userId);
-  return !error;
+  if (error) {
+    logDbError("deleteOrganization", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== PAYMENT METHODS ==============
@@ -130,7 +113,7 @@ export async function deleteOrganization(supabase: SupabaseClientType, userId: s
 export async function addPaymentMethod(supabase: SupabaseClientType, userId: string, orgId: string, data: Omit<PaymentMethod, "id" | "organization_id" | "created_at">): Promise<PaymentMethod | null> {
   // Verify org ownership
   const org = await getOrganizationById(supabase, userId, orgId);
-  if (!org) return null;
+  if (!org) return null; // Not found - intentionally silent
 
   const { data: pm, error } = await supabase
     .from("payment_methods")
@@ -140,13 +123,16 @@ export async function addPaymentMethod(supabase: SupabaseClientType, userId: str
     })
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    logDbError("addPaymentMethod", error);
+    return null;
+  }
   return pm;
 }
 
 export async function updatePaymentMethod(supabase: SupabaseClientType, userId: string, orgId: string, pmId: string, data: Partial<Omit<PaymentMethod, "id" | "organization_id" | "created_at">>): Promise<PaymentMethod | null> {
   const org = await getOrganizationById(supabase, userId, orgId);
-  if (!org) return null;
+  if (!org) return null; // Not found - intentionally silent
 
   const { data: pm, error } = await supabase
     .from("payment_methods")
@@ -155,24 +141,37 @@ export async function updatePaymentMethod(supabase: SupabaseClientType, userId: 
     .eq("organization_id", orgId)
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    logDbError("updatePaymentMethod", error);
+    return null;
+  }
   return pm;
 }
 
 export async function deletePaymentMethod(supabase: SupabaseClientType, userId: string, orgId: string, pmId: string): Promise<boolean> {
   const org = await getOrganizationById(supabase, userId, orgId);
-  if (!org) return false;
+  if (!org) return false; // Not found - intentionally silent
 
   const { error } = await supabase
     .from("payment_methods")
     .delete()
     .eq("id", pmId)
     .eq("organization_id", orgId);
-  return !error;
+  if (error) {
+    logDbError("deletePaymentMethod", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== PROJECTS ==============
 
+const DEFAULT_PAGE_LIMIT = 50;
+
+/**
+ * Get all projects (legacy - no pagination)
+ * @deprecated Use getProjectsPaginated for better performance
+ */
 export async function getProjects(supabase: SupabaseClientType, userId: string): Promise<Project[]> {
   const { data: orgs } = await supabase
     .from("organizations")
@@ -192,6 +191,52 @@ export async function getProjects(supabase: SupabaseClientType, userId: string):
   return (data || []).map(p => normalizeProjectData(p));
 }
 
+/**
+ * Get projects with pagination support
+ */
+export async function getProjectsPaginated(
+  supabase: SupabaseClientType,
+  userId: string,
+  pagination: PaginationParams = {}
+): Promise<PaginatedResult<Project>> {
+  const { limit = DEFAULT_PAGE_LIMIT, offset = 0 } = pagination;
+
+  // Get user's organization IDs
+  const { data: orgs } = await supabase
+    .from("organizations")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (!orgs || orgs.length === 0) {
+    return { data: [], total: 0, limit, offset, hasMore: false };
+  }
+
+  const orgIds = orgs.map(o => o.id);
+
+  // Get total count
+  const { count } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .in("organization_id", orgIds);
+
+  // Get paginated data
+  const { data } = await supabase
+    .from("projects")
+    .select("*, milestones(*, time_entries(*))")
+    .in("organization_id", orgIds)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  const total = count || 0;
+  return {
+    data: (data || []).map(p => normalizeProjectData(p)),
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total,
+  };
+}
+
 export async function getProjectsByOrganization(supabase: SupabaseClientType, userId: string, orgId: string): Promise<Project[]> {
   const org = await getOrganizationById(supabase, userId, orgId);
   if (!org) return [];
@@ -205,7 +250,7 @@ export async function getProjectsByOrganization(supabase: SupabaseClientType, us
   return (data || []).map(p => normalizeProjectData(p));
 }
 
-const PROJECT_SELECT_QUERY = "*, milestones(*, time_entries(*), payment_history(*)), comments(*), attachments(*)";
+const PROJECT_SELECT_QUERY = `*, milestones(*, time_entries(*), payment_history(*)), comments(*), attachments(*)`;
 
 export async function getProjectById(supabase: SupabaseClientType, userId: string, id: string): Promise<Project | null> {
   const { data } = await supabase
@@ -234,7 +279,10 @@ export async function createProject(supabase: SupabaseClientType, userId: string
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("createProject", error);
+    return null;
+  }
   return { ...project, milestones: [], comments: [], attachments: [], has_password: false, has_secure_note: false };
 }
 
@@ -246,7 +294,7 @@ export async function updateProject(supabase: SupabaseClientType, userId: string
     .eq("organizations.user_id", userId)
     .single();
 
-  if (!project) return null;
+  if (!project) return null; // Not found or unauthorized - intentionally silent
 
   const { data: updated, error } = await supabase
     .from("projects")
@@ -255,7 +303,10 @@ export async function updateProject(supabase: SupabaseClientType, userId: string
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("updateProject", error);
+    return null;
+  }
   return {
     ...updated,
     has_password: !!updated.public_password_hash,
@@ -271,14 +322,18 @@ export async function deleteProject(supabase: SupabaseClientType, userId: string
     .eq("organizations.user_id", userId)
     .single();
 
-  if (!project) return false;
+  if (!project) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("projects")
     .delete()
     .eq("id", id);
 
-  return !error;
+  if (error) {
+    logDbError("deleteProject", error);
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -317,7 +372,10 @@ export async function transferProject(supabase: SupabaseClientType, userId: stri
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("transferProject", error);
+    return null;
+  }
   return {
     ...updated,
     has_password: !!updated.public_password_hash,
@@ -399,7 +457,10 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("addMilestone", error);
+    return null;
+  }
   return { ...milestone, time_entries: [], payment_history: [] };
 }
 
@@ -415,7 +476,7 @@ export async function getMilestoneById(supabase: SupabaseClientType, userId: str
 
 export async function updateMilestone(supabase: SupabaseClientType, userId: string, milestoneId: string, data: Partial<Omit<Milestone, "id" | "project_id" | "created_at">>): Promise<Milestone | null> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
-  if (!milestone) return null;
+  if (!milestone) return null; // Not found or unauthorized - intentionally silent
 
   const { data: updated, error } = await supabase
     .from("milestones")
@@ -424,7 +485,10 @@ export async function updateMilestone(supabase: SupabaseClientType, userId: stri
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("updateMilestone", error);
+    return null;
+  }
   return updated;
 }
 
@@ -432,8 +496,24 @@ export async function updateMilestonePaidAmount(supabase: SupabaseClientType, us
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
   if (!milestone) return null;
 
-  const clampedPaidAmount = Math.min(Math.max(0, paidAmount), Number(milestone.amount));
-  const isPaid = clampedPaidAmount >= Number(milestone.amount);
+  // Calculate total based on milestone type
+  let total: number;
+  if (milestone.type === "hourly") {
+    const entries = milestone.time_entries || [];
+    const hours = entries.reduce((sum: number, e) => sum + Number(e.hours || 0), 0);
+    total = hours * Number(milestone.hourly_rate || 0);
+  } else if (milestone.type === "per_unit") {
+    const entries = milestone.time_entries || [];
+    const units = entries.reduce((sum: number, e) => sum + Number(e.units || 0), 0);
+    total = units * Number(milestone.unit_rate || 0);
+  } else {
+    // Fixed milestone
+    total = Number(milestone.amount || 0);
+  }
+
+  // Clamp to valid range (0 to total)
+  const clampedPaidAmount = Math.max(0, total > 0 ? Math.min(paidAmount, total) : paidAmount);
+  const isPaid = total > 0 && clampedPaidAmount >= total;
 
   const { data: updated, error } = await supabase
     .from("milestones")
@@ -446,27 +526,34 @@ export async function updateMilestonePaidAmount(supabase: SupabaseClientType, us
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("updateMilestonePaidAmount", error);
+    return null;
+  }
   return updated;
 }
 
 export async function deleteMilestone(supabase: SupabaseClientType, userId: string, milestoneId: string): Promise<boolean> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
-  if (!milestone) return false;
+  if (!milestone) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("milestones")
     .delete()
     .eq("id", milestoneId);
 
-  return !error;
+  if (error) {
+    logDbError("deleteMilestone", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== TIME ENTRIES ==============
 
 export async function addTimeEntry(supabase: SupabaseClientType, userId: string, milestoneId: string, data: { date: string; hours?: number; units?: number; description?: string; paid_amount?: number }): Promise<TimeEntry | null> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
-  if (!milestone) return null;
+  if (!milestone) return null; // Not found or unauthorized - intentionally silent
 
   const { data: entry, error } = await supabase
     .from("time_entries")
@@ -481,7 +568,10 @@ export async function addTimeEntry(supabase: SupabaseClientType, userId: string,
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("addTimeEntry", error);
+    return null;
+  }
   return entry;
 }
 
@@ -497,7 +587,7 @@ export async function getTimeEntryById(supabase: SupabaseClientType, userId: str
 
 export async function updateTimeEntry(supabase: SupabaseClientType, userId: string, entryId: string, data: Partial<{ date: string; hours: number; units: number; description: string; paid_amount: number }>): Promise<TimeEntry | null> {
   const entry = await getTimeEntryById(supabase, userId, entryId);
-  if (!entry) return null;
+  if (!entry) return null; // Not found or unauthorized - intentionally silent
 
   const { data: updated, error } = await supabase
     .from("time_entries")
@@ -506,27 +596,34 @@ export async function updateTimeEntry(supabase: SupabaseClientType, userId: stri
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("updateTimeEntry", error);
+    return null;
+  }
   return updated;
 }
 
 export async function deleteTimeEntry(supabase: SupabaseClientType, userId: string, entryId: string): Promise<boolean> {
   const entry = await getTimeEntryById(supabase, userId, entryId);
-  if (!entry) return false;
+  if (!entry) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("time_entries")
     .delete()
     .eq("id", entryId);
 
-  return !error;
+  if (error) {
+    logDbError("deleteTimeEntry", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== COMMENTS ==============
 
 export async function addComment(supabase: SupabaseClientType, userId: string, projectId: string, data: { content: string; milestone_id?: string }): Promise<Comment | null> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
-  if (!project) return null;
+  if (!project) return null; // Not found or unauthorized - intentionally silent
 
   const { data: comment, error } = await supabase
     .from("comments")
@@ -538,7 +635,10 @@ export async function addComment(supabase: SupabaseClientType, userId: string, p
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("addComment", error);
+    return null;
+  }
   return comment;
 }
 
@@ -554,7 +654,7 @@ export async function getCommentById(supabase: SupabaseClientType, userId: strin
 
 export async function updateComment(supabase: SupabaseClientType, userId: string, commentId: string, content: string): Promise<Comment | null> {
   const comment = await getCommentById(supabase, userId, commentId);
-  if (!comment) return null;
+  if (!comment) return null; // Not found or unauthorized - intentionally silent
 
   const { data: updated, error } = await supabase
     .from("comments")
@@ -563,20 +663,27 @@ export async function updateComment(supabase: SupabaseClientType, userId: string
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("updateComment", error);
+    return null;
+  }
   return updated;
 }
 
 export async function deleteComment(supabase: SupabaseClientType, userId: string, commentId: string): Promise<boolean> {
   const comment = await getCommentById(supabase, userId, commentId);
-  if (!comment) return false;
+  if (!comment) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("comments")
     .delete()
     .eq("id", commentId);
 
-  return !error;
+  if (error) {
+    logDbError("deleteComment", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== ATTACHMENTS ==============
@@ -588,7 +695,7 @@ export async function addAttachment(supabase: SupabaseClientType, userId: string
   milestone_id?: string;
 }): Promise<Attachment | null> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
-  if (!project) return null;
+  if (!project) return null; // Not found or unauthorized - intentionally silent
 
   const { data: attachment, error } = await supabase
     .from("attachments")
@@ -602,7 +709,10 @@ export async function addAttachment(supabase: SupabaseClientType, userId: string
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("addAttachment", error);
+    return null;
+  }
   return attachment;
 }
 
@@ -618,21 +728,25 @@ export async function getAttachmentById(supabase: SupabaseClientType, userId: st
 
 export async function deleteAttachment(supabase: SupabaseClientType, userId: string, attachmentId: string): Promise<boolean> {
   const attachment = await getAttachmentById(supabase, userId, attachmentId);
-  if (!attachment) return false;
+  if (!attachment) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("attachments")
     .delete()
     .eq("id", attachmentId);
 
-  return !error;
+  if (error) {
+    logDbError("deleteAttachment", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== SECURE NOTES ==============
 
 export async function setSecureNote(supabase: SupabaseClientType, userId: string, projectId: string, encryptedNote: string, passwordHash: string): Promise<boolean> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
-  if (!project) return false;
+  if (!project) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("projects")
@@ -642,12 +756,16 @@ export async function setSecureNote(supabase: SupabaseClientType, userId: string
     })
     .eq("id", projectId);
 
-  return !error;
+  if (error) {
+    logDbError("setSecureNote", error);
+    return false;
+  }
+  return true;
 }
 
 export async function deleteSecureNote(supabase: SupabaseClientType, userId: string, projectId: string): Promise<boolean> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
-  if (!project) return false;
+  if (!project) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("projects")
@@ -657,28 +775,36 @@ export async function deleteSecureNote(supabase: SupabaseClientType, userId: str
     })
     .eq("id", projectId);
 
-  return !error;
+  if (error) {
+    logDbError("deleteSecureNote", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== PROJECT PASSWORD ==============
 
 export async function setProjectPassword(supabase: SupabaseClientType, userId: string, projectId: string, passwordHash: string | null): Promise<boolean> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
-  if (!project) return false;
+  if (!project) return false; // Not found or unauthorized - intentionally silent
 
   const { error } = await supabase
     .from("projects")
     .update({ public_password_hash: passwordHash })
     .eq("id", projectId);
 
-  return !error;
+  if (error) {
+    logDbError("setProjectPassword", error);
+    return false;
+  }
+  return true;
 }
 
 // ============== PAYMENT HISTORY ==============
 
 export async function addPaymentHistoryEntry(supabase: SupabaseClientType, userId: string, milestoneId: string, data: { amount: number; note?: string }): Promise<PaymentHistoryEntry | null> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
-  if (!milestone) return null;
+  if (!milestone) return null; // Not found or unauthorized - intentionally silent
 
   const { data: entry, error } = await supabase
     .from("payment_history")
@@ -690,10 +816,17 @@ export async function addPaymentHistoryEntry(supabase: SupabaseClientType, userI
     .select()
     .single();
 
-  if (error) return null;
+  if (error) {
+    logDbError("addPaymentHistoryEntry", error);
+    return null;
+  }
   return entry;
 }
 
+/**
+ * Get payment history (legacy - no pagination)
+ * @deprecated Use getPaymentHistoryPaginated for better performance
+ */
 export async function getPaymentHistory(supabase: SupabaseClientType, userId: string, milestoneId: string): Promise<PaymentHistoryEntry[]> {
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
   if (!milestone) return [];
@@ -707,7 +840,53 @@ export async function getPaymentHistory(supabase: SupabaseClientType, userId: st
   return data || [];
 }
 
+/**
+ * Get payment history with pagination support
+ */
+export async function getPaymentHistoryPaginated(
+  supabase: SupabaseClientType,
+  userId: string,
+  milestoneId: string,
+  pagination: PaginationParams = {}
+): Promise<PaginatedResult<PaymentHistoryEntry>> {
+  const { limit = DEFAULT_PAGE_LIMIT, offset = 0 } = pagination;
+
+  // Verify ownership
+  const milestone = await getMilestoneById(supabase, userId, milestoneId);
+  if (!milestone) {
+    return { data: [], total: 0, limit, offset, hasMore: false };
+  }
+
+  // Get total count
+  const { count } = await supabase
+    .from("payment_history")
+    .select("*", { count: "exact", head: true })
+    .eq("milestone_id", milestoneId);
+
+  // Get paginated data
+  const { data } = await supabase
+    .from("payment_history")
+    .select("*")
+    .eq("milestone_id", milestoneId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  const total = count || 0;
+  return {
+    data: data || [],
+    total,
+    limit,
+    offset,
+    hasMore: offset + limit < total,
+  };
+}
+
+/**
+ * Deletes a payment entry and atomically recalculates milestone paid_amount
+ * Uses RPC function with FOR UPDATE lock to prevent race conditions
+ */
 export async function deletePaymentHistoryEntry(supabase: SupabaseClientType, userId: string, entryId: string): Promise<boolean> {
+  // 1. Verify ownership first
   const { data: entry } = await supabase
     .from("payment_history")
     .select("*, milestones!inner(project_id, projects!inner(organization_id, organizations!inner(user_id)))")
@@ -717,18 +896,23 @@ export async function deletePaymentHistoryEntry(supabase: SupabaseClientType, us
 
   if (!entry) return false;
 
-  const { error } = await supabase
-    .from("payment_history")
-    .delete()
-    .eq("id", entryId);
+  // 2. Use atomic RPC function to delete and recalculate
+  const { data: result, error } = await supabase.rpc("delete_payment_atomic", {
+    p_entry_id: entryId,
+  });
 
-  return !error;
+  if (error || !result?.success) {
+    console.error("Atomic payment deletion failed:", error?.message || result?.error);
+    return false;
+  }
+
+  return true;
 }
 
 /**
- * Records a payment atomically - adds to payment history and recalculates milestone paid_amount
- * Uses sum of all payment history entries instead of increment to avoid race conditions
- * @returns Updated milestone or null if failed
+ * Records a payment atomically using database-level transaction
+ * Uses RPC function with FOR UPDATE lock to prevent race conditions
+ * @returns Updated milestone and payment entry, or null if failed
  */
 export async function recordPaymentAtomically(
   supabase: SupabaseClientType,
@@ -736,7 +920,7 @@ export async function recordPaymentAtomically(
   milestoneId: string,
   data: { amount: number; note?: string }
 ): Promise<{ milestone: Milestone; entry: PaymentHistoryEntry } | null> {
-  // 1. Verify ownership and get milestone
+  // 1. Verify ownership first (before calling RPC)
   const milestone = await getMilestoneById(supabase, userId, milestoneId);
   if (!milestone) return null;
 
@@ -745,123 +929,84 @@ export async function recordPaymentAtomically(
     return null;
   }
 
-  // 3. Add payment history entry
-  const { data: entry, error: entryError } = await supabase
-    .from("payment_history")
-    .insert({
+  // 3. Call atomic RPC function (uses FOR UPDATE lock in database)
+  const { data: result, error } = await supabase.rpc("record_payment_atomic", {
+    p_milestone_id: milestoneId,
+    p_amount: data.amount,
+    p_note: data.note || null,
+  });
+
+  if (error || !result?.success) {
+    console.error("Atomic payment failed:", error?.message || result?.error);
+    return null;
+  }
+
+  // 4. Fetch updated milestone with all relations
+  const updatedMilestone = await getMilestoneById(supabase, userId, milestoneId);
+  if (!updatedMilestone) return null;
+
+  // 5. Return result with entry data from RPC response
+  return {
+    milestone: updatedMilestone,
+    entry: {
+      id: result.entry_id,
       milestone_id: milestoneId,
       amount: data.amount,
-      note: data.note,
-    })
-    .select()
-    .single();
-
-  if (entryError || !entry) {
-    console.error("Failed to add payment history entry:", entryError?.message);
-    return null;
-  }
-
-  // 4. Recalculate paid_amount from all payment history entries (avoids race condition)
-  const { data: historyEntries } = await supabase
-    .from("payment_history")
-    .select("amount")
-    .eq("milestone_id", milestoneId);
-
-  const totalPaid = (historyEntries || []).reduce(
-    (sum, e) => sum + Number(e.amount || 0),
-    0
-  );
-
-  // 5. Update milestone with recalculated amount
-  const milestoneAmount = Number(milestone.amount) || 0;
-  const clampedPaidAmount = Math.min(Math.max(0, totalPaid), milestoneAmount);
-  const isPaid = milestoneAmount > 0 && clampedPaidAmount >= milestoneAmount;
-
-  const { data: updatedMilestone, error: updateError } = await supabase
-    .from("milestones")
-    .update({
-      paid_amount: clampedPaidAmount,
-      is_paid: isPaid,
-      paid_at: isPaid ? new Date().toISOString() : null,
-    })
-    .eq("id", milestoneId)
-    .select()
-    .single();
-
-  if (updateError || !updatedMilestone) {
-    // Rollback: delete the payment history entry we just created
-    console.error("Failed to update milestone, rolling back payment history entry:", updateError?.message);
-    await supabase.from("payment_history").delete().eq("id", entry.id);
-    return null;
-  }
-
-  return { milestone: updatedMilestone, entry };
+      note: data.note || null,
+      created_at: new Date().toISOString(),
+    } as PaymentHistoryEntry,
+  };
 }
 
 // ============== DASHBOARD ==============
 
 export async function getDashboardStats(supabase: SupabaseClientType, userId: string) {
-  const { data: orgs } = await supabase
+  const emptyStats = {
+    totalOrganizations: 0,
+    totalProjects: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 0,
+    percentPaid: 0,
+    totalHours: 0,
+    hourlyAmount: 0,
+    totalUnits: 0,
+    unitAmount: 0,
+    projectsByStatus: {
+      in_progress: 0,
+      awaiting_payment: 0,
+      completed: 0,
+      on_hold: 0,
+    },
+  };
+
+  // Get organization count and IDs in one query
+  const { data: orgs, count: orgCount } = await supabase
     .from("organizations")
-    .select("id")
+    .select("id", { count: "exact" })
     .eq("user_id", userId);
 
   if (!orgs || orgs.length === 0) {
-    return {
-      totalOrganizations: 0,
-      totalProjects: 0,
-      totalAmount: 0,
-      paidAmount: 0,
-      remainingAmount: 0,
-      percentPaid: 0,
-      totalHours: 0,
-      hourlyAmount: 0,
-      totalUnits: 0,
-      unitAmount: 0,
-      projectsByStatus: {
-        in_progress: 0,
-        awaiting_payment: 0,
-        completed: 0,
-        on_hold: 0,
-      },
-    };
+    return emptyStats;
   }
 
   const orgIds = orgs.map(o => o.id);
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("*, milestones(*, time_entries(*))")
-    .in("organization_id", orgIds);
+  // Run all queries in parallel for better performance
+  const [projectsResult, milestonesResult] = await Promise.all([
+    // Get projects with status
+    supabase
+      .from("projects")
+      .select("status")
+      .in("organization_id", orgIds),
+    // Get all milestones with time entries in one query
+    supabase
+      .from("milestones")
+      .select("type, amount, paid_amount, hourly_rate, unit_rate, time_entries(hours, units, paid_amount), projects!inner(organization_id)")
+      .in("projects.organization_id", orgIds),
+  ]);
 
-  if (!projects) {
-    return {
-      totalOrganizations: orgs.length,
-      totalProjects: 0,
-      totalAmount: 0,
-      paidAmount: 0,
-      remainingAmount: 0,
-      percentPaid: 0,
-      totalHours: 0,
-      hourlyAmount: 0,
-      totalUnits: 0,
-      unitAmount: 0,
-      projectsByStatus: {
-        in_progress: 0,
-        awaiting_payment: 0,
-        completed: 0,
-        on_hold: 0,
-      },
-    };
-  }
-
-  let totalAmount = 0;
-  let paidAmount = 0;
-  let totalHours = 0;
-  let hourlyAmount = 0;
-  let totalUnits = 0;
-  let unitAmount = 0;
-
+  // Process project counts by status
   const projectsByStatus = {
     in_progress: 0,
     awaiting_payment: 0,
@@ -869,38 +1014,57 @@ export async function getDashboardStats(supabase: SupabaseClientType, userId: st
     on_hold: 0,
   };
 
-  projects.forEach(project => {
-    const status = project.status || "in_progress";
-    projectsByStatus[status as keyof typeof projectsByStatus]++;
-
-    const milestones = project.milestones || [];
-    milestones.forEach((m: Milestone) => {
-      if (m.type === "hourly") {
-        const entries = (m.time_entries || []) as TimeEntry[];
-        const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-        totalHours += hours;
-        const amount = hours * Number(m.hourly_rate || 0);
-        hourlyAmount += amount;
-        totalAmount += amount;
-        paidAmount += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-      } else if (m.type === "per_unit") {
-        const entries = (m.time_entries || []) as TimeEntry[];
-        const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
-        totalUnits += units;
-        const amount = units * Number(m.unit_rate || 0);
-        unitAmount += amount;
-        totalAmount += amount;
-        paidAmount += entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-      } else {
-        totalAmount += Number(m.amount || 0);
-        paidAmount += Number(m.paid_amount || 0);
-      }
-    });
+  const projectCounts = projectsResult.data || [];
+  projectCounts.forEach(p => {
+    const status = p.status || "in_progress";
+    if (status in projectsByStatus) {
+      projectsByStatus[status as keyof typeof projectsByStatus]++;
+    }
   });
 
+  // Process milestones - single pass through data
+  let fixedTotal = 0;
+  let fixedPaid = 0;
+  let totalHours = 0;
+  let hourlyAmount = 0;
+  let hourlyPaid = 0;
+  let totalUnits = 0;
+  let unitAmount = 0;
+  let unitPaid = 0;
+
+  const milestones = milestonesResult.data || [];
+  milestones.forEach(m => {
+    const milestoneType = m.type || "fixed";
+    const entries = m.time_entries || [];
+
+    if (milestoneType === "fixed" || !m.type) {
+      fixedTotal += Number(m.amount || 0);
+      fixedPaid += Number(m.paid_amount || 0);
+    } else if (milestoneType === "hourly") {
+      const rate = Number(m.hourly_rate || 0);
+      entries.forEach((e: { hours?: number; paid_amount?: number }) => {
+        const hours = Number(e.hours || 0);
+        totalHours += hours;
+        hourlyAmount += hours * rate;
+        hourlyPaid += Number(e.paid_amount || 0);
+      });
+    } else if (milestoneType === "per_unit") {
+      const rate = Number(m.unit_rate || 0);
+      entries.forEach((e: { units?: number; paid_amount?: number }) => {
+        const units = Number(e.units || 0);
+        totalUnits += units;
+        unitAmount += units * rate;
+        unitPaid += Number(e.paid_amount || 0);
+      });
+    }
+  });
+
+  const totalAmount = fixedTotal + hourlyAmount + unitAmount;
+  const paidAmount = fixedPaid + hourlyPaid + unitPaid;
+
   return {
-    totalOrganizations: orgs.length,
-    totalProjects: projects.length,
+    totalOrganizations: orgCount || orgs.length,
+    totalProjects: projectCounts.length,
     totalAmount,
     paidAmount,
     remainingAmount: totalAmount - paidAmount,

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import type { User } from "@supabase/supabase-js";
 import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "./types";
+import { normalizeProjectData } from "./db/normalize";
 
 /**
  * Generates a cryptographically secure URL-safe hash
@@ -17,48 +18,6 @@ export async function getCurrentUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return user;
-}
-
-// Helper to normalize project data from DB
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizeProjectData(data: any, isPublic = false): Project {
-  const normalized = {
-    ...data,
-    status: data.status || "in_progress",
-    hide_amounts: data.hide_amounts || false,
-    hide_paid: data.hide_paid || false,
-    show_payment_history: data.show_payment_history || false,
-    show_expenses: data.show_expenses || false,
-    milestones: ((data.milestones as Milestone[]) || [])
-      .sort((a: Milestone, b: Milestone) => a.order - b.order)
-      .map((m: Milestone & { time_entries?: TimeEntry[]; payment_history?: PaymentHistoryEntry[] }) => ({
-        ...m,
-        type: m.type || "fixed",
-        time_entries: (m.time_entries || []).sort((a: TimeEntry, b: TimeEntry) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        ),
-        payment_history: (m.payment_history || []).sort((a: PaymentHistoryEntry, b: PaymentHistoryEntry) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-      })),
-    comments: ((data.comments as Comment[]) || []).sort((a: Comment, b: Comment) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    ),
-    attachments: data.attachments || [],
-    operating_expenses: ((data.operating_expenses as OperatingExpense[]) || []).sort((a: OperatingExpense, b: OperatingExpense) =>
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
-  };
-
-  if (isPublic) {
-    // Only indicate if public password is set, don't expose hash
-    normalized.public_password_hash = data.public_password_hash ? "protected" : null;
-    // Only indicate if note exists, don't expose encrypted data or hash
-    normalized.secure_note_encrypted = data.secure_note_encrypted ? "exists" : null;
-    normalized.secure_note_password_hash = undefined;
-  }
-
-  return normalized as Project;
 }
 
 /**
@@ -424,7 +383,7 @@ export async function getProjectByHash(hash: string): Promise<Project | null> {
 
   if (!data) return null;
 
-  return normalizeProjectData(data, true); // isPublic = true
+  return normalizeProjectData(data, { isPublic: true });
 }
 
 export async function createProject(data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
@@ -635,17 +594,33 @@ export async function updateMilestone(projectId: string, milestoneId: string, da
 export async function updateMilestonePaidAmount(projectId: string, milestoneId: string, paidAmount: number): Promise<Milestone | null> {
   const supabase = await createClient();
 
-  // Get current milestone to check amount
+  // Get current milestone with time entries to calculate total correctly
   const { data: current } = await supabase
     .from("milestones")
-    .select("amount")
+    .select("*, time_entries(*)")
     .eq("id", milestoneId)
     .single();
 
   if (!current) return null;
 
-  const clampedPaidAmount = Math.min(Math.max(0, paidAmount), current.amount);
-  const isPaid = clampedPaidAmount >= current.amount;
+  // Calculate total based on milestone type
+  let total: number;
+  if (current.type === "hourly") {
+    const entries = current.time_entries || [];
+    const hours = entries.reduce((sum: number, e: TimeEntry) => sum + Number(e.hours || 0), 0);
+    total = hours * Number(current.hourly_rate || 0);
+  } else if (current.type === "per_unit") {
+    const entries = current.time_entries || [];
+    const units = entries.reduce((sum: number, e: TimeEntry) => sum + Number(e.units || 0), 0);
+    total = units * Number(current.unit_rate || 0);
+  } else {
+    // Fixed milestone
+    total = Number(current.amount || 0);
+  }
+
+  // Clamp to valid range (0 to total)
+  const clampedPaidAmount = Math.max(0, total > 0 ? Math.min(paidAmount, total) : paidAmount);
+  const isPaid = total > 0 && clampedPaidAmount >= total;
 
   const { data: milestone, error } = await supabase
     .from("milestones")
@@ -666,40 +641,15 @@ export async function updateMilestonePaidAmount(projectId: string, milestoneId: 
 export async function deleteMilestone(projectId: string, milestoneId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  // Get the milestone to know its order
-  const { data: milestone } = await supabase
-    .from("milestones")
-    .select("order")
-    .eq("id", milestoneId)
-    .eq("project_id", projectId)
-    .single();
+  // Use atomic RPC function to delete milestone and reorder remaining
+  const { data: result, error } = await supabase.rpc("delete_milestone_atomic", {
+    p_milestone_id: milestoneId,
+    p_project_id: projectId,
+  }) as { data: { success: boolean; error?: string } | null; error: Error | null };
 
-  if (!milestone) return false;
-
-  const { error } = await supabase
-    .from("milestones")
-    .delete()
-    .eq("id", milestoneId)
-    .eq("project_id", projectId);
-
-  if (error) return false;
-
-  // Reorder remaining milestones to fill the gap
-  const { data: remaining } = await supabase
-    .from("milestones")
-    .select("id, order")
-    .eq("project_id", projectId)
-    .gt("order", milestone.order)
-    .order("order", { ascending: true });
-
-  if (remaining && remaining.length > 0) {
-    // Decrement order of all milestones after the deleted one
-    for (const m of remaining) {
-      await supabase
-        .from("milestones")
-        .update({ order: m.order - 1 })
-        .eq("id", m.id);
-    }
+  if (error || !result?.success) {
+    console.error("Atomic milestone deletion failed:", error?.message || result?.error);
+    return false;
   }
 
   return true;
@@ -983,6 +933,103 @@ export async function deletePaymentHistoryEntry(entryId: string): Promise<boolea
     .eq("id", entryId);
 
   return !error;
+}
+
+// Type for RPC response
+interface AtomicPaymentResult {
+  success: boolean;
+  error?: string;
+  entry_id?: string;
+  paid_amount?: number;
+  total_paid?: number;
+  is_paid?: boolean;
+  paid_at?: string | null;
+}
+
+/**
+ * Records a payment atomically using database-level transaction
+ * Uses RPC function with FOR UPDATE lock to prevent race conditions
+ * @returns Updated milestone and payment entry, or null if failed
+ */
+export async function recordPaymentAtomically(
+  milestoneId: string,
+  data: { amount: number; note?: string },
+  existingUser?: User | null
+): Promise<{ milestone: Milestone; entry: PaymentHistoryEntry } | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  // 1. Verify ownership first
+  const milestone = await verifyMilestoneOwnership(milestoneId, user);
+  if (!milestone) return null;
+
+  // 2. Validate amount
+  if (typeof data.amount !== "number" || !Number.isFinite(data.amount) || data.amount === 0) {
+    return null;
+  }
+
+  // 3. Call atomic RPC function
+  const { data: result, error } = await supabase.rpc("record_payment_atomic", {
+    p_milestone_id: milestoneId,
+    p_amount: data.amount,
+    p_note: data.note || null,
+  }) as { data: AtomicPaymentResult | null; error: Error | null };
+
+  if (error || !result?.success) {
+    console.error("Atomic payment failed:", error?.message || result?.error);
+    return null;
+  }
+
+  // 4. Return result
+  const updatedMilestone: Milestone = {
+    ...milestone,
+    paid_amount: result.paid_amount ?? milestone.paid_amount,
+    is_paid: result.is_paid ?? milestone.is_paid,
+    paid_at: result.paid_at ?? milestone.paid_at,
+  };
+
+  return {
+    milestone: updatedMilestone,
+    entry: {
+      id: result.entry_id!,
+      milestone_id: milestoneId,
+      amount: data.amount,
+      note: data.note || undefined,
+      created_at: new Date().toISOString(),
+    } as PaymentHistoryEntry,
+  };
+}
+
+/**
+ * Deletes a payment entry and atomically recalculates milestone paid_amount
+ * Uses RPC function with FOR UPDATE lock to prevent race conditions
+ */
+export async function deletePaymentAtomically(entryId: string, existingUser?: User | null): Promise<boolean> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return false;
+
+  // Verify ownership through payment_history -> milestone -> project -> org chain
+  const { data: entry } = await supabase
+    .from("payment_history")
+    .select("*, milestones!inner(project_id, projects!inner(organization_id, organizations!inner(user_id)))")
+    .eq("id", entryId)
+    .eq("milestones.projects.organizations.user_id", user.id)
+    .single();
+
+  if (!entry) return false;
+
+  const { data: result, error } = await supabase.rpc("delete_payment_atomic", {
+    p_entry_id: entryId,
+  }) as { data: { success: boolean; error?: string } | null; error: Error | null };
+
+  if (error || !result?.success) {
+    console.error("Atomic payment deletion failed:", error?.message || result?.error);
+    return false;
+  }
+
+  return true;
 }
 
 // Operating Expense CRUD

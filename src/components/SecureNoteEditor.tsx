@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AlertDialog } from "./AlertDialog";
 
 interface SecureNoteEditorProps {
@@ -19,6 +19,16 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const checkNote = async () => {
@@ -89,7 +99,7 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
       setNote("");
       setPassword("");
       setConfirmPassword("");
-      setTimeout(() => setSuccess(null), 3000);
+      successTimeoutRef.current = setTimeout(() => setSuccess(null), 3000);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -104,7 +114,7 @@ export function SecureNoteEditor({ projectId }: SecureNoteEditorProps) {
     setHasNote(false);
     setShowDeleteDialog(false);
     setSuccess("Secure note deleted");
-    setTimeout(() => setSuccess(null), 3000);
+    successTimeoutRef.current = setTimeout(() => setSuccess(null), 3000);
 
     const res = await fetch(`/api/projects/${projectId}/secure-note`, {
       method: "DELETE",

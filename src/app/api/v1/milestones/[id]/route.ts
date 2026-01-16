@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { withAuth, apiSuccess, apiError, apiNotFound } from "@/lib/api-auth";
+import { withAuth, apiSuccess, apiNotFound, handleApiError } from "@/lib/api-auth";
 import { getMilestoneById, updateMilestone, updateMilestonePaidAmount, deleteMilestone } from "@/lib/api-db";
 
 type Params = { params: Promise<{ id: string }> };
@@ -65,8 +65,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
 
       return apiSuccess(milestone);
-    } catch {
-      return apiError("Invalid request");
+    } catch (error) {
+      return handleApiError(error, "PATCH /api/v1/milestones/[id]");
     }
   });
 }

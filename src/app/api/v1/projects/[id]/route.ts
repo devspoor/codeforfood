@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { withAuth, apiSuccess, apiError, apiNotFound } from "@/lib/api-auth";
+import { withAuth, apiSuccess, apiNotFound, handleApiError } from "@/lib/api-auth";
 import { getProjectById, updateProject, deleteProject, getProjectSummary } from "@/lib/api-db";
 
 type Params = { params: Promise<{ id: string }> };
@@ -47,8 +47,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
 
       return apiSuccess(project);
-    } catch {
-      return apiError("Invalid request");
+    } catch (error) {
+      return handleApiError(error, "PATCH /api/v1/projects/[id]");
     }
   });
 }

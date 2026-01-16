@@ -20,14 +20,17 @@ export function ProjectActions({ projectId, organizationId }: { projectId: strin
   const [transferError, setTransferError] = useState<string>("");
   const [loadingOrgs, setLoadingOrgs] = useState(false);
 
+  const [orgsLoaded, setOrgsLoaded] = useState(false);
+
   useEffect(() => {
-    if (showTransfer && organizations.length === 0) {
+    if (showTransfer && !orgsLoaded) {
       setLoadingOrgs(true);
       fetch("/api/organizations")
         .then((res) => res.json())
         .then((data) => {
           const otherOrgs = data.filter((org: Organization) => org.id !== organizationId);
           setOrganizations(otherOrgs);
+          setOrgsLoaded(true);
           if (otherOrgs.length > 0) {
             setSelectedOrgId(otherOrgs[0].id);
           }
@@ -39,7 +42,7 @@ export function ProjectActions({ projectId, organizationId }: { projectId: strin
           setLoadingOrgs(false);
         });
     }
-  }, [showTransfer, organizationId, organizations.length]);
+  }, [showTransfer, organizationId, orgsLoaded]);
 
   const handleDelete = async () => {
     setDeleting(true);

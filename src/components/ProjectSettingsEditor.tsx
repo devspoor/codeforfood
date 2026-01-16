@@ -78,7 +78,8 @@ export function ProjectSettingsEditor({
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) return;
+    const trimmedPassword = password.trim();
+    if (!trimmedPassword) return;
 
     // Optimistic update
     setHasPassword(true);
@@ -88,7 +89,7 @@ export function ProjectSettingsEditor({
     const res = await fetch(`/api/projects/${projectId}/password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: password.trim() }),
+      body: JSON.stringify({ password: trimmedPassword }),
     });
     if (!res.ok) {
       // Rollback on error

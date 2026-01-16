@@ -1,78 +1,30 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { Milestone, TimeEntry, PaymentHistoryEntry } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { AlertDialog } from "./AlertDialog";
+import { MilestoneForm, type MilestoneFormData } from "./milestones";
+import {
+  getPaymentPercent,
+  getMilestoneTotal,
+  getTotalHours,
+  getTotalUnits,
+  getPaidAmount,
+} from "./milestones/utils";
 
 interface Props {
   projectId: string;
   milestones: Milestone[];
 }
 
-// Pure helper functions (outside component to avoid recreation)
-const getPaymentPercent = (m: Milestone) => {
-  if (m.type === "hourly") {
-    const entries = m.time_entries || [];
-    const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
-    const total = hours * Number(m.hourly_rate || 0);
-    const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-    return total > 0 ? Math.round((paid / total) * 100) : 0;
-  }
-  if (m.type === "per_unit") {
-    const entries = m.time_entries || [];
-    const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
-    const total = units * Number(m.unit_rate || 0);
-    const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-    return total > 0 ? Math.round((paid / total) * 100) : 0;
-  }
-  const paid = m.paid_amount || 0;
-  return m.amount > 0 ? Math.round((paid / m.amount) * 100) : 0;
-};
-
-const getMilestoneTotal = (m: Milestone) => {
-  if (m.type === "hourly") {
-    const hours = (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours || 0), 0);
-    return hours * Number(m.hourly_rate || 0);
-  }
-  if (m.type === "per_unit") {
-    const units = (m.time_entries || []).reduce((sum, e) => sum + Number(e.units || 0), 0);
-    return units * Number(m.unit_rate || 0);
-  }
-  return m.amount;
-};
-
-const getTotalHours = (m: Milestone) => {
-  return (m.time_entries || []).reduce((sum, e) => sum + Number(e.hours || 0), 0);
-};
-
-const getTotalUnits = (m: Milestone) => {
-  return (m.time_entries || []).reduce((sum, e) => sum + Number(e.units || 0), 0);
-};
-
-const getPaidAmount = (m: Milestone) => {
-  if (m.type === "hourly" || m.type === "per_unit") {
-    return (m.time_entries || []).reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-  }
-  return m.paid_amount || 0;
-};
-
 export function MilestonesEditor({ projectId, milestones: initialMilestones }: Props) {
+  const router = useRouter();
   const [milestones, setMilestones] = useState(initialMilestones);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [milestoneType, setMilestoneType] = useState<"fixed" | "hourly" | "per_unit">("fixed");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
-  const [estimatedHours, setEstimatedHours] = useState("");
-  const [hoursLimit, setHoursLimit] = useState("");
-  // Per-unit fields
-  const [unitRate, setUnitRate] = useState("");
-  const [unitLabel, setUnitLabel] = useState("unit");
-  const [estimatedUnits, setEstimatedUnits] = useState("");
-  const [unitsLimit, setUnitsLimit] = useState("");
+  // Payment and time entry states (kept in main component)
   const [paymentInputs, setPaymentInputs] = useState<Record<string, string>>({});
   const [timeEntryPaymentInputs, setTimeEntryPaymentInputs] = useState<Record<string, string>>({});
   const [showTimeEntry, setShowTimeEntry] = useState<string | null>(null);
@@ -86,46 +38,32 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   const [deleteDialogEntryId, setDeleteDialogEntryId] = useState<{ milestoneId: string; entryId: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const editingMilestone = editingId ? milestones.find(m => m.id === editingId) : null;
+
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    // Defer clearing fields to not block UI
-    setTimeout(() => {
-      setTitle("");
-      setDescription("");
-      setAmount("");
-      setHourlyRate("");
-      setEstimatedHours("");
-      setHoursLimit("");
-      setUnitRate("");
-      setUnitLabel("unit");
-      setEstimatedUnits("");
-      setUnitsLimit("");
-      setMilestoneType("fixed");
-    }, 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+  const handleFormSubmit = async (formData: MilestoneFormData) => {
+    if (!formData.title.trim()) return;
 
     if (editingId) {
       const updateData: Record<string, unknown> = {
-        title: title.trim(),
-        description: description.trim() || undefined,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
       };
-      if (milestoneType === "fixed") {
-        updateData.amount = Number(amount);
-      } else if (milestoneType === "hourly") {
-        updateData.hourly_rate = Number(hourlyRate);
-        updateData.estimated_hours = estimatedHours ? Number(estimatedHours) : undefined;
-        updateData.hours_limit = hoursLimit ? Number(hoursLimit) : undefined;
+      if (formData.type === "fixed") {
+        updateData.amount = Number(formData.amount);
+      } else if (formData.type === "hourly") {
+        updateData.hourly_rate = Number(formData.hourlyRate);
+        updateData.estimated_hours = formData.estimatedHours ? Number(formData.estimatedHours) : undefined;
+        updateData.hours_limit = formData.hoursLimit ? Number(formData.hoursLimit) : undefined;
       } else {
-        // per_unit
-        updateData.unit_rate = Number(unitRate);
-        updateData.unit_label = unitLabel.trim() || "unit";
-        updateData.estimated_units = estimatedUnits ? Number(estimatedUnits) : undefined;
-        updateData.units_limit = unitsLimit ? Number(unitsLimit) : undefined;
+        updateData.unit_rate = Number(formData.unitRate);
+        updateData.unit_label = formData.unitLabel.trim() || "unit";
+        updateData.estimated_units = formData.estimatedUnits ? Number(formData.estimatedUnits) : undefined;
+        updateData.units_limit = formData.unitsLimit ? Number(formData.unitsLimit) : undefined;
       }
 
       // Optimistic update for edit
@@ -142,25 +80,26 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       if (res.ok) {
         const updated = await res.json();
         setMilestones((prev) => prev.map((m) => (m.id === editingId ? { ...m, ...updated } : m)));
+        router.refresh(); // Update summary stats
       }
     } else {
       const createData: Record<string, unknown> = {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        type: milestoneType,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        type: formData.type,
       };
-      if (milestoneType === "fixed") {
-        createData.amount = Number(amount);
-      } else if (milestoneType === "hourly") {
-        createData.hourly_rate = Number(hourlyRate);
-        createData.estimated_hours = estimatedHours ? Number(estimatedHours) : undefined;
-        createData.hours_limit = hoursLimit ? Number(hoursLimit) : undefined;
+      if (formData.type === "fixed") {
+        createData.amount = Number(formData.amount);
+      } else if (formData.type === "hourly") {
+        createData.hourly_rate = Number(formData.hourlyRate);
+        createData.estimated_hours = formData.estimatedHours ? Number(formData.estimatedHours) : undefined;
+        createData.hours_limit = formData.hoursLimit ? Number(formData.hoursLimit) : undefined;
       } else {
         // per_unit
-        createData.unit_rate = Number(unitRate);
-        createData.unit_label = unitLabel.trim() || "unit";
-        createData.estimated_units = estimatedUnits ? Number(estimatedUnits) : undefined;
-        createData.units_limit = unitsLimit ? Number(unitsLimit) : undefined;
+        createData.unit_rate = Number(formData.unitRate);
+        createData.unit_label = formData.unitLabel.trim() || "unit";
+        createData.estimated_units = formData.estimatedUnits ? Number(formData.estimatedUnits) : undefined;
+        createData.units_limit = formData.unitsLimit ? Number(formData.unitsLimit) : undefined;
       }
 
       // Optimistic update for create
@@ -168,17 +107,17 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       const optimisticMilestone: Milestone = {
         id: tempId,
         project_id: projectId,
-        title: title.trim(),
-        description: description.trim() || undefined,
-        type: milestoneType,
-        amount: milestoneType === "fixed" ? Number(amount) : 0,
-        hourly_rate: milestoneType === "hourly" ? Number(hourlyRate) : undefined,
-        estimated_hours: milestoneType === "hourly" && estimatedHours ? Number(estimatedHours) : undefined,
-        hours_limit: milestoneType === "hourly" && hoursLimit ? Number(hoursLimit) : undefined,
-        unit_rate: milestoneType === "per_unit" ? Number(unitRate) : undefined,
-        unit_label: milestoneType === "per_unit" ? (unitLabel.trim() || "unit") : undefined,
-        estimated_units: milestoneType === "per_unit" && estimatedUnits ? Number(estimatedUnits) : undefined,
-        units_limit: milestoneType === "per_unit" && unitsLimit ? Number(unitsLimit) : undefined,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        type: formData.type,
+        amount: formData.type === "fixed" ? Number(formData.amount) : 0,
+        hourly_rate: formData.type === "hourly" ? Number(formData.hourlyRate) : undefined,
+        estimated_hours: formData.type === "hourly" && formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
+        hours_limit: formData.type === "hourly" && formData.hoursLimit ? Number(formData.hoursLimit) : undefined,
+        unit_rate: formData.type === "per_unit" ? Number(formData.unitRate) : undefined,
+        unit_label: formData.type === "per_unit" ? (formData.unitLabel.trim() || "unit") : undefined,
+        estimated_units: formData.type === "per_unit" && formData.estimatedUnits ? Number(formData.estimatedUnits) : undefined,
+        units_limit: formData.type === "per_unit" && formData.unitsLimit ? Number(formData.unitsLimit) : undefined,
         paid_amount: 0,
         is_paid: false,
         paid_at: undefined,
@@ -198,6 +137,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       if (res.ok) {
         const milestone = await res.json();
         setMilestones((prev) => prev.map((m) => (m.id === tempId ? milestone : m)));
+        router.refresh(); // Update summary stats
       }
     }
   };
@@ -205,47 +145,19 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   const handleEdit = (m: Milestone) => {
     setEditingId(m.id);
     setShowForm(true);
-    // Defer field population to not block UI
-    setTimeout(() => {
-      setTitle(m.title);
-      setDescription(m.description || "");
-      setMilestoneType(m.type || "fixed");
-      if (m.type === "hourly") {
-        setHourlyRate(String(m.hourly_rate || ""));
-        setEstimatedHours(m.estimated_hours ? String(m.estimated_hours) : "");
-        setHoursLimit(m.hours_limit ? String(m.hours_limit) : "");
-        setAmount("");
-        setUnitRate("");
-        setUnitLabel("unit");
-        setEstimatedUnits("");
-        setUnitsLimit("");
-      } else if (m.type === "per_unit") {
-        setUnitRate(String(m.unit_rate || ""));
-        setUnitLabel(m.unit_label || "unit");
-        setEstimatedUnits(m.estimated_units ? String(m.estimated_units) : "");
-        setUnitsLimit(m.units_limit ? String(m.units_limit) : "");
-        setAmount("");
-        setHourlyRate("");
-        setEstimatedHours("");
-        setHoursLimit("");
-      } else {
-        setAmount(String(m.amount));
-        setHourlyRate("");
-        setEstimatedHours("");
-        setHoursLimit("");
-        setUnitRate("");
-        setUnitLabel("unit");
-        setEstimatedUnits("");
-        setUnitsLimit("");
-      }
-    }, 0);
   };
 
   const handleUpdatePaidAmount = async (milestoneId: string, paidAmount: number) => {
     const milestone = milestones.find((m) => m.id === milestoneId);
-    const oldPaidAmount = milestone?.paid_amount || 0;
+    if (!milestone) return;
+
+    const oldPaidAmount = milestone.paid_amount || 0;
     const difference = paidAmount - oldPaidAmount;
-    const total = milestone ? getMilestoneTotal(milestone) : 0;
+
+    // No change needed
+    if (difference === 0) return;
+
+    const total = getMilestoneTotal(milestone);
     const isPaid = paidAmount >= total && total > 0;
 
     // Optimistic update - update UI immediately
@@ -256,40 +168,49 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
     ));
     setPaymentInputs((prev) => ({ ...prev, [milestoneId]: "" }));
 
-    // Fire requests in parallel
-    const requests: Promise<Response>[] = [
-      fetch(`/api/projects/${projectId}/milestones/${milestoneId}`, {
-        method: "PATCH",
+    // Use atomic payment endpoint - single request handles both milestone update and payment history
+    try {
+      const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}/payment-history`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paidAmount }),
-      }),
-    ];
+        body: JSON.stringify({ amount: difference, atomic: true }),
+      });
 
-    if (difference !== 0) {
-      requests.push(
-        fetch(`/api/projects/${projectId}/milestones/${milestoneId}/payment-history`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: difference }),
-        })
-      );
-    }
-
-    const responses = await Promise.all(requests);
-
-    // Update with server response for consistency
-    if (responses[0].ok) {
-      const updated = await responses[0].json();
-      if (difference !== 0 && responses[1]?.ok) {
-        const historyEntry = await responses[1].json();
+      if (res.ok) {
+        const result = await res.json();
+        // Update with server response for consistency
         setMilestones((prev) => prev.map((m) =>
           m.id === milestoneId
-            ? { ...m, ...updated, payment_history: [historyEntry, ...(m.payment_history || [])] }
+            ? {
+                ...m,
+                paid_amount: result.milestone?.paid_amount ?? paidAmount,
+                is_paid: result.milestone?.is_paid ?? isPaid,
+                paid_at: result.milestone?.paid_at ?? m.paid_at,
+                payment_history: result.entry
+                  ? [result.entry, ...(m.payment_history || [])]
+                  : m.payment_history,
+              }
             : m
         ));
+        router.refresh(); // Update summary stats
       } else {
-        setMilestones((prev) => prev.map((m) => m.id === milestoneId ? { ...m, ...updated } : m));
+        // Rollback on error
+        const error = await res.json().catch(() => ({}));
+        console.error("Payment update failed:", error.error || "Unknown error");
+        setMilestones((prev) => prev.map((m) =>
+          m.id === milestoneId
+            ? { ...m, paid_amount: oldPaidAmount, is_paid: milestone.is_paid, paid_at: milestone.paid_at }
+            : m
+        ));
       }
+    } catch (err) {
+      // Rollback on network error
+      console.error("Payment update failed:", err);
+      setMilestones((prev) => prev.map((m) =>
+        m.id === milestoneId
+          ? { ...m, paid_amount: oldPaidAmount, is_paid: milestone.is_paid, paid_at: milestone.paid_at }
+          : m
+      ));
     }
   };
 
@@ -306,6 +227,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
     if (!res.ok) {
       // Rollback on error
       setMilestones(previousMilestones);
+    } else {
+      router.refresh(); // Update summary stats
     }
     setDeleting(false);
   };
@@ -315,15 +238,33 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
     const hasUnits = isUnitEntry && timeEntryUnits;
     if (!timeEntryDate || (!hasHours && !hasUnits)) return;
 
+    // Validate numeric values
+    const hours = hasHours ? Number(timeEntryHours) : undefined;
+    const units = hasUnits ? Number(timeEntryUnits) : undefined;
+    const paidAmount = timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0;
+
+    if (hours !== undefined && (!Number.isFinite(hours) || hours <= 0 || hours > 24)) {
+      console.error("Invalid hours value");
+      return;
+    }
+    if (units !== undefined && (!Number.isFinite(units) || units < 1 || units > 10000)) {
+      console.error("Invalid units value");
+      return;
+    }
+    if (!Number.isFinite(paidAmount) || paidAmount < 0) {
+      console.error("Invalid paid amount");
+      return;
+    }
+
     const tempId = `temp-${Date.now()}`;
     const optimisticEntry: TimeEntry = {
       id: tempId,
       milestone_id: milestoneId,
       date: timeEntryDate,
-      hours: hasHours ? Number(timeEntryHours) : undefined,
-      units: hasUnits ? Number(timeEntryUnits) : undefined,
+      hours,
+      units,
       description: timeEntryDesc.trim() || undefined,
-      paid_amount: timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0,
+      paid_amount: paidAmount,
       created_at: new Date().toISOString(),
     };
 
@@ -342,10 +283,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
     const body: Record<string, unknown> = {
       date: timeEntryDate,
       description: timeEntryDesc.trim() || undefined,
-      paid_amount: timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0,
+      paid_amount: paidAmount,
     };
-    if (hasHours) body.hours = Number(timeEntryHours);
-    if (hasUnits) body.units = Number(timeEntryUnits);
+    if (hours !== undefined) body.hours = hours;
+    if (units !== undefined) body.units = units;
 
     const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}/time-entries`, {
       method: "POST",
@@ -361,6 +302,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           ? { ...m, time_entries: (m.time_entries || []).map((e) => e.id === tempId ? entry : e) }
           : m
       ));
+      router.refresh(); // Update summary stats (hours/units)
     }
   };
 
@@ -381,6 +323,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
     if (!res.ok) {
       // Rollback on error
       setMilestones(previousMilestones);
+    } else {
+      router.refresh(); // Update summary stats
     }
     setDeleting(false);
   };
@@ -416,6 +360,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
             }
           : ml
       ));
+      router.refresh(); // Update summary stats
     }
   };
 
@@ -923,197 +868,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-4 space-y-4">
-          {/* Type selector */}
-          {!editingId && (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setMilestoneType("fixed")}
-                className={`flex-1 py-2 text-sm rounded border transition-colors ${
-                  milestoneType === "fixed"
-                    ? "border-accent bg-accent/10 text-accent"
-                    : "border-border text-muted hover:border-muted"
-                }`}
-              >
-                Fixed Price
-              </button>
-              <button
-                type="button"
-                onClick={() => setMilestoneType("hourly")}
-                className={`flex-1 py-2 text-sm rounded border transition-colors ${
-                  milestoneType === "hourly"
-                    ? "border-accent bg-accent/10 text-accent"
-                    : "border-border text-muted hover:border-muted"
-                }`}
-              >
-                Hourly Rate
-              </button>
-              <button
-                type="button"
-                onClick={() => setMilestoneType("per_unit")}
-                className={`flex-1 py-2 text-sm rounded border transition-colors ${
-                  milestoneType === "per_unit"
-                    ? "border-accent bg-accent/10 text-accent"
-                    : "border-border text-muted hover:border-muted"
-                }`}
-              >
-                Per Unit
-              </button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-muted mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Design Phase"
-                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                autoFocus
-              />
-            </div>
-            {milestoneType === "fixed" && (
-              <div>
-                <label className="block text-sm text-muted mb-1">Amount ($)</label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-            )}
-            {milestoneType === "hourly" && (
-              <div>
-                <label className="block text-sm text-muted mb-1">Hourly Rate ($)</label>
-                <input
-                  type="number"
-                  value={hourlyRate}
-                  onChange={(e) => setHourlyRate(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-            )}
-            {milestoneType === "per_unit" && (
-              <div>
-                <label className="block text-sm text-muted mb-1">Rate per Unit ($)</label>
-                <input
-                  type="number"
-                  value={unitRate}
-                  onChange={(e) => setUnitRate(e.target.value)}
-                  placeholder="e.g. 30"
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-            )}
-          </div>
-
-          {milestoneType === "hourly" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-muted mb-1">Estimated Hours (optional)</label>
-                <input
-                  type="number"
-                  value={estimatedHours}
-                  onChange={(e) => setEstimatedHours(e.target.value)}
-                  placeholder="e.g. 10"
-                  min="0"
-                  step="0.5"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-muted mb-1">Hours Limit (optional)</label>
-                <input
-                  type="number"
-                  value={hoursLimit}
-                  onChange={(e) => setHoursLimit(e.target.value)}
-                  placeholder="e.g. 20"
-                  min="0"
-                  step="0.5"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {milestoneType === "per_unit" && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm text-muted mb-1">Unit Name</label>
-                <input
-                  type="text"
-                  value={unitLabel}
-                  onChange={(e) => setUnitLabel(e.target.value)}
-                  placeholder="e.g. app, screen, widget"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-muted mb-1">Estimated Units (optional)</label>
-                <input
-                  type="number"
-                  value={estimatedUnits}
-                  onChange={(e) => setEstimatedUnits(e.target.value)}
-                  placeholder="e.g. 5"
-                  min="0"
-                  step="1"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-muted mb-1">Units Limit (optional)</label>
-                <input
-                  type="number"
-                  value={unitsLimit}
-                  onChange={(e) => setUnitsLimit(e.target.value)}
-                  placeholder="e.g. 10"
-                  min="0"
-                  step="1"
-                  className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm text-muted mb-1">Description (optional)</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of this milestone"
-              className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={!title.trim() || (milestoneType === "fixed" && !amount) || (milestoneType === "hourly" && !hourlyRate) || (milestoneType === "per_unit" && !unitRate)}
-              className="px-4 py-2 bg-accent text-background font-semibold rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
-            >
-              {editingId ? "Update" : "Add Milestone"}
-            </button>
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-4 py-2 border border-border rounded hover:border-muted transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <MilestoneForm
+          isEditing={!!editingId}
+          editingMilestone={editingMilestone}
+          onSubmit={handleFormSubmit}
+          onCancel={resetForm}
+        />
       )}
 
       <AlertDialog

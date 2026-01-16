@@ -156,3 +156,17 @@ export interface OrganizationWithProjects extends Organization {
   paidAmount: number;
   remainingAmount: number;
 }
+
+// Pagination types
+export interface PaginationParams {
+  limit?: number;  // default: 50
+  offset?: number; // default: 0
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
