@@ -211,14 +211,24 @@ export default async function PublicOrganizationPage({
           )}
 
           {/* Footer */}
-          <footer className="text-center pt-8 border-t border-border/50">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-muted hover:text-accent transition-colors text-xs"
-            >
-              <span>{"// powered by"}</span>
-              <span className="text-accent font-semibold">{"<codeforfood/>"}</span>
-            </Link>
+          <footer className="pt-8 border-t border-border/50">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-muted hover:text-accent transition-colors text-xs"
+              >
+                <span>{"// powered by"}</span>
+                <span className="text-accent font-semibold">{"<codeforfood/>"}</span>
+              </Link>
+              <div className="flex items-center gap-4 text-xs text-muted/50">
+                <Link href="/privacy" className="hover:text-muted transition-colors">
+                  Privacy
+                </Link>
+                <Link href="/terms" className="hover:text-muted transition-colors">
+                  Terms
+                </Link>
+              </div>
+            </div>
           </footer>
         </div>
       </div>

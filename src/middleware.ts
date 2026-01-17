@@ -19,11 +19,11 @@ export async function middleware(request: NextRequest) {
       response.headers.set(key, value);
     });
 
-    // Add HSTS header only in production
+    // Add HSTS header only in production (with preload for browser preload list)
     if (process.env.NODE_ENV === "production") {
       response.headers.set(
         "Strict-Transport-Security",
-        "max-age=31536000; includeSubDomains"
+        "max-age=31536000; includeSubDomains; preload"
       );
     }
   }

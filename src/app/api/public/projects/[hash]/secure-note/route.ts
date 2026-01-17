@@ -93,11 +93,9 @@ export async function POST(
     // Verify password using bcrypt
     const isValid = await verifyPassword(password, project.secure_note_password_hash);
     if (!isValid) {
+      // SECURITY: Do not return attemptsRemaining to prevent brute-force calibration
       return NextResponse.json(
-        {
-          error: "Invalid password",
-          attemptsRemaining: rateLimit.remaining_attempts,
-        },
+        { error: "Invalid password" },
         { status: 401 }
       );
     }

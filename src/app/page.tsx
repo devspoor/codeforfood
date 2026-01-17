@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Home() {
   const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || "https://my.codefor.food";
 
@@ -12,12 +14,17 @@ export default function Home() {
         <header className="w-full py-6 px-4">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="text-accent font-bold text-lg">{"<cff/>"}</div>
-            <a
-              href={`${adminUrl}/login`}
-              className="text-sm text-muted hover:text-foreground transition-colors"
-            >
-              Sign In
-            </a>
+            <div className="flex items-center gap-6 text-sm text-muted">
+              <Link href="/pricing" className="hover:text-foreground transition-colors">
+                Pricing
+              </Link>
+              <a
+                href={`${adminUrl}/login`}
+                className="hover:text-foreground transition-colors"
+              >
+                Sign In
+              </a>
+            </div>
           </div>
         </header>
 
@@ -213,9 +220,17 @@ export default function Home() {
         <footer className="border-t border-border py-8 px-4">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-accent font-bold">{"<codeforfood/>"}</div>
-            <p className="text-xs text-muted/50">
-              {"// hack the planet"}
-            </p>
+            <div className="flex items-center gap-4 text-xs text-muted/50">
+              <Link href="/pricing" className="hover:text-muted transition-colors">
+                Pricing
+              </Link>
+              <Link href="/privacy" className="hover:text-muted transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-muted transition-colors">
+                Terms
+              </Link>
+            </div>
             <div className="flex items-center gap-6 text-sm text-muted">
               <a href={`${adminUrl}/login`} className="hover:text-foreground transition-colors">
                 Sign In

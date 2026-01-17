@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getProjectByHash, getProjectSummary } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { PublicProjectContent } from "./PublicProjectContent";
+import { ProtectedProjectGate } from "./ProtectedProjectGate";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,14 @@ export async function generateMetadata({
   params: Promise<{ hash: string }>;
 }): Promise<Metadata> {
   const { hash } = await params;
-  const project = await getProjectByHash(hash);
+
+  // Only fetch minimal data for metadata (name only, no sensitive data)
+  const supabase = await createClient();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("hash", hash)
+    .single();
 
   if (!project) {
     return {
@@ -22,10 +30,10 @@ export async function generateMetadata({
 
   return {
     title: `${project.name} | codeforfood`,
-    description: project.description || `Project billing details for ${project.name}`,
+    description: `Project billing details for ${project.name}`,
     openGraph: {
       title: `${project.name} | codeforfood`,
-      description: project.description || `Project billing details for ${project.name}`,
+      description: `Project billing details for ${project.name}`,
       type: "website",
     },
   };
@@ -44,6 +52,34 @@ export default async function PublicProjectPage({
   params: Promise<{ hash: string }>;
 }) {
   const { hash } = await params;
+
+  // First, check if project exists and if it's password protected
+  // SECURITY: Only fetch minimal data to check protection status
+  const supabase = await createClient();
+  const { data: projectCheck } = await supabase
+    .from("projects")
+    .select("id, name, public_password_hash")
+    .eq("hash", hash)
+    .single();
+
+  if (!projectCheck) {
+    notFound();
+  }
+
+  const isProtected = !!projectCheck.public_password_hash;
+
+  // SECURITY: If password protected, do NOT load any project data
+  // Only show the password gate - data will be fetched client-side after unlock
+  if (isProtected) {
+    return (
+      <ProtectedProjectGate
+        hash={hash}
+        projectName={projectCheck.name}
+      />
+    );
+  }
+
+  // Only load full project data for unprotected projects
   const project = await getProjectByHash(hash);
 
   if (!project) {
@@ -51,7 +87,6 @@ export default async function PublicProjectPage({
   }
 
   // Get organization for payment methods
-  const supabase = await createClient();
   const { data: org } = await supabase
     .from("organizations")
     .select("*, payment_methods(*)")
@@ -60,22 +95,6 @@ export default async function PublicProjectPage({
 
   const summary = getProjectSummary(project);
   const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.in_progress;
-  // Check if project has password protection (any truthy value means protected)
-  const isProtected = !!project.public_password_hash;
-
-  // If password protected, render client component that handles unlock
-  if (isProtected) {
-    return (
-      <PublicProjectContent
-        hash={hash}
-        project={project}
-        org={org}
-        summary={summary}
-        statusInfo={statusInfo}
-        isProtected={true}
-      />
-    );
-  }
 
   return (
     <PublicProjectContent
@@ -84,7 +103,6 @@ export default async function PublicProjectPage({
       org={org}
       summary={summary}
       statusInfo={statusInfo}
-      isProtected={false}
     />
   );
 }

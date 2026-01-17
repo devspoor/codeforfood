@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
-import { ProjectPasswordUnlock } from "@/components/ProjectPasswordUnlock";
 
 // Helper functions moved outside component to avoid recreation
 const getMilestoneTotal = (m: Milestone) => {
@@ -38,7 +37,6 @@ interface Props {
   } | null;
   summary: ProjectSummary;
   statusInfo: { label: string; color: string };
-  isProtected: boolean;
 }
 
 const ATTACHMENT_ICONS: Record<string, { icon: string; color: string }> = {
@@ -56,24 +54,12 @@ const STATUS_STYLES: Record<string, string> = {
   on_hold: "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
-export function PublicProjectContent({ hash, project, org, summary, statusInfo, isProtected }: Props) {
-  const [unlocked, setUnlocked] = useState(!isProtected);
-
-  // Memoize sorted milestones - must be called before any conditional returns
+export function PublicProjectContent({ hash, project, org, summary, statusInfo }: Props) {
+  // Memoize sorted milestones
   const sortedMilestones = useMemo(() =>
     [...(project.milestones || [])].sort((a, b) => a.order - b.order),
     [project.milestones]
   );
-
-  if (!unlocked) {
-    return (
-      <ProjectPasswordUnlock
-        projectHash={hash}
-        projectName={project.name}
-        onUnlock={() => setUnlocked(true)}
-      />
-    );
-  }
 
   const hideAmounts = project.hide_amounts;
   const hidePaid = project.hide_paid;
@@ -505,15 +491,25 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo, 
           )}
 
           {/* Footer */}
-          <footer className="text-center pt-8 border-t border-border/50">
-            <p className="text-xs text-muted mb-2">Last updated: {formatDate(project.updated_at)}</p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-muted hover:text-accent transition-colors text-xs"
-            >
-              <span>{"// powered by"}</span>
-              <span className="text-accent font-semibold">{"<codeforfood/>"}</span>
-            </Link>
+          <footer className="pt-8 border-t border-border/50">
+            <p className="text-xs text-muted mb-4 text-center">Last updated: {formatDate(project.updated_at)}</p>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-muted hover:text-accent transition-colors text-xs"
+              >
+                <span>{"// powered by"}</span>
+                <span className="text-accent font-semibold">{"<codeforfood/>"}</span>
+              </Link>
+              <div className="flex items-center gap-4 text-xs text-muted/50">
+                <Link href="/privacy" className="hover:text-muted transition-colors">
+                  Privacy
+                </Link>
+                <Link href="/terms" className="hover:text-muted transition-colors">
+                  Terms
+                </Link>
+              </div>
+            </div>
           </footer>
         </div>
       </div>

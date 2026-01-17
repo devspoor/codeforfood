@@ -1,18 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PublicProjectContent } from "./PublicProjectContent";
+import type { Project, ProjectSummary } from "@/lib/types";
 
 interface Props {
-  projectHash: string;
+  hash: string;
   projectName: string;
-  onUnlock: () => void;
 }
 
-export function ProjectPasswordUnlock({ projectHash, projectName, onUnlock }: Props) {
+interface ProjectData {
+  project: Project;
+  org: {
+    hash: string;
+    name: string;
+    payment_methods?: Array<{ id: string; label: string; type: string; value: string }>;
+  } | null;
+  summary: ProjectSummary;
+  statusInfo: { label: string; color: string };
+}
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  in_progress: { label: "In Progress", color: "bg-blue-500/20 text-blue-400" },
+  awaiting_payment: { label: "Awaiting Payment", color: "bg-yellow-500/20 text-yellow-400" },
+  completed: { label: "Completed", color: "bg-success/20 text-success" },
+  on_hold: { label: "On Hold", color: "bg-gray-500/20 text-gray-400" },
+};
+
+export function ProtectedProjectGate({ hash, projectName }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
+  const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
   // Clear retryAfter after the specified time
   useEffect(() => {
@@ -34,24 +54,50 @@ export function ProjectPasswordUnlock({ projectHash, projectName, onUnlock }: Pr
     setError("");
 
     try {
-      const res = await fetch(`/api/public/projects/${projectHash}/verify-password`, {
+      // Step 1: Verify password
+      const verifyRes = await fetch(`/api/public/projects/${hash}/verify-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: password.trim() }),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        onUnlock();
-      } else if (res.status === 429) {
+      if (verifyRes.status === 429) {
+        const data = await verifyRes.json();
         setRetryAfter(data.retryAfter);
         setError(`Too many attempts. Try again in ${Math.ceil(data.retryAfter / 60)} minutes.`);
-      } else {
-        const remaining = data.attemptsRemaining ?? 0;
-        setError(remaining > 0 ? `Incorrect password. ${remaining} attempts remaining.` : "Incorrect password");
-        setPassword("");
+        setLoading(false);
+        return;
       }
+
+      if (!verifyRes.ok) {
+        setError("Incorrect password");
+        setPassword("");
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Password verified - fetch project data
+      const dataRes = await fetch(`/api/public/projects/${hash}/data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: password.trim() }),
+      });
+
+      if (!dataRes.ok) {
+        setError("Failed to load project data");
+        setLoading(false);
+        return;
+      }
+
+      const data = await dataRes.json();
+      const statusInfo = STATUS_LABELS[data.project.status] || STATUS_LABELS.in_progress;
+
+      setProjectData({
+        project: data.project,
+        org: data.org,
+        summary: data.summary,
+        statusInfo,
+      });
     } catch {
       setError("An error occurred. Please try again.");
     } finally {
@@ -59,6 +105,20 @@ export function ProjectPasswordUnlock({ projectHash, projectName, onUnlock }: Pr
     }
   };
 
+  // If unlocked, show the full content
+  if (projectData) {
+    return (
+      <PublicProjectContent
+        hash={hash}
+        project={projectData.project}
+        org={projectData.org}
+        summary={projectData.summary}
+        statusInfo={projectData.statusInfo}
+      />
+    );
+  }
+
+  // Show password form
   return (
     <div className="min-h-screen flex items-center justify-center py-8 px-4">
       <div className="max-w-md w-full">

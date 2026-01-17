@@ -168,13 +168,26 @@ export function validatePassword(password: string): { valid: boolean; error?: st
     return { valid: false, error: "Password must contain at least one number" };
   }
 
-  // Check for common weak passwords
+  // Check for common weak passwords (12+ characters to match minimum length requirement)
   const weakPasswords = [
-    "password", "12345678", "qwerty12", "abc12345", "password1",
-    "iloveyou", "sunshine", "princess", "football", "baseball"
+    "password1234",
+    "password12345",
+    "123456789012",
+    "qwerty123456",
+    "abcdefgh1234",
+    "iloveyou1234",
+    "administrator1",
+    "letmein123456",
+    "welcome123456",
+    "changeme12345",
   ];
   if (weakPasswords.includes(password.toLowerCase())) {
     return { valid: false, error: "This password is too common. Please choose a stronger password" };
+  }
+
+  // Check for sequential/repeated patterns
+  if (/^(.)\1+$/.test(password) || /^(012|123|234|345|456|567|678|789|890)+/.test(password)) {
+    return { valid: false, error: "Password contains predictable patterns" };
   }
 
   return { valid: true };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -20,7 +21,8 @@ export function LoginForm() {
     });
 
     if (error) {
-      setError(error.message);
+      // SECURITY: Don't expose internal Supabase error messages
+      setError("Unable to sign in. Please try again.");
       setLoading(null);
     }
   };
@@ -129,7 +131,15 @@ export function LoginForm() {
 
           {/* Info */}
           <p className="text-xs text-muted/70 text-center">
-            By signing in, you agree to our terms of service and privacy policy.
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="text-muted hover:text-foreground transition-colors underline">
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-muted hover:text-foreground transition-colors underline">
+              Privacy Policy
+            </Link>
+            .
           </p>
         </div>
 
