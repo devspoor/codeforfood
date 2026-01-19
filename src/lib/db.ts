@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import type { User } from "@supabase/supabase-js";
-import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "./types";
+import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense, TaskColumn, Task, TaskBoardData, TaskPriority } from "./types";
 import { normalizeProjectData } from "./db/normalize";
 import { roundCurrency, calculateAmount, sumCurrency, calculatePercent } from "./format";
 
@@ -1169,4 +1169,399 @@ export async function verifyOperatingExpenseOwnership(expenseId: string, existin
   if (!expense) return null;
 
   return expense;
+}
+
+// ============================================
+// Task Columns
+// ============================================
+
+const DEFAULT_COLUMNS = [
+  { name: "To Do", position: 0, is_system: true, is_done_column: false },
+  { name: "In Progress", position: 1, is_system: true, is_done_column: false },
+  { name: "Done", position: 2, is_system: true, is_done_column: true },
+];
+
+export async function createDefaultTaskColumns(projectId: string): Promise<TaskColumn[]> {
+  const supabase = await createClient();
+
+  const columnsToInsert = DEFAULT_COLUMNS.map((col) => ({
+    project_id: projectId,
+    ...col,
+  }));
+
+  const { data, error } = await supabase
+    .from("task_columns")
+    .insert(columnsToInsert)
+    .select();
+
+  if (error) {
+    console.error("Error creating default columns:", error.message);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getTaskColumns(projectId: string): Promise<TaskColumn[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("task_columns")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching task columns:", error.message);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addTaskColumn(projectId: string, data: { name: string }): Promise<TaskColumn | null> {
+  const supabase = await createClient();
+
+  // Get max position (excluding done column)
+  const { data: existing } = await supabase
+    .from("task_columns")
+    .select("position")
+    .eq("project_id", projectId)
+    .eq("is_done_column", false)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  // Move done column to the right
+  await supabase
+    .from("task_columns")
+    .update({ position: nextPosition + 1 })
+    .eq("project_id", projectId)
+    .eq("is_done_column", true);
+
+  const { data: column, error } = await supabase
+    .from("task_columns")
+    .insert({
+      project_id: projectId,
+      name: data.name,
+      position: nextPosition,
+      is_system: false,
+      is_done_column: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating task column:", error.message);
+    return null;
+  }
+
+  return column;
+}
+
+export async function updateTaskColumn(columnId: string, data: { name?: string; position?: number }): Promise<TaskColumn | null> {
+  const supabase = await createClient();
+
+  const { data: column, error } = await supabase
+    .from("task_columns")
+    .update(data)
+    .eq("id", columnId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating task column:", error.message);
+    return null;
+  }
+
+  return column;
+}
+
+export async function deleteTaskColumn(columnId: string, projectId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Get first column (To Do) to move tasks to
+  const { data: columns } = await supabase
+    .from("task_columns")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("is_system", true)
+    .eq("is_done_column", false)
+    .order("position", { ascending: true })
+    .limit(1);
+
+  if (!columns || columns.length === 0) {
+    console.error("No default column found");
+    return false;
+  }
+
+  const defaultColumnId = columns[0].id;
+
+  // Move tasks to default column
+  await supabase
+    .from("tasks")
+    .update({ column_id: defaultColumnId })
+    .eq("column_id", columnId);
+
+  // Delete the column
+  const { error } = await supabase
+    .from("task_columns")
+    .delete()
+    .eq("id", columnId)
+    .eq("is_system", false); // Can't delete system columns
+
+  if (error) {
+    console.error("Error deleting task column:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function reorderTaskColumns(projectId: string, columnIds: string[]): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Update positions based on array order
+  const updates = columnIds.map((id, index) =>
+    supabase
+      .from("task_columns")
+      .update({ position: index })
+      .eq("id", id)
+      .eq("project_id", projectId)
+  );
+
+  const results = await Promise.all(updates);
+  const hasError = results.some((r) => r.error);
+
+  if (hasError) {
+    console.error("Error reordering columns");
+    return false;
+  }
+
+  return true;
+}
+
+export async function verifyTaskColumnOwnership(columnId: string, existingUser?: User | null): Promise<TaskColumn | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: column } = await supabase
+    .from("task_columns")
+    .select("*, projects!inner(organization_id, organizations!inner(user_id))")
+    .eq("id", columnId)
+    .eq("projects.organizations.user_id", user.id)
+    .single();
+
+  if (!column) return null;
+  return column;
+}
+
+// ============================================
+// Tasks
+// ============================================
+
+export async function getTaskBoardData(projectId: string): Promise<TaskBoardData> {
+  const supabase = await createClient();
+
+  const [columnsResult, tasksResult] = await Promise.all([
+    supabase
+      .from("task_columns")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("position", { ascending: true }),
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("project_id", projectId)
+      .eq("is_archived", false)
+      .order("position", { ascending: true }),
+  ]);
+
+  return {
+    columns: columnsResult.data || [],
+    tasks: tasksResult.data || [],
+  };
+}
+
+export async function getTasks(projectId: string, includeArchived = false): Promise<Task[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("tasks")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("position", { ascending: true });
+
+  if (!includeArchived) {
+    query = query.eq("is_archived", false);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching tasks:", error.message);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addTask(projectId: string, columnId: string, data: {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  deadline?: string;
+  milestone_id?: string;
+}): Promise<Task | null> {
+  const supabase = await createClient();
+
+  // Get max position in column
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("position")
+    .eq("column_id", columnId)
+    .eq("is_archived", false)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { data: task, error } = await supabase
+    .from("tasks")
+    .insert({
+      project_id: projectId,
+      column_id: columnId,
+      title: data.title,
+      description: data.description || null,
+      priority: data.priority || "medium",
+      deadline: data.deadline || null,
+      milestone_id: data.milestone_id || null,
+      position: nextPosition,
+      is_archived: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating task:", error.message);
+    return null;
+  }
+
+  return task;
+}
+
+export async function updateTask(taskId: string, data: Partial<{
+  title: string;
+  description: string | null;
+  priority: TaskPriority;
+  deadline: string | null;
+  milestone_id: string | null;
+  column_id: string;
+  position: number;
+  is_archived: boolean;
+}>): Promise<Task | null> {
+  const supabase = await createClient();
+
+  const { data: task, error } = await supabase
+    .from("tasks")
+    .update({ ...data, updated_at: new Date().toISOString() })
+    .eq("id", taskId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating task:", error.message);
+    return null;
+  }
+
+  return task;
+}
+
+export async function moveTask(taskId: string, columnId: string, position: number): Promise<Task | null> {
+  const supabase = await createClient();
+
+  const { data: task, error } = await supabase
+    .from("tasks")
+    .update({
+      column_id: columnId,
+      position: position,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", taskId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error moving task:", error.message);
+    return null;
+  }
+
+  return task;
+}
+
+export async function deleteTask(taskId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("id", taskId);
+
+  if (error) {
+    console.error("Error deleting task:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function archiveTask(taskId: string): Promise<Task | null> {
+  return updateTask(taskId, { is_archived: true });
+}
+
+export async function restoreTask(taskId: string): Promise<Task | null> {
+  return updateTask(taskId, { is_archived: false });
+}
+
+export async function verifyTaskOwnership(taskId: string, existingUser?: User | null): Promise<Task | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("*, projects!inner(organization_id, organizations!inner(user_id))")
+    .eq("id", taskId)
+    .eq("projects.organizations.user_id", user.id)
+    .single();
+
+  if (!task) return null;
+  return task;
+}
+
+export async function getUpcomingDeadlines(days = 7): Promise<Task[]> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  const future = new Date();
+  future.setDate(future.getDate() + days);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*, projects!inner(name, organization_id, organizations!inner(user_id))")
+    .eq("projects.organizations.user_id", user.id)
+    .eq("is_archived", false)
+    .not("deadline", "is", null)
+    .lte("deadline", future.toISOString())
+    .order("deadline", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching upcoming deadlines:", error.message);
+    return [];
+  }
+
+  return data || [];
 }
