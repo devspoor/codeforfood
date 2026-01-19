@@ -102,6 +102,7 @@ export interface Project {
   operating_expenses?: OperatingExpense[];
   secure_note_encrypted?: string | null;
   secure_note_password_hash?: string | null;
+  tasks_board_public?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -169,4 +170,37 @@ export interface PaginatedResult<T> {
   limit: number;
   offset: number;
   hasMore: boolean;
+}
+
+// Task board types
+export type TaskPriority = "low" | "medium" | "high";
+
+export interface TaskColumn {
+  id: string;
+  project_id: string;
+  name: string;
+  position: number;
+  is_system: boolean;
+  is_done_column: boolean;
+  created_at: string;
+}
+
+export interface Task {
+  id: string;
+  project_id: string;
+  milestone_id?: string | null;
+  column_id: string;
+  title: string;
+  description?: string | null;
+  priority: TaskPriority;
+  deadline?: string | null;
+  position: number;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskBoardData {
+  columns: TaskColumn[];
+  tasks: Task[];
 }
