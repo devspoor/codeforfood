@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getProjectById, getOrganizationById, getProjectSummary } from "@/lib/db";
+import { getProjectById, getOrganizationById, getProjectSummary, getTaskBoardData, createDefaultTaskColumns } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ProjectActions } from "@/components/ProjectActions";
 import { MilestonesEditor } from "@/components/MilestonesEditor";
@@ -9,6 +9,7 @@ import { CommentsEditor } from "@/components/CommentsEditor";
 import { AttachmentsEditor } from "@/components/AttachmentsEditor";
 import { ProjectSettingsEditor } from "@/components/ProjectSettingsEditor";
 import { OperatingExpensesEditor } from "@/components/OperatingExpensesEditor";
+import { TaskBoard } from "@/components/tasks/TaskBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,13 @@ export default async function ProjectDetailPage({
 
   const org = await getOrganizationById(project.organization_id);
   const summary = getProjectSummary(project);
+
+  // Fetch or initialize task board
+  let taskBoardData = await getTaskBoardData(project.id);
+  if (taskBoardData.columns.length === 0) {
+    await createDefaultTaskColumns(project.id);
+    taskBoardData = await getTaskBoardData(project.id);
+  }
   const publicUrl = `/p/${project.hash}`;
   const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.in_progress;
 
@@ -141,6 +149,25 @@ export default async function ProjectDetailPage({
           <div>
             <h2 className="text-lg font-semibold mb-4">Milestones</h2>
             <MilestonesEditor projectId={project.id} milestones={project.milestones || []} />
+          </div>
+
+          {/* Task Board */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Tasks</h2>
+              <Link
+                href={`/admin/projects/${project.id}/tasks`}
+                className="text-sm text-accent hover:text-accent-hover transition-colors"
+              >
+                Full Screen →
+              </Link>
+            </div>
+            <TaskBoard
+              projectId={project.id}
+              columns={taskBoardData.columns}
+              tasks={taskBoardData.tasks.filter(t => !t.is_archived)}
+              milestones={project.milestones || []}
+            />
           </div>
 
           {/* Operating Expenses */}

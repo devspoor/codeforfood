@@ -11,7 +11,7 @@ export async function PATCH(
   }
 
   try {
-    const { id, columnId } = await params;
+    const { columnId } = await params;
     const column = await verifyTaskColumnOwnership(columnId, user);
     if (!column) {
       return NextResponse.json({ error: "Column not found" }, { status: 404 });

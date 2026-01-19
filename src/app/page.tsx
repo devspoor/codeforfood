@@ -145,7 +145,7 @@ export default function Home() {
                     One link — everything your client needs
                   </h3>
                   <p className="text-muted text-pretty">
-                    Your client opens the project page and sees: what's done, what's in progress,
+                    Your client opens the project page and sees: what&apos;s done, what&apos;s in progress,
                     how much is paid, and where to send money. No questions needed.
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export default function Home() {
                 </h3>
                 <p className="text-muted mb-6 text-pretty">
                   Milestone progress, logged hours, amount paid and remaining — all updated live.
-                  Client doesn't need an account, just opens the link.
+                  Client doesn&apos;t need an account, just opens the link.
                 </p>
                 <ul className="space-y-3 text-sm">
                   {["No client signup required", "Optional: hide amounts", "Password protection available"].map((item, i) => (
@@ -307,7 +307,7 @@ export default function Home() {
                 </div>
                 <h3 className="font-bold text-lg mb-2">Fixed Price</h3>
                 <p className="text-sm text-muted mb-4 text-pretty">
-                  Set a fixed amount for a deliverable. "Homepage design — $1,500". Track partial payments if the client pays in installments.
+                  Set a fixed amount for a deliverable. &quot;Homepage design — $1,500&quot;. Track partial payments if the client pays in installments.
                 </p>
                 <div className="bg-background/50 rounded-lg p-4 text-sm">
                   <div className="flex justify-between mb-2">
@@ -353,7 +353,7 @@ export default function Home() {
                 </div>
                 <h3 className="font-bold text-lg mb-2">Per Unit</h3>
                 <p className="text-sm text-muted mb-4 text-pretty">
-                  Charge per item: "$50 per blog post", "$200 per landing page". Log each unit with a label. Great for content and batch work.
+                  Charge per item: &quot;$50 per blog post&quot;, &quot;$200 per landing page&quot;. Log each unit with a label. Great for content and batch work.
                 </p>
                 <div className="bg-background/50 rounded-lg p-4 text-sm">
                   <div className="flex justify-between mb-2">
@@ -427,7 +427,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Payment history</h3>
-                      <p className="text-sm text-muted">Timeline of all payments received with dates and amounts. Client sees exactly what's been paid.</p>
+                      <p className="text-sm text-muted">Timeline of all payments received with dates and amounts. Client sees exactly what&apos;s been paid.</p>
                     </div>
                   </div>
                 </div>
@@ -474,7 +474,7 @@ export default function Home() {
 
               <div className="order-1 lg:order-2">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-balance">
-                  You control what's visible
+                  You control what&apos;s visible
                 </h2>
                 <p className="text-muted mb-8 text-pretty">
                   Not every client needs to see every detail. Toggle visibility settings per project.
@@ -557,7 +557,7 @@ export default function Home() {
                     <span className="text-sm font-medium">Private Note</span>
                   </div>
                   <div className="space-y-2 text-sm text-muted font-mono">
-                    <p>Client's AWS credentials:</p>
+                    <p>Client&apos;s AWS credentials:</p>
                     <p className="text-muted/50">••••••••••••••••••••</p>
                     <p className="mt-4">Actual cost breakdown:</p>
                     <p className="text-muted/50">••••••••••••••••••••</p>
