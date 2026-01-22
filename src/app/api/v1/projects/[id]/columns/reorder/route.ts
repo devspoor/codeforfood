@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser, verifyProjectOwnership, reorderTaskColumns } from "@/lib/db";
+import { getCurrentUser, verifyProjectOwnership, getTaskColumns, reorderTaskColumns } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
@@ -22,6 +22,19 @@ export async function POST(
 
     if (!Array.isArray(columnIds) || columnIds.length === 0) {
       return NextResponse.json({ error: "columnIds array required" }, { status: 400 });
+    }
+
+    // Validate all columnIds are strings
+    if (!columnIds.every((id) => typeof id === "string")) {
+      return NextResponse.json({ error: "Invalid columnIds" }, { status: 400 });
+    }
+
+    // Verify all columns belong to this project
+    const projectColumns = await getTaskColumns(id);
+    const projectColumnIds = new Set(projectColumns.map((c) => c.id));
+    const invalidIds = columnIds.filter((cid) => !projectColumnIds.has(cid));
+    if (invalidIds.length > 0) {
+      return NextResponse.json({ error: "Invalid column IDs" }, { status: 400 });
     }
 
     const success = await reorderTaskColumns(id, columnIds);

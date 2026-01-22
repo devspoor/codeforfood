@@ -5,26 +5,31 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const project = await verifyProjectOwnership(id, user);
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    let boardData = await getTaskBoardData(id);
+
+    // Create default columns if none exist
+    if (boardData.columns.length === 0) {
+      await createDefaultTaskColumns(id);
+      boardData = await getTaskBoardData(id);
+    }
+
+    return NextResponse.json(boardData);
+  } catch (error) {
+    console.error("[GET /tasks] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const { id } = await params;
-  const project = await verifyProjectOwnership(id, user);
-  if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  let boardData = await getTaskBoardData(id);
-
-  // Create default columns if none exist
-  if (boardData.columns.length === 0) {
-    await createDefaultTaskColumns(id);
-    boardData = await getTaskBoardData(id);
-  }
-
-  return NextResponse.json(boardData);
 }
 
 export async function POST(
@@ -61,7 +66,15 @@ export async function POST(
     }
 
     // Use provided column_id or default to first column
-    const targetColumnId = column_id || columns[0]?.id;
+    let targetColumnId = columns[0]?.id;
+    if (column_id) {
+      // Verify provided column_id belongs to this project
+      const columnExists = columns.some((c) => c.id === column_id);
+      if (!columnExists) {
+        return NextResponse.json({ error: "Column not found in this project" }, { status: 400 });
+      }
+      targetColumnId = column_id;
+    }
     if (!targetColumnId) {
       return NextResponse.json({ error: "No column available" }, { status: 500 });
     }

@@ -5,19 +5,24 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { id } = await params;
-  const project = await verifyProjectOwnership(id, user);
-  if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
+    const { id } = await params;
+    const project = await verifyProjectOwnership(id, user);
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
 
-  const columns = await getTaskColumns(id);
-  return NextResponse.json(columns);
+    const columns = await getTaskColumns(id);
+    return NextResponse.json(columns);
+  } catch (error) {
+    console.error("[GET /columns] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(

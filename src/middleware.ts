@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 // Security headers to add to all responses
@@ -10,25 +10,39 @@ const securityHeaders = {
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 };
 
-export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
 
-  // Add security headers to the response
-  if (response) {
-    Object.entries(securityHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
-    // Add HSTS header only in production (with preload for browser preload list)
-    if (process.env.NODE_ENV === "production") {
-      response.headers.set(
-        "Strict-Transport-Security",
-        "max-age=31536000; includeSubDomains; preload"
-      );
-    }
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=31536000; includeSubDomains; preload"
+    );
   }
 
   return response;
+}
+
+export async function middleware(request: NextRequest) {
+  try {
+    const response = await updateSession(request);
+
+    if (response) {
+      return addSecurityHeaders(response);
+    }
+
+    // Fallback response if updateSession returns null
+    return addSecurityHeaders(NextResponse.next());
+  } catch (error) {
+    // Log error but don't crash - allow request to continue
+    console.error("[Middleware] Error in updateSession:", error);
+
+    // Return a basic response with security headers
+    // The request will proceed but without auth session
+    return addSecurityHeaders(NextResponse.next());
+  }
 }
 
 export const config = {

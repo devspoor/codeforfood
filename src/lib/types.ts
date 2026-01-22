@@ -185,6 +185,37 @@ export interface TaskColumn {
   created_at: string;
 }
 
+export interface TaskChecklistItem {
+  id: string;
+  checklist_id: string;
+  text: string;
+  is_completed: boolean;
+  position: number;
+  created_at: string;
+}
+
+export interface TaskChecklist {
+  id: string;
+  task_id: string;
+  name: string;
+  position: number;
+  created_at: string;
+  items?: TaskChecklistItem[];
+}
+
+export type TaskAttachmentType = "link" | "file";
+
+export interface TaskAttachment {
+  id: string;
+  task_id: string;
+  type: TaskAttachmentType;
+  name: string;
+  url: string;
+  file_size?: number | null;
+  mime_type?: string | null;
+  created_at: string;
+}
+
 export interface Task {
   id: string;
   project_id: string;
@@ -198,6 +229,8 @@ export interface Task {
   is_archived: boolean;
   created_at: string;
   updated_at: string;
+  checklists?: TaskChecklist[];
+  attachments?: TaskAttachment[];
 }
 
 export interface TaskBoardData {

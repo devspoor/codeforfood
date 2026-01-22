@@ -38,6 +38,17 @@ export function TaskCard({ task, milestones = [], onClick }: TaskCardProps) {
   const isToday = task.deadline && isSameDay(new Date(task.deadline), new Date());
   const isTomorrow = task.deadline && isSameDay(new Date(task.deadline), addDays(new Date(), 1));
 
+  // Checklist stats
+  const checklists = task.checklists || [];
+  const totalItems = checklists.reduce((sum, c) => sum + (c.items?.length || 0), 0);
+  const completedItems = checklists.reduce(
+    (sum, c) => sum + (c.items?.filter(i => i.is_completed).length || 0),
+    0
+  );
+
+  // Attachment count
+  const attachmentCount = task.attachments?.length || 0;
+
   function isSameDay(d1: Date, d2: Date) {
     return d1.toDateString() === d2.toDateString();
   }
@@ -70,6 +81,31 @@ export function TaskCard({ task, milestones = [], onClick }: TaskCardProps) {
       <p className="text-sm font-medium line-clamp-2">{task.title}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+        {/* Checklist indicator */}
+        {totalItems > 0 && (
+          <span
+            className={`flex items-center gap-1 ${
+              completedItems === totalItems ? "text-success" : ""
+            }`}
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            {completedItems}/{totalItems}
+          </span>
+        )}
+
+        {/* Attachment indicator */}
+        {attachmentCount > 0 && (
+          <span className="flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+            {attachmentCount}
+          </span>
+        )}
+
+        {/* Deadline */}
         {task.deadline && (
           <span
             className={`
@@ -82,8 +118,9 @@ export function TaskCard({ task, milestones = [], onClick }: TaskCardProps) {
           </span>
         )}
 
+        {/* Milestone */}
         {milestone && (
-          <span className="text-muted truncate max-w-[120px]">
+          <span className="text-muted truncate max-w-[100px]">
             {milestone.title}
           </span>
         )}

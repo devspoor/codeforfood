@@ -10,6 +10,7 @@ interface Props {
   hidePaid: boolean;
   showPaymentHistory: boolean;
   showExpenses: boolean;
+  showTasksBoard: boolean;
   hasPassword: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ProjectSettingsEditor({
   hidePaid: initialHidePaid,
   showPaymentHistory: initialShowPaymentHistory,
   showExpenses: initialShowExpenses,
+  showTasksBoard: initialShowTasksBoard,
   hasPassword: initialHasPassword,
 }: Props) {
   const [status, setStatus] = useState(initialStatus);
@@ -34,6 +36,7 @@ export function ProjectSettingsEditor({
   const [hidePaid, setHidePaid] = useState(initialHidePaid);
   const [showPaymentHistory, setShowPaymentHistory] = useState(initialShowPaymentHistory);
   const [showExpenses, setShowExpenses] = useState(initialShowExpenses);
+  const [showTasksBoard, setShowTasksBoard] = useState(initialShowTasksBoard);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState("");
@@ -54,13 +57,14 @@ export function ProjectSettingsEditor({
     }
   };
 
-  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses", value: boolean) => {
+  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public", value: boolean) => {
     // Optimistic update
-    const previousValues = { hideAmounts, hidePaid, showPaymentHistory, showExpenses };
+    const previousValues = { hideAmounts, hidePaid, showPaymentHistory, showExpenses, showTasksBoard };
     if (field === "hide_amounts") setHideAmounts(value);
     if (field === "hide_paid") setHidePaid(value);
     if (field === "show_payment_history") setShowPaymentHistory(value);
     if (field === "show_expenses") setShowExpenses(value);
+    if (field === "tasks_board_public") setShowTasksBoard(value);
 
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
@@ -73,6 +77,7 @@ export function ProjectSettingsEditor({
       setHidePaid(previousValues.hidePaid);
       setShowPaymentHistory(previousValues.showPaymentHistory);
       setShowExpenses(previousValues.showExpenses);
+      setShowTasksBoard(previousValues.showTasksBoard);
     }
   };
 
@@ -180,6 +185,18 @@ export function ProjectSettingsEditor({
             <div>
               <span className="text-sm">Show operating expenses</span>
               <p className="text-xs text-muted">Show project expenses on public page</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showTasksBoard}
+              onChange={(e) => handleVisibilityChange("tasks_board_public", e.target.checked)}
+              className="w-4 h-4 rounded border-border bg-background accent-accent"
+            />
+            <div>
+              <span className="text-sm">Show tasks board</span>
+              <p className="text-xs text-muted">Display task board on public page (read-only)</p>
             </div>
           </label>
         </div>

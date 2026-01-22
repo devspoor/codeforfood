@@ -6,6 +6,7 @@ import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment
 import { formatCurrency, formatDate } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
+import { PublicTaskBoard } from "@/components/tasks/PublicTaskBoard";
 
 // Helper functions moved outside component to avoid recreation
 const getMilestoneTotal = (m: Milestone) => {
@@ -75,7 +76,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
 
       {/* Content */}
       <div className="relative z-10 py-8 px-4">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">
             <div className="inline-block mb-4">
@@ -161,6 +162,19 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Tasks Board */}
+          {project.tasks_board_public && (
+            <div className="mb-10">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                Tasks
+              </h2>
+              <PublicTaskBoard hash={hash} />
             </div>
           )}
 

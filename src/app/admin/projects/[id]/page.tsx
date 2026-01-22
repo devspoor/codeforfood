@@ -207,6 +207,7 @@ export default async function ProjectDetailPage({
               hidePaid={project.hide_paid}
               showPaymentHistory={project.show_payment_history}
               showExpenses={project.show_expenses}
+              showTasksBoard={project.tasks_board_public || false}
               hasPassword={!!project.public_password_hash}
             />
           </div>

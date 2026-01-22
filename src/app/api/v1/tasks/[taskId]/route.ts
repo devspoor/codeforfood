@@ -5,12 +5,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { taskId } = await params;
     const task = await verifyTaskOwnership(taskId, user);
     if (!task) {
@@ -66,21 +66,26 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const { taskId } = await params;
-  const task = await verifyTaskOwnership(taskId, user);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found" }, { status: 404 });
-  }
+    const { taskId } = await params;
+    const task = await verifyTaskOwnership(taskId, user);
+    if (!task) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
 
-  const deleted = await deleteTask(taskId);
-  if (!deleted) {
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
-  }
+    const deleted = await deleteTask(taskId);
+    if (!deleted) {
+      return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    }
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[DELETE /tasks] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }

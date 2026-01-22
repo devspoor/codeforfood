@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getOrganizations, getProjects, getProjectSummary } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import type { Project, ProjectStatus } from "@/lib/types";
+import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 
 export const dynamic = "force-dynamic";
 
@@ -193,23 +194,31 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Status Breakdown */}
-      {projects.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Projects by Status</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([status, config]) => (
-              <div
-                key={status}
-                className={`border rounded-xl p-4 ${config.bgColor}`}
-              >
-                <p className={`text-sm mb-1 ${config.color}`}>{config.label}</p>
-                <p className="text-2xl font-bold">{statusCounts[status] || 0}</p>
-              </div>
-            ))}
+      {/* Status Breakdown + Upcoming Deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Status Breakdown */}
+        {projects.length > 0 && (
+          <div className="lg:col-span-2">
+            <h2 className="text-lg font-semibold mb-4">Projects by Status</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([status, config]) => (
+                <div
+                  key={status}
+                  className={`border rounded-xl p-4 ${config.bgColor}`}
+                >
+                  <p className={`text-sm mb-1 ${config.color}`}>{config.label}</p>
+                  <p className="text-2xl font-bold">{statusCounts[status] || 0}</p>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Upcoming Deadlines Widget */}
+        <div className="lg:col-span-1">
+          <UpcomingDeadlines />
         </div>
-      )}
+      </div>
 
       {/* Recent Projects */}
       <div>

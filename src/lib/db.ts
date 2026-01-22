@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import type { User } from "@supabase/supabase-js";
-import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense, TaskColumn, Task, TaskBoardData, TaskPriority } from "./types";
+import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense, TaskColumn, Task, TaskBoardData, TaskPriority, TaskChecklist, TaskChecklistItem, TaskAttachment, TaskAttachmentType } from "./types";
 import { normalizeProjectData } from "./db/normalize";
 import { roundCurrency, calculateAmount, sumCurrency, calculatePercent } from "./format";
 
@@ -454,10 +454,13 @@ export async function createProject(data: { organizationId: string; name: string
     return null;
   }
 
+  // Create default task columns for new project
+  await createDefaultTaskColumns(project.id);
+
   return { ...project, milestones: [] };
 }
 
-export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses">>): Promise<Project | null> {
+export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public">>): Promise<Project | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return null;
@@ -1320,26 +1323,31 @@ export async function deleteTaskColumn(columnId: string, projectId: string): Pro
 }
 
 export async function reorderTaskColumns(projectId: string, columnIds: string[]): Promise<boolean> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Update positions based on array order
-  const updates = columnIds.map((id, index) =>
-    supabase
-      .from("task_columns")
-      .update({ position: index })
-      .eq("id", id)
-      .eq("project_id", projectId)
-  );
+    // Update positions based on array order
+    const updates = columnIds.map((id, index) =>
+      supabase
+        .from("task_columns")
+        .update({ position: index })
+        .eq("id", id)
+        .eq("project_id", projectId)
+    );
 
-  const results = await Promise.all(updates);
-  const hasError = results.some((r) => r.error);
+    const results = await Promise.all(updates);
+    const hasError = results.some((r) => r.error);
 
-  if (hasError) {
-    console.error("Error reordering columns");
+    if (hasError) {
+      console.error("Error reordering columns");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error in reorderTaskColumns:", error);
     return false;
   }
-
-  return true;
 }
 
 export async function verifyTaskColumnOwnership(columnId: string, existingUser?: User | null): Promise<TaskColumn | null> {
@@ -1362,8 +1370,19 @@ export async function verifyTaskColumnOwnership(columnId: string, existingUser?:
 // Tasks
 // ============================================
 
-export async function getTaskBoardData(projectId: string): Promise<TaskBoardData> {
+export async function getTaskBoardData(projectId: string, includeArchived = true): Promise<TaskBoardData> {
   const supabase = await createClient();
+
+  // First fetch columns and tasks
+  let tasksQuery = supabase
+    .from("tasks")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("position", { ascending: true });
+
+  if (!includeArchived) {
+    tasksQuery = tasksQuery.eq("is_archived", false);
+  }
 
   const [columnsResult, tasksResult] = await Promise.all([
     supabase
@@ -1371,17 +1390,51 @@ export async function getTaskBoardData(projectId: string): Promise<TaskBoardData
       .select("*")
       .eq("project_id", projectId)
       .order("position", { ascending: true }),
-    supabase
-      .from("tasks")
-      .select("*")
-      .eq("project_id", projectId)
-      .eq("is_archived", false)
-      .order("position", { ascending: true }),
+    tasksQuery,
   ]);
+
+  const tasks = tasksResult.data || [];
+  const taskIds = tasks.map(t => t.id);
+
+  if (taskIds.length === 0) {
+    return {
+      columns: columnsResult.data || [],
+      tasks: [],
+    };
+  }
+
+  // Fetch checklists with items and attachments for all tasks
+  const [checklistsResult, attachmentsResult] = await Promise.all([
+    supabase
+      .from("task_checklists")
+      .select("*, items:task_checklist_items(*)")
+      .in("task_id", taskIds)
+      .order("position", { ascending: true }),
+    supabase
+      .from("task_attachments")
+      .select("*")
+      .in("task_id", taskIds)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const checklists = checklistsResult.data || [];
+  const attachments = attachmentsResult.data || [];
+
+  // Merge checklists and attachments into tasks
+  const tasksWithData = tasks.map(task => ({
+    ...task,
+    checklists: checklists
+      .filter(c => c.task_id === task.id)
+      .map(c => ({
+        ...c,
+        items: (c.items || []).sort((a: TaskChecklistItem, b: TaskChecklistItem) => (a.position ?? 0) - (b.position ?? 0)),
+      })),
+    attachments: attachments.filter(a => a.task_id === task.id),
+  }));
 
   return {
     columns: columnsResult.data || [],
-    tasks: tasksResult.data || [],
+    tasks: tasksWithData,
   };
 }
 
@@ -1564,4 +1617,279 @@ export async function getUpcomingDeadlines(days = 7): Promise<Task[]> {
   }
 
   return data || [];
+}
+
+// ============================================
+// Task Checklists
+// ============================================
+
+export async function getTaskChecklists(taskId: string): Promise<TaskChecklist[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("task_checklists")
+    .select("*, items:task_checklist_items(*)")
+    .eq("task_id", taskId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching task checklists:", error.message);
+    return [];
+  }
+
+  // Sort items within each checklist
+  return (data || []).map(checklist => ({
+    ...checklist,
+    items: (checklist.items || []).sort((a: TaskChecklistItem, b: TaskChecklistItem) => a.position - b.position),
+  }));
+}
+
+export async function addTaskChecklist(taskId: string, name: string): Promise<TaskChecklist | null> {
+  const supabase = await createClient();
+
+  // Get max position
+  const { data: existing } = await supabase
+    .from("task_checklists")
+    .select("position")
+    .eq("task_id", taskId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { data: checklist, error } = await supabase
+    .from("task_checklists")
+    .insert({
+      task_id: taskId,
+      name,
+      position: nextPosition,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating task checklist:", error.message);
+    return null;
+  }
+
+  return { ...checklist, items: [] };
+}
+
+export async function updateTaskChecklist(checklistId: string, data: { name?: string; position?: number }): Promise<TaskChecklist | null> {
+  const supabase = await createClient();
+
+  const { data: checklist, error } = await supabase
+    .from("task_checklists")
+    .update(data)
+    .eq("id", checklistId)
+    .select("*, items:task_checklist_items(*)")
+    .single();
+
+  if (error) {
+    console.error("Error updating task checklist:", error.message);
+    return null;
+  }
+
+  return checklist;
+}
+
+export async function deleteTaskChecklist(checklistId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("task_checklists")
+    .delete()
+    .eq("id", checklistId);
+
+  if (error) {
+    console.error("Error deleting task checklist:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function verifyChecklistOwnership(checklistId: string, existingUser?: User | null): Promise<TaskChecklist | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: checklist } = await supabase
+    .from("task_checklists")
+    .select("*, tasks!inner(project_id, projects!inner(organization_id, organizations!inner(user_id)))")
+    .eq("id", checklistId)
+    .eq("tasks.projects.organizations.user_id", user.id)
+    .single();
+
+  if (!checklist) return null;
+  return checklist;
+}
+
+// ============================================
+// Checklist Items
+// ============================================
+
+export async function addChecklistItem(checklistId: string, text: string): Promise<TaskChecklistItem | null> {
+  const supabase = await createClient();
+
+  // Get max position
+  const { data: existing } = await supabase
+    .from("task_checklist_items")
+    .select("position")
+    .eq("checklist_id", checklistId)
+    .order("position", { ascending: false })
+    .limit(1);
+
+  const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+  const { data: item, error } = await supabase
+    .from("task_checklist_items")
+    .insert({
+      checklist_id: checklistId,
+      text,
+      position: nextPosition,
+      is_completed: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating checklist item:", error.message);
+    return null;
+  }
+
+  return item;
+}
+
+export async function updateChecklistItem(itemId: string, data: { text?: string; is_completed?: boolean; position?: number }): Promise<TaskChecklistItem | null> {
+  const supabase = await createClient();
+
+  const { data: item, error } = await supabase
+    .from("task_checklist_items")
+    .update(data)
+    .eq("id", itemId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating checklist item:", error.message);
+    return null;
+  }
+
+  return item;
+}
+
+export async function deleteChecklistItem(itemId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("task_checklist_items")
+    .delete()
+    .eq("id", itemId);
+
+  if (error) {
+    console.error("Error deleting checklist item:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function verifyChecklistItemOwnership(itemId: string, existingUser?: User | null): Promise<TaskChecklistItem | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: item } = await supabase
+    .from("task_checklist_items")
+    .select("*, task_checklists!inner(task_id, tasks!inner(project_id, projects!inner(organization_id, organizations!inner(user_id))))")
+    .eq("id", itemId)
+    .eq("task_checklists.tasks.projects.organizations.user_id", user.id)
+    .single();
+
+  if (!item) return null;
+  return item;
+}
+
+// ============================================
+// Task Attachments
+// ============================================
+
+export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("task_attachments")
+    .select("*")
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching task attachments:", error.message);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addTaskAttachment(taskId: string, data: {
+  type: TaskAttachmentType;
+  name: string;
+  url: string;
+  file_size?: number;
+  mime_type?: string;
+}): Promise<TaskAttachment | null> {
+  const supabase = await createClient();
+
+  const { data: attachment, error } = await supabase
+    .from("task_attachments")
+    .insert({
+      task_id: taskId,
+      type: data.type,
+      name: data.name,
+      url: data.url,
+      file_size: data.file_size || null,
+      mime_type: data.mime_type || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating task attachment:", error.message);
+    return null;
+  }
+
+  return attachment;
+}
+
+export async function deleteTaskAttachment(attachmentId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("task_attachments")
+    .delete()
+    .eq("id", attachmentId);
+
+  if (error) {
+    console.error("Error deleting task attachment:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function verifyTaskAttachmentOwnership(attachmentId: string, existingUser?: User | null): Promise<TaskAttachment | null> {
+  const supabase = await createClient();
+  const user = existingUser ?? await getCurrentUser();
+  if (!user) return null;
+
+  const { data: attachment } = await supabase
+    .from("task_attachments")
+    .select("*, tasks!inner(project_id, projects!inner(organization_id, organizations!inner(user_id)))")
+    .eq("id", attachmentId)
+    .eq("tasks.projects.organizations.user_id", user.id)
+    .single();
+
+  if (!attachment) return null;
+  return attachment;
 }
