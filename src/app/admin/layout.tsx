@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { LogoutButton } from "@/components/LogoutButton";
-import { getCurrentProfile } from "@/lib/db";
+import { getCurrentProfile, getCurrentUser } from "@/lib/db";
+import { getSubscription } from "@/lib/paddle/subscriptions";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
+import { PaddleProvider } from "@/components/PaddleProvider";
 import type { Metadata } from "next";
 
 // Prevent admin pages from being indexed by search engines
@@ -22,8 +25,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const profile = await getCurrentProfile();
+  const user = await getCurrentUser();
+  const subscription = user ? await getSubscription(user.id) : null;
 
   return (
+    <PaddleProvider>
     <div className="min-h-screen relative">
 
       {/* Header */}
@@ -33,12 +39,16 @@ export default async function AdminLayout({
             {/* Logo */}
             <Link
               href="/admin"
-              className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover group"
+              className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover"
             >
-              <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-                <span className="text-sm">{"</>"}</span>
-              </div>
-              <span className="hidden sm:block">{"<codeforfood/>"}</span>
+              <Image
+                src="/logo.png"
+                alt="codeforfood"
+                width={24}
+                height={24}
+                className="size-6"
+              />
+              <span className="hidden sm:block">codeforfood</span>
             </Link>
 
             {/* Navigation */}
@@ -66,25 +76,38 @@ export default async function AdminLayout({
               <div className="w-px h-6 bg-border mx-2" />
 
               {/* User section */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {profile?.avatar_url && (
                   <Image
                     src={profile.avatar_url}
                     alt=""
                     width={32}
                     height={32}
-                    className="w-8 h-8 rounded-full border border-border"
+                    className="size-8 rounded-full border border-border"
                   />
                 )}
-                <span className="text-sm text-muted hidden md:block max-w-[120px] truncate">
+                <span className="text-sm text-muted hidden md:block max-w-[120px] truncate ml-1 mr-2">
                   {profile?.name || profile?.email}
                 </span>
+                <Link
+                  href="/admin/settings"
+                  aria-label="Settings"
+                  className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-card transition-colors"
+                >
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </Link>
                 <LogoutButton />
               </div>
             </nav>
           </div>
         </div>
       </header>
+
+      {/* Subscription Banner */}
+      <SubscriptionBanner subscription={subscription} />
 
       {/* Main content */}
       <main className="relative z-10 max-w-6xl mx-auto px-4 py-8 animate-fade-in">
@@ -96,5 +119,6 @@ export default async function AdminLayout({
         {"// <codeforfood/>"}
       </footer>
     </div>
+    </PaddleProvider>
   );
 }
