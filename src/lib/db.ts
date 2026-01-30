@@ -4,6 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense, TaskColumn, Task, TaskBoardData, TaskPriority, TaskChecklist, TaskChecklistItem, TaskAttachment, TaskAttachmentType } from "./types";
 import { normalizeProjectData } from "./db/normalize";
 import { roundCurrency, calculateAmount, sumCurrency, calculatePercent } from "./format";
+import { canUserCreateOrganization, canUserCreateProject } from "@/lib/paddle/access";
 
 /**
  * Generates a cryptographically secure URL-safe hash
@@ -212,6 +213,13 @@ export async function createOrganization(data: { name: string; description?: str
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return null;
+
+  // Check subscription limits
+  const canCreate = await canUserCreateOrganization(user.id);
+  if (!canCreate) {
+    console.error("Subscription limit reached: cannot create organization");
+    return null;
+  }
 
   const { data: org, error } = await supabase
     .from("organizations")
@@ -437,6 +445,22 @@ export async function getProjectByHash(hash: string): Promise<Project | null> {
 
 export async function createProject(data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
   const supabase = await createClient();
+
+  // Get organization owner for subscription check
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("user_id")
+    .eq("id", data.organizationId)
+    .single();
+
+  if (!org) return null;
+
+  // Check subscription limits
+  const canCreate = await canUserCreateProject(org.user_id, data.organizationId);
+  if (!canCreate) {
+    console.error("Subscription limit reached: cannot create project");
+    return null;
+  }
 
   const { data: project, error } = await supabase
     .from("projects")
