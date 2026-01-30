@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getOrganizationByHash, getProjectsByOrganization, getProjectSummary } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
+import { getSubscription, isSubscriptionActive } from "@/lib/paddle/subscriptions";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +46,24 @@ export default async function PublicOrganizationPage({
     notFound();
   }
 
+  // Check owner's subscription status
+  const subscription = await getSubscription(org.user_id)
+  if (!subscription || !isSubscriptionActive(subscription.status)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center px-4">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-warning/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-semibold mb-2">Страница временно недоступна</h1>
+          <p className="text-muted text-sm">Владелец должен активировать подписку</p>
+        </div>
+      </div>
+    )
+  }
+
   const projects = await getProjectsByOrganization(org.id);
   const totals = projects.reduce(
     (acc, p) => {
@@ -70,11 +90,13 @@ export default async function PublicOrganizationPage({
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10 animate-fade-in-up">
-            <div className="inline-block mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
-                <span className="text-accent text-lg font-bold">{"</>"}</span>
-              </div>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="codeforfood"
+              width={40}
+              height={40}
+              className="size-10 mx-auto mb-4"
+            />
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">{org.name}</h1>
             {org.description && (
               <p className="text-muted text-sm max-w-md mx-auto">{org.description}</p>
@@ -85,15 +107,15 @@ export default async function PublicOrganizationPage({
           <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8 animate-fade-in-up stagger-1 opacity-0">
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Total</p>
-              <p className="text-lg sm:text-xl font-bold text-accent">{formatCurrency(totals.total)}</p>
+              <p className="text-lg sm:text-xl font-bold text-accent font-mono">{formatCurrency(totals.total)}</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Paid</p>
-              <p className="text-lg sm:text-xl font-bold text-success">{formatCurrency(totals.paid)}</p>
+              <p className="text-lg sm:text-xl font-bold text-success font-mono">{formatCurrency(totals.paid)}</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Due</p>
-              <p className="text-lg sm:text-xl font-bold text-danger">{formatCurrency(totals.remaining)}</p>
+              <p className="text-lg sm:text-xl font-bold text-foreground font-mono">{formatCurrency(totals.remaining)}</p>
             </div>
           </div>
 
@@ -102,7 +124,7 @@ export default async function PublicOrganizationPage({
             <div className="bg-card border border-border rounded-xl p-5">
               <div className="flex justify-between text-sm mb-3">
                 <span className="text-muted">Overall Progress</span>
-                <span className="font-bold text-lg">{percentPaid}%</span>
+                <span className="font-bold text-lg font-mono">{percentPaid}%</span>
               </div>
               <div className="h-3 bg-border rounded-full overflow-hidden">
                 <div
@@ -152,7 +174,7 @@ export default async function PublicOrganizationPage({
                             {summary.remainingAmount > 0 && (
                               <>
                                 <span className="text-muted"> / </span>
-                                <span className="text-danger">{formatCurrency(summary.remainingAmount)}</span>
+                                <span className="text-muted">{formatCurrency(summary.remainingAmount)}</span>
                               </>
                             )}
                           </p>
@@ -190,10 +212,10 @@ export default async function PublicOrganizationPage({
                       <span className="font-semibold">{pm.label}</span>
                       <span className={`text-xs px-2.5 py-1 rounded-full uppercase tracking-wide ${
                         pm.type === "crypto"
-                          ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                          ? "bg-accent/10 text-accent border border-accent/20"
                           : pm.type === "bank"
-                          ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                          : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                          ? "bg-neutral-500/10 text-foreground border border-neutral-500/20"
+                          : "bg-neutral-500/10 text-muted border border-neutral-500/20"
                       }`}>
                         {pm.type}
                       </span>
