@@ -23,7 +23,7 @@ export default async function OrganizationsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
@@ -43,9 +43,9 @@ export default async function OrganizationsPage() {
 
       {/* Organizations List */}
       {organizations.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-card border border-border rounded-xl p-8 sm:p-12 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-neutral-500/10 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
@@ -70,22 +70,22 @@ export default async function OrganizationsPage() {
               <Link
                 key={org.id}
                 href={`/admin/organizations/${org.id}`}
-                className="card-glow block bg-card border border-border rounded-xl p-5 hover:border-accent/30"
+                className="card-glow block bg-card border border-border rounded-xl p-4 sm:p-5 hover:border-accent/30 overflow-hidden"
               >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 min-w-0">
                   {/* Left side */}
-                  <div className="flex items-start gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1 overflow-hidden">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-neutral-500/10 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{org.name}</h3>
+                      <h3 className="font-semibold text-base sm:text-lg truncate">{org.name}</h3>
                       {org.description && (
                         <p className="text-sm text-muted truncate mt-0.5">{org.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs text-muted">
                         <span className="flex items-center gap-1">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -109,13 +109,13 @@ export default async function OrganizationsPage() {
                   </div>
 
                   {/* Right side - Stats */}
-                  <div className="flex items-center gap-6 sm:text-right">
-                    <div>
-                      <p className="text-xl font-bold text-accent">{formatCurrency(totals.total)}</p>
-                      <p className="text-xs text-success">{formatCurrency(totals.paid)} paid</p>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 sm:text-right shrink-0">
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-xl font-bold text-accent font-mono truncate">{formatCurrency(totals.total)}</p>
+                      <p className="text-xs text-success font-mono truncate">{formatCurrency(totals.paid)} paid</p>
                     </div>
-                    <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center">
-                      <span className="text-xs font-bold">{progressPercent}%</span>
+                    <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shrink-0">
+                      <span className="text-xs font-bold font-mono">{progressPercent}%</span>
                     </div>
                   </div>
                 </div>

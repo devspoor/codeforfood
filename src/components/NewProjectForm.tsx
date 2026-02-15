@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export function NewProjectForm({ organizationId }: { organizationId: string }) {
   const router = useRouter();
@@ -10,6 +11,7 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +19,7 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
 
     setIsSubmitting(true);
     setError(null);
+    setLimitReached(false);
 
     const projectName = name.trim();
     const projectDescription = description.trim() || undefined;
@@ -41,6 +44,9 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
         router.push(`/admin/projects/${project.id}`);
       } else {
         const data = await res.json().catch(() => ({}));
+        if (data.code === "LIMIT_REACHED") {
+          setLimitReached(true);
+        }
         setError(data.error || "Failed to create project");
         setIsSubmitting(false);
       }
@@ -66,6 +72,14 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
       {error && (
         <div className="p-3 bg-danger/10 border border-danger/30 rounded text-danger text-sm">
           {error}
+          {limitReached && (
+            <Link
+              href="/admin/settings/billing"
+              className="ml-2 text-accent hover:underline"
+            >
+              Upgrade now →
+            </Link>
+          )}
         </div>
       )}
       <div>

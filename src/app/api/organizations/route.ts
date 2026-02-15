@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrganizations, createOrganization, getCurrentUser } from "@/lib/db";
+import { canUserCreateOrganization } from "@/lib/paddle/access";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check subscription limits
+  const canCreate = await canUserCreateOrganization(user.id);
+  if (!canCreate) {
+    return NextResponse.json(
+      { error: "Organization limit reached. Upgrade your plan to create more.", code: "LIMIT_REACHED" },
+      { status: 403 }
+    );
   }
 
   try {

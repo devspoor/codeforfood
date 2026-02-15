@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError } from "@/lib/api-auth";
 import { getOrganizations, createOrganization } from "@/lib/api-db";
 import { validateRequiredString, validateOptionalString, MAX_LENGTHS } from "@/lib/validation";
+import { getSubscriptionWithClient, isSubscriptionActive, PLAN_LIMITS } from "@/lib/paddle/subscriptions";
 
 /**
  * GET /api/v1/organizations
@@ -21,6 +22,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(request, async ({ user, supabase }) => {
     try {
+      // Check subscription limits
+      const subscription = await getSubscriptionWithClient(supabase, user.id);
+      if (!subscription || !isSubscriptionActive(subscription.status)) {
+        return apiError("Active subscription required to create organizations", 403);
+      }
+
+      const { count } = await supabase
+        .from("organizations")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      const limit = subscription.plan ? PLAN_LIMITS[subscription.plan].organizations : 0;
+      if ((count || 0) >= limit) {
+        return apiError("Organization limit reached. Upgrade your plan to create more.", 403);
+      }
+
       const { name, description } = await request.json();
 
       const nameValidation = validateRequiredString(name, "Name", MAX_LENGTHS.name);

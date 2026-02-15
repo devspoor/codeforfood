@@ -14,10 +14,10 @@ import { TaskBoard } from "@/components/tasks/TaskBoard";
 export const dynamic = "force-dynamic";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  in_progress: { label: "In Progress", color: "bg-blue-500/20 text-blue-400" },
-  awaiting_payment: { label: "Awaiting Payment", color: "bg-yellow-500/20 text-yellow-400" },
+  in_progress: { label: "In Progress", color: "bg-neutral-500/20 text-foreground" },
+  awaiting_payment: { label: "Awaiting Payment", color: "bg-accent/20 text-accent" },
   completed: { label: "Completed", color: "bg-success/20 text-success" },
-  on_hold: { label: "On Hold", color: "bg-gray-500/20 text-gray-400" },
+  on_hold: { label: "On Hold", color: "bg-neutral-500/20 text-muted" },
 };
 
 export default async function ProjectDetailPage({
@@ -72,7 +72,7 @@ export default async function ProjectDetailPage({
               /p/{project.hash}
             </a>
             {project.public_password_hash && (
-              <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">
+              <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
                 🔒 Protected
               </span>
             )}
@@ -82,49 +82,49 @@ export default async function ProjectDetailPage({
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-muted text-sm mb-1">Total</p>
-          <p className="text-2xl font-bold text-accent">{formatCurrency(summary.totalAmount)}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-muted text-xs sm:text-sm mb-1">Total</p>
+          <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount)}</p>
         </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-muted text-sm mb-1">Paid</p>
-          <p className="text-2xl font-bold text-success">{formatCurrency(summary.paidAmount)}</p>
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-muted text-xs sm:text-sm mb-1">Paid</p>
+          <p className="text-lg sm:text-2xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount)}</p>
         </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-muted text-sm mb-1">Remaining</p>
-          <p className="text-2xl font-bold text-danger">{formatCurrency(summary.remainingAmount)}</p>
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-muted text-xs sm:text-sm mb-1">Remaining</p>
+          <p className="text-lg sm:text-2xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount)}</p>
         </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-muted text-sm mb-1">Progress</p>
-          <p className="text-2xl font-bold">{summary.percentPaid}%</p>
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-muted text-xs sm:text-sm mb-1">Progress</p>
+          <p className="text-lg sm:text-2xl font-bold font-mono">{summary.percentPaid}%</p>
         </div>
       </div>
 
       {/* Hours stats (if any hourly milestones) */}
       {summary.totalHours > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-muted text-sm mb-1">Hours Logged</p>
-            <p className="text-2xl font-bold">{summary.totalHours.toFixed(1)}h</p>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <p className="text-muted text-xs sm:text-sm mb-1">Hours Logged</p>
+            <p className="text-lg sm:text-2xl font-bold font-mono">{summary.totalHours.toFixed(1)}h</p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-muted text-sm mb-1">Hourly Revenue</p>
-            <p className="text-2xl font-bold text-accent">{formatCurrency(summary.hourlyAmount)}</p>
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <p className="text-muted text-xs sm:text-sm mb-1">Hourly Revenue</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount)}</p>
           </div>
         </div>
       )}
 
       {/* Units stats (if any per_unit milestones) */}
       {summary.totalUnits > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-muted text-sm mb-1">Units Logged</p>
-            <p className="text-2xl font-bold">{summary.totalUnits}</p>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <p className="text-muted text-xs sm:text-sm mb-1">Units Logged</p>
+            <p className="text-lg sm:text-2xl font-bold">{summary.totalUnits}</p>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-muted text-sm mb-1">Per-Unit Revenue</p>
-            <p className="text-2xl font-bold text-accent">{formatCurrency(summary.unitAmount)}</p>
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <p className="text-muted text-xs sm:text-sm mb-1">Per-Unit Revenue</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent">{formatCurrency(summary.unitAmount)}</p>
           </div>
         </div>
       )}
@@ -202,6 +202,7 @@ export default async function ProjectDetailPage({
             <h2 className="text-lg font-semibold mb-4">Settings</h2>
             <ProjectSettingsEditor
               projectId={project.id}
+              projectHash={project.hash}
               status={project.status}
               hideAmounts={project.hide_amounts}
               hidePaid={project.hide_paid}

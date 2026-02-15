@@ -31,18 +31,18 @@ const TYPE_OPTIONS = [
 ] as const;
 
 const TYPE_COLORS: Record<string, string> = {
-  figma: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  github: "bg-gray-500/20 text-gray-300 border-gray-500/30",
-  demo: "bg-green-500/20 text-green-400 border-green-500/30",
-  document: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  figma: "bg-neutral-500/20 text-foreground border-neutral-500/30",
+  github: "bg-neutral-500/20 text-foreground border-neutral-500/30",
+  demo: "bg-success/20 text-success border-success/30",
+  document: "bg-neutral-500/20 text-foreground border-neutral-500/30",
   link: "bg-accent/20 text-accent border-accent/30",
 };
 
 const TYPE_HOVER: Record<string, string> = {
-  figma: "hover:bg-purple-500/30 hover:border-purple-400",
-  github: "hover:bg-gray-500/30 hover:border-gray-400",
-  demo: "hover:bg-green-500/30 hover:border-green-400",
-  document: "hover:bg-blue-500/30 hover:border-blue-400",
+  figma: "hover:bg-neutral-500/30 hover:border-neutral-400",
+  github: "hover:bg-neutral-500/30 hover:border-neutral-400",
+  demo: "hover:bg-success/30 hover:border-success",
+  document: "hover:bg-neutral-500/30 hover:border-neutral-400",
   link: "hover:bg-accent/30 hover:border-accent",
 };
 

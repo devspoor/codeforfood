@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
@@ -41,18 +42,18 @@ interface Props {
 }
 
 const ATTACHMENT_ICONS: Record<string, { icon: string; color: string }> = {
-  figma: { icon: "M12 2L7 7h3v6H7l5 5 5-5h-3V7h3L12 2z", color: "text-pink-400" },
-  github: { icon: "M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z", color: "text-gray-400" },
-  demo: { icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z", color: "text-green-400" },
-  document: { icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", color: "text-blue-400" },
-  link: { icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", color: "text-purple-400" },
+  figma: { icon: "M12 2L7 7h3v6H7l5 5 5-5h-3V7h3L12 2z", color: "text-muted" },
+  github: { icon: "M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z", color: "text-muted" },
+  demo: { icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z", color: "text-success" },
+  document: { icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", color: "text-muted" },
+  link: { icon: "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1", color: "text-accent" },
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  in_progress: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  awaiting_payment: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  in_progress: "bg-neutral-500/10 text-foreground border-neutral-500/20",
+  awaiting_payment: "bg-accent/10 text-accent border-accent/20",
   completed: "bg-success/10 text-success border-success/20",
-  on_hold: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  on_hold: "bg-neutral-500/10 text-muted border-neutral-500/20",
 };
 
 export function PublicProjectContent({ hash, project, org, summary, statusInfo }: Props) {
@@ -79,11 +80,13 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">
-            <div className="inline-block mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
-                <span className="text-accent text-lg font-bold">{"</>"}</span>
-              </div>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="codeforfood"
+              width={40}
+              height={40}
+              className="size-10 mx-auto mb-4"
+            />
             <div className="flex items-center justify-center gap-2 mb-2">
               <h1 className="text-2xl sm:text-3xl font-bold">{project.name}</h1>
               <span className={`text-xs px-2.5 py-1 rounded-full border ${STATUS_STYLES[project.status] || STATUS_STYLES.in_progress}`}>
@@ -111,17 +114,17 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
             <div className={`grid gap-3 sm:gap-4 mb-8 ${hidePaid ? 'grid-cols-2' : 'grid-cols-3'}`}>
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-muted text-xs mb-1 uppercase tracking-wider">Total</p>
-                <p className="text-lg sm:text-xl font-bold text-accent">{formatCurrency(summary.totalAmount)}</p>
+                <p className="text-lg sm:text-xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount)}</p>
               </div>
               {!hidePaid && (
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                   <p className="text-muted text-xs mb-1 uppercase tracking-wider">Paid</p>
-                  <p className="text-lg sm:text-xl font-bold text-success">{formatCurrency(summary.paidAmount)}</p>
+                  <p className="text-lg sm:text-xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount)}</p>
                 </div>
               )}
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-muted text-xs mb-1 uppercase tracking-wider">Due</p>
-                <p className="text-lg sm:text-xl font-bold text-danger">{formatCurrency(summary.remainingAmount)}</p>
+                <p className="text-lg sm:text-xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount)}</p>
               </div>
             </div>
           )}
@@ -132,7 +135,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex justify-between text-sm mb-3">
                   <span className="text-muted">Payment Progress</span>
-                  <span className="font-bold text-lg">{summary.percentPaid}%</span>
+                  <span className="font-bold text-lg font-mono">{summary.percentPaid}%</span>
                 </div>
                 <div className="h-3 bg-border rounded-full overflow-hidden">
                   <div
@@ -153,12 +156,12 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-center gap-6">
                 <div className="text-center">
                   <p className="text-muted text-xs mb-1 uppercase tracking-wider">Hours Logged</p>
-                  <p className="text-xl font-bold">{summary.totalHours.toFixed(1)}h</p>
+                  <p className="text-xl font-bold font-mono">{summary.totalHours.toFixed(1)}h</p>
                 </div>
                 {summary.hourlyAmount > 0 && (
                   <div className="text-center border-l border-border pl-6">
                     <p className="text-muted text-xs mb-1 uppercase tracking-wider">Billed</p>
-                    <p className="text-xl font-bold text-accent">{formatCurrency(summary.hourlyAmount)}</p>
+                    <p className="text-xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount)}</p>
                   </div>
                 )}
               </div>
@@ -237,7 +240,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                                 {m.title}
                               </p>
                               {isHourly && (
-                                <span className="text-xs bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">
+                                <span className="text-xs bg-neutral-500/10 text-muted px-2 py-0.5 rounded-full border border-neutral-500/20">
                                   HOURLY
                                 </span>
                               )}
@@ -484,10 +487,10 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                       <span className="font-semibold">{pm.label}</span>
                       <span className={`text-xs px-2.5 py-1 rounded-full uppercase tracking-wide ${
                         pm.type === "crypto"
-                          ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                          ? "bg-accent/10 text-accent border border-accent/20"
                           : pm.type === "bank"
-                          ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                          : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                          ? "bg-neutral-500/10 text-foreground border border-neutral-500/20"
+                          : "bg-neutral-500/10 text-muted border border-neutral-500/20"
                       }`}>
                         {pm.type}
                       </span>

@@ -110,7 +110,7 @@ export default async function AdminLayout({
       <SubscriptionBanner subscription={subscription} />
 
       {/* Main content */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 py-8 animate-fade-in">
+      <main className="relative z-10 max-w-6xl mx-auto px-4 py-8 animate-fade-in overflow-hidden">
         {children}
       </main>
 

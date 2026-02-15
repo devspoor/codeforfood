@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
@@ -36,12 +37,14 @@ export function LoginForm() {
       <div className="relative z-10 w-full max-w-sm animate-fade-in-up">
         {/* Logo section */}
         <div className="text-center mb-8">
-          <div className="inline-block mb-6">
-            <div className="size-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
-              <span className="text-accent text-xl font-bold">{"</>"}</span>
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold gradient-text mb-2 text-balance">{"<codeforfood/>"}</h1>
+          <Image
+            src="/logo.png"
+            alt="codeforfood"
+            width={48}
+            height={48}
+            className="size-12 mx-auto mb-6"
+          />
+          <h1 className="text-3xl font-bold gradient-text mb-2 text-balance">codeforfood</h1>
           <p className="text-muted text-sm">Project billing tracker</p>
         </div>
 
@@ -154,7 +157,7 @@ export function LoginForm() {
             <p className="text-xs text-muted">Payments</p>
           </div>
           <div>
-            <div className="text-blue-400 text-lg mb-1">{"< />"}</div>
+            <div className="text-muted text-lg mb-1">{"< />"}</div>
             <p className="text-xs text-muted">Sharing</p>
           </div>
         </div>

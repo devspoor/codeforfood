@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createBotClient } from '@/lib/supabase/server'
 
 export type SubscriptionStatus = 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled'
 export type SubscriptionPlan = 'pro' | 'unlimited' | null
@@ -23,8 +23,22 @@ export const PLAN_LIMITS = {
   unlimited: { organizations: Infinity, projectsPerOrg: Infinity },
 } as const
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseLike = { from: (table: string) => any }
+
+/** Get subscription using cookie-based auth (for authenticated pages) */
 export async function getSubscription(userId: string): Promise<Subscription | null> {
   const supabase = await createClient()
+  return getSubscriptionWithClient(supabase, userId)
+}
+
+/** Get subscription bypassing RLS (for public pages, webhooks, bot) */
+export function getSubscriptionAdmin(userId: string): Promise<Subscription | null> {
+  const supabase = createBotClient()
+  return getSubscriptionWithClient(supabase, userId)
+}
+
+export async function getSubscriptionWithClient(supabase: SupabaseLike, userId: string): Promise<Subscription | null> {
   const { data } = await supabase
     .from('subscriptions')
     .select('*')
@@ -69,16 +83,4 @@ export async function updateSubscriptionByPaddleId(
 
 export function isSubscriptionActive(status: SubscriptionStatus): boolean {
   return status === 'trialing' || status === 'active'
-}
-
-export function canCreateOrganization(subscription: Subscription | null, currentCount: number): boolean {
-  if (!subscription || !isSubscriptionActive(subscription.status)) return false
-  const limit = subscription.plan ? PLAN_LIMITS[subscription.plan].organizations : 0
-  return currentCount < limit
-}
-
-export function canCreateProject(subscription: Subscription | null, currentCount: number): boolean {
-  if (!subscription || !isSubscriptionActive(subscription.status)) return false
-  const limit = subscription.plan ? PLAN_LIMITS[subscription.plan].projectsPerOrg : 0
-  return currentCount < limit
 }

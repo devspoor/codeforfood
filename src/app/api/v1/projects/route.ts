@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError } from "@/lib/api-auth";
 import { getProjects, createProject, getProjectSummary } from "@/lib/api-db";
 import { validateRequiredString, validateOptionalString, MAX_LENGTHS } from "@/lib/validation";
+import { getSubscriptionWithClient, isSubscriptionActive, PLAN_LIMITS } from "@/lib/paddle/subscriptions";
 
 /**
  * GET /api/v1/projects
@@ -32,6 +33,22 @@ export async function POST(request: NextRequest) {
 
       if (!organization_id) {
         return apiError("organization_id is required");
+      }
+
+      // Check subscription limits
+      const subscription = await getSubscriptionWithClient(supabase, user.id);
+      if (!subscription || !isSubscriptionActive(subscription.status)) {
+        return apiError("Active subscription required to create projects", 403);
+      }
+
+      const { count } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", organization_id);
+
+      const limit = subscription.plan ? PLAN_LIMITS[subscription.plan].projectsPerOrg : 0;
+      if ((count || 0) >= limit) {
+        return apiError("Project limit reached for this organization. Upgrade your plan to create more.", 403);
       }
 
       const nameValidation = validateRequiredString(name, "Name", MAX_LENGTHS.name);

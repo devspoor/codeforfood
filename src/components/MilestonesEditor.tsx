@@ -437,15 +437,15 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                             {m.title}
                           </span>
                           {isHourly ? (
-                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                            <span className="text-xs bg-neutral-500/20 text-muted px-2 py-0.5 rounded">
                               HOURLY
                             </span>
                           ) : isPerUnit ? (
-                            <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
+                            <span className="text-xs bg-neutral-500/20 text-muted px-2 py-0.5 rounded">
                               PER {(m.unit_label || "unit").toUpperCase()}
                             </span>
                           ) : (
-                            <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                            <span className="text-xs bg-neutral-500/20 text-muted px-2 py-0.5 rounded">
                               FIXED
                             </span>
                           )}
@@ -481,7 +481,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg tabular-nums">{formatCurrency(total)}</p>
+                        <p className="font-bold text-lg tabular-nums font-mono">{formatCurrency(total)}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <button
                             onClick={() => handleEdit(m)}
@@ -502,8 +502,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     {/* Progress bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-success tabular-nums">{formatCurrency(paidAmount)} paid</span>
-                        <span className="text-muted tabular-nums">{formatCurrency(remaining)} remaining</span>
+                        <span className="text-success tabular-nums font-mono">{formatCurrency(paidAmount)} paid</span>
+                        <span className="text-muted tabular-nums font-mono">{formatCurrency(remaining)} remaining</span>
                       </div>
                       <div className="h-2 bg-border rounded-full overflow-hidden">
                         <div
@@ -585,15 +585,15 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                   key={entry.id}
                                   className={`bg-background rounded px-2 py-2 ${isPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-3">
+                                  <div className="flex items-start justify-between text-xs gap-2">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                       <span className="text-muted">{entry.date}</span>
                                       <span className="font-medium">{Number(entry.hours || 0).toFixed(2)}h</span>
                                       <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>
                                       {entry.description && (
-                                        <span className="text-muted truncate max-w-[150px]">{entry.description}</span>
+                                        <span className="text-muted truncate max-w-[100px] sm:max-w-[150px]">{entry.description}</span>
                                       )}
                                     </div>
                                     <button
@@ -605,7 +605,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                     </button>
                                   </div>
                                   {!isPaid && entryAmount > 0 && (
-                                    <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex flex-wrap items-center gap-2 mt-2">
                                       <span className="text-xs text-muted">$</span>
                                       <input
                                         type="number"
@@ -723,15 +723,15 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                   key={entry.id}
                                   className={`bg-background rounded px-2 py-2 ${isPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-3">
+                                  <div className="flex items-start justify-between text-xs gap-2">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                       <span className="text-muted">{entry.date}</span>
                                       <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
                                       <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>
                                       {entry.description && (
-                                        <span className="text-muted truncate max-w-[150px]">{entry.description}</span>
+                                        <span className="text-muted truncate max-w-[100px] sm:max-w-[150px]">{entry.description}</span>
                                       )}
                                     </div>
                                     <button
@@ -743,7 +743,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                     </button>
                                   </div>
                                   {!isPaid && entryAmount > 0 && (
-                                    <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex flex-wrap items-center gap-2 mt-2">
                                       <span className="text-xs text-muted">$</span>
                                       <input
                                         type="number"

@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_ADMIN_URL: process.env.NEXT_PUBLIC_ADMIN_URL,
+    NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
+    NEXT_PUBLIC_PADDLE_ENV: process.env.NEXT_PUBLIC_PADDLE_ENV,
+    NEXT_PUBLIC_PADDLE_PRICE_ID_PRO: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PRO,
+    NEXT_PUBLIC_PADDLE_PRICE_ID_UNLIMITED: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_UNLIMITED,
   },
   images: {
     remotePatterns: [
@@ -32,18 +36,20 @@ const nextConfig: NextConfig = {
     // Content Security Policy - defense in depth against XSS
     const cspDirectives = [
       "default-src 'self'",
-      // Scripts: self + inline for Next.js hydration + eval for dev mode
+      // Scripts: self + inline for Next.js hydration + eval for dev mode + Paddle
       process.env.NODE_ENV === "production"
-        ? "script-src 'self' 'unsafe-inline'"
-        : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      // Styles: self + inline for Tailwind/CSS-in-JS
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        ? "script-src 'self' 'unsafe-inline' https://*.paddle.com https://static.cloudflareinsights.com"
+        : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.paddle.com https://static.cloudflareinsights.com",
+      // Styles: self + inline for Tailwind/CSS-in-JS + Paddle
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.paddle.com",
       // Fonts: self + Google Fonts
       "font-src 'self' https://fonts.gstatic.com",
-      // Images: self + Supabase storage + avatars
-      `img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com`,
-      // Connect: API calls to self + Supabase
-      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+      // Images: self + Supabase storage + avatars + Paddle
+      `img-src 'self' data: blob: https://*.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com https://*.paddle.com`,
+      // Connect: API calls to self + Supabase + Paddle
+      `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.paddle.com https://cloudflareinsights.com`,
+      // Frame: Paddle checkout overlay
+      "frame-src 'self' https://*.paddle.com",
       // Frame ancestors: none (same as X-Frame-Options: DENY)
       "frame-ancestors 'none'",
       // Form actions: only to self

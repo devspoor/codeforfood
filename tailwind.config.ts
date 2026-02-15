@@ -21,6 +21,7 @@ export default {
         danger: "#ef4444",
       },
       fontFamily: {
+        sans: ["var(--font-sans)", "Manrope", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "JetBrains Mono", "Fira Code", "monospace"],
       },
     },

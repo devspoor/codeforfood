@@ -42,28 +42,28 @@ export function UpcomingDeadlines() {
 
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-xl p-6">
+      <div className="bg-card border border-border rounded-xl p-6 h-full flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="size-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Upcoming Deadlines
         </h2>
-        <div className="text-sm text-muted text-center py-4">Loading...</div>
+        <div className="text-sm text-muted text-center py-4 flex-1 flex items-center justify-center">Loading...</div>
       </div>
     );
   }
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-xl p-6">
+      <div className="bg-card border border-border rounded-xl p-6 h-full flex flex-col">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="size-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Upcoming Deadlines
         </h2>
-        <div className="text-sm text-muted text-center py-6">
+        <div className="text-sm text-muted text-center flex-1 flex items-center justify-center">
           <p>No upcoming deadlines in the next 7 days</p>
         </div>
       </div>
@@ -93,20 +93,20 @@ export function UpcomingDeadlines() {
   const upcomingTasks = activeTasks.filter((t) => !t.is_overdue);
 
   return (
-    <div className="bg-card border border-border rounded-xl p-6">
+    <div className="bg-card border border-border rounded-xl p-6 h-full flex flex-col">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="size-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         Upcoming Deadlines
         {activeTasks.length > 0 && (
-          <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full ml-auto">
+          <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full ml-auto tabular-nums font-mono">
             {activeTasks.length}
           </span>
         )}
       </h2>
 
-      <div className="space-y-3 max-h-[400px] overflow-y-auto">
+      <div className="space-y-3 flex-1 overflow-y-auto">
         {/* Overdue tasks first */}
         {overdueTasks.map((task) => (
           <DeadlineItem key={task.id} task={task} formatDeadline={formatDeadline} />
@@ -157,7 +157,7 @@ function DeadlineItem({
         <div className="flex-shrink-0 text-right">
           <span
             className={`text-xs font-medium ${
-              task.is_overdue ? "text-red-400" : "text-muted"
+              task.is_overdue ? "text-danger" : "text-muted"
             }`}
           >
             {formatDeadline(task.deadline)}

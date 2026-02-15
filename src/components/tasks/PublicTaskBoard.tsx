@@ -228,9 +228,9 @@ function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) 
         {task.deadline && (
           <span
             className={`
-              ${isOverdue ? "text-red-400 bg-red-500/10 px-1 rounded" : ""}
-              ${isToday ? "text-orange-400" : ""}
-              ${isTomorrow ? "text-yellow-400" : ""}
+              ${isOverdue ? "text-danger bg-danger/10 px-1 rounded" : ""}
+              ${isToday ? "text-accent" : ""}
+              ${isTomorrow ? "text-muted" : ""}
             `}
           >
             {formatDeadline(task.deadline)}
@@ -297,8 +297,8 @@ function PublicTaskModal({ task, onClose }: { task: Task; onClose: () => void })
             <div>
               <span className="text-muted">Priority: </span>
               <span className={`capitalize ${
-                task.priority === "high" ? "text-red-400" :
-                task.priority === "medium" ? "text-yellow-400" : "text-muted"
+                task.priority === "high" ? "text-danger" :
+                task.priority === "medium" ? "text-accent" : "text-muted"
               }`}>
                 {task.priority}
               </span>
@@ -307,7 +307,7 @@ function PublicTaskModal({ task, onClose }: { task: Task; onClose: () => void })
             {task.deadline && (
               <div>
                 <span className="text-muted">Deadline: </span>
-                <span className={isOverdue ? "text-red-400" : ""}>
+                <span className={isOverdue ? "text-danger" : ""}>
                   {new Date(task.deadline).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",

@@ -7,10 +7,10 @@ import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 export const dynamic = "force-dynamic";
 
 const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; bgColor: string }> = {
-  in_progress: { label: "In Progress", color: "text-blue-400", bgColor: "bg-blue-500/10 border-blue-500/20" },
-  awaiting_payment: { label: "Awaiting Payment", color: "text-amber-400", bgColor: "bg-amber-500/10 border-amber-500/20" },
+  in_progress: { label: "In Progress", color: "text-foreground", bgColor: "bg-neutral-500/10 border-neutral-500/20" },
+  awaiting_payment: { label: "Awaiting Payment", color: "text-accent", bgColor: "bg-accent/10 border-accent/20" },
   completed: { label: "Completed", color: "text-success", bgColor: "bg-success/10 border-success/20" },
-  on_hold: { label: "On Hold", color: "text-gray-400", bgColor: "bg-gray-500/10 border-gray-500/20" },
+  on_hold: { label: "On Hold", color: "text-muted", bgColor: "bg-neutral-500/10 border-neutral-500/20" },
 };
 
 export default async function AdminDashboard() {
@@ -45,16 +45,16 @@ export default async function AdminDashboard() {
     : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-1">Dashboard</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted text-sm">Overview of all projects and payments</p>
         </div>
         <Link
           href="/admin/organizations/new"
-          className="btn-glow inline-flex items-center gap-2 px-4 py-2.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-background text-sm font-medium rounded-lg hover:bg-accent-hover transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -63,151 +63,100 @@ export default async function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Value */}
-        <div className="card-glow bg-card border border-border rounded-xl p-5 stat-card text-accent">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-sm text-muted">Total Value</span>
+      {/* Stats Overview */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6">
+          {/* Total Value */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Value</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent tabular-nums font-mono">{formatCurrency(totalStats.total)}</p>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalStats.total)}</p>
+
+          {/* Received */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Received</p>
+            <p className="text-lg sm:text-2xl font-bold text-success tabular-nums font-mono">{formatCurrency(totalStats.paid)}</p>
+          </div>
+
+          {/* Outstanding */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Outstanding</p>
+            <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums font-mono">{formatCurrency(totalStats.pending)}</p>
+          </div>
+
+          {/* Organizations */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Organizations</p>
+            <p className="text-lg sm:text-2xl font-bold tabular-nums font-mono">{organizations.length}</p>
+          </div>
+
+          {/* Projects */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Projects</p>
+            <p className="text-lg sm:text-2xl font-bold tabular-nums font-mono">{projects.length}</p>
+          </div>
+
+          {/* Payment Rate */}
+          <div className="lg:col-span-1">
+            <p className="text-xs text-muted uppercase tracking-wider mb-1">Payment Rate</p>
+            <p className="text-lg sm:text-2xl font-bold tabular-nums font-mono">{paymentRate}%</p>
+          </div>
         </div>
 
-        {/* Received */}
-        <div className="card-glow bg-card border border-border rounded-xl p-5 stat-card text-success">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-sm text-muted">Received</span>
+        {/* Progress Bar */}
+        <div className="mt-6 pt-6 border-t border-border">
+          <div className="flex items-center justify-between text-xs text-muted mb-2">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-success" />
+              {formatCurrency(totalStats.paid)} received
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-neutral-600" />
+              {formatCurrency(totalStats.pending)} outstanding
+            </span>
           </div>
-          <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalStats.paid)}</p>
+          <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-success rounded-full transition-all duration-500"
+              style={{ width: `${paymentRate}%` }}
+            />
+          </div>
         </div>
 
-        {/* Outstanding */}
-        <div className="card-glow bg-card border border-border rounded-xl p-5 stat-card text-danger">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="text-sm text-muted">Outstanding</span>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold">{formatCurrency(totalStats.pending)}</p>
-        </div>
-
-        {/* Payment Rate */}
-        <div className="card-glow bg-card border border-border rounded-xl p-5 stat-card">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <span className="text-sm text-muted">Payment Rate</span>
-          </div>
-          <p className="text-2xl sm:text-3xl font-bold">{paymentRate}%</p>
-        </div>
-      </div>
-
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card/50 border border-border rounded-lg p-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-lg font-bold">{organizations.length}</p>
-            <p className="text-xs text-muted">Organizations</p>
-          </div>
-        </div>
-        <div className="bg-card/50 border border-border rounded-lg p-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-lg font-bold">{projects.length}</p>
-            <p className="text-xs text-muted">Projects</p>
-          </div>
-        </div>
+        {/* Hours Stats (if any) */}
         {totalStats.hours > 0 && (
-          <>
-            <div className="bg-card/50 border border-border rounded-lg p-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-lg font-bold">{totalStats.hours.toFixed(1)}h</p>
-                <p className="text-xs text-muted">Hours Logged</p>
-              </div>
+          <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-xs text-muted uppercase tracking-wider mb-1">Hours Logged</p>
+              <p className="text-xl font-bold tabular-nums font-mono">{totalStats.hours.toFixed(1)}h</p>
             </div>
-            <div className="bg-card/50 border border-border rounded-lg p-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-lg font-bold">{formatCurrency(totalStats.hourlyRevenue)}</p>
-                <p className="text-xs text-muted">Hourly Revenue</p>
-              </div>
+            <div>
+              <p className="text-xs text-muted uppercase tracking-wider mb-1">Hourly Revenue</p>
+              <p className="text-xl font-bold text-accent tabular-nums font-mono">{formatCurrency(totalStats.hourlyRevenue)}</p>
             </div>
-          </>
+          </div>
         )}
-      </div>
-
-      {/* Progress Bar */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-muted">Overall Payment Progress</span>
-          <span className="text-lg font-bold">{paymentRate}%</span>
-        </div>
-        <div className="h-3 bg-border rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-success to-accent"
-            style={{ width: `${paymentRate}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-muted mt-3">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-success" />
-            {formatCurrency(totalStats.paid)} received
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-danger" />
-            {formatCurrency(totalStats.pending)} outstanding
-          </span>
-        </div>
       </div>
 
       {/* Status Breakdown + Upcoming Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Status Breakdown */}
         {projects.length > 0 && (
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-semibold mb-4">Projects by Status</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6 flex flex-col">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <svg className="size-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Projects by Status
+            </h2>
+            <div className="grid grid-cols-2 gap-3 flex-1">
               {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([status, config]) => (
                 <div
                   key={status}
-                  className={`border rounded-xl p-4 ${config.bgColor}`}
+                  className={`border rounded-lg p-4 flex flex-col justify-center ${config.bgColor}`}
                 >
                   <p className={`text-sm mb-1 ${config.color}`}>{config.label}</p>
-                  <p className="text-2xl font-bold">{statusCounts[status] || 0}</p>
+                  <p className="text-2xl font-bold tabular-nums font-mono">{statusCounts[status] || 0}</p>
                 </div>
               ))}
             </div>
@@ -278,7 +227,7 @@ export default async function AdminDashboard() {
                       <p className="text-xs mt-0.5">
                         <span className="text-success">{formatCurrency(summary.paidAmount)}</span>
                         <span className="text-muted"> / </span>
-                        <span className="text-danger">{formatCurrency(summary.remainingAmount)}</span>
+                        <span className="text-muted">{formatCurrency(summary.remainingAmount)}</span>
                       </p>
                     </div>
                   </div>

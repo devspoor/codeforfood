@@ -22,6 +22,16 @@ function validateCsrf(request: NextRequest): boolean {
     return true;
   }
 
+  // Skip CSRF for Telegram webhook (uses secret token header for auth)
+  if (pathname.startsWith("/api/telegram/")) {
+    return true;
+  }
+
+  // Skip CSRF for Paddle webhook (uses signature header for auth)
+  if (pathname.startsWith("/api/webhooks/paddle")) {
+    return true;
+  }
+
   // Mobile API v1 uses Bearer token authentication (not cookies)
   // Bearer tokens are passed via Authorization header which browsers don't auto-include
   // in cross-origin requests, making traditional CSRF attacks impossible.

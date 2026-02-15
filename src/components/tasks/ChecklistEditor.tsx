@@ -300,7 +300,7 @@ function ChecklistItem({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm font-medium focus:outline-none focus:border-accent"
+            className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm font-medium focus:outline-none focus:border-accent"
             autoFocus
             onBlur={handleUpdateName}
             onKeyDown={(e) => {
@@ -327,7 +327,7 @@ function ChecklistItem({
             <button
               type="button"
               onClick={handleDeleteChecklist}
-              className="text-muted hover:text-red-400 text-xs"
+              className="text-muted hover:text-danger text-xs"
             >
               Delete
             </button>
@@ -367,7 +367,7 @@ function ChecklistItem({
               value={newItemText}
               onChange={(e) => setNewItemText(e.target.value)}
               placeholder="Add item..."
-              className="flex-1 bg-background border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-accent"
+              className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAddItem();
@@ -381,7 +381,7 @@ function ChecklistItem({
               type="button"
               onClick={handleAddItem}
               disabled={!newItemText.trim() || addingItem}
-              className="px-2 py-1 text-xs bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
+              className="px-3 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
             >
               Add
             </button>
@@ -531,7 +531,7 @@ function ChecklistItemRow({
         <button
           type="button"
           onClick={handleDelete}
-          className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-400 text-xs transition-opacity"
+          className="opacity-0 group-hover:opacity-100 text-muted hover:text-danger text-xs transition-opacity"
         >
           ✕
         </button>

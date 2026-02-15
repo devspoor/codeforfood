@@ -21,10 +21,10 @@ interface ProjectData {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  in_progress: { label: "In Progress", color: "bg-blue-500/20 text-blue-400" },
-  awaiting_payment: { label: "Awaiting Payment", color: "bg-yellow-500/20 text-yellow-400" },
+  in_progress: { label: "In Progress", color: "bg-neutral-500/20 text-foreground" },
+  awaiting_payment: { label: "Awaiting Payment", color: "bg-accent/20 text-accent" },
   completed: { label: "Completed", color: "bg-success/20 text-success" },
-  on_hold: { label: "On Hold", color: "bg-gray-500/20 text-gray-400" },
+  on_hold: { label: "On Hold", color: "bg-neutral-500/20 text-muted" },
 };
 
 export function ProtectedProjectGate({ hash, projectName }: Props) {

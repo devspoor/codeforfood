@@ -77,8 +77,8 @@ export default async function OrganizationDetailPage({
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(summary.totalAmount)}</p>
-                      <p className="text-sm">
+                      <p className="font-semibold font-mono">{formatCurrency(summary.totalAmount)}</p>
+                      <p className="text-sm font-mono">
                         <span className="text-success">{formatCurrency(summary.paidAmount)}</span>
                         {summary.remainingAmount > 0 && (
                           <>

@@ -10,6 +10,7 @@ export default function NewOrganizationPage() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +21,7 @@ export default function NewOrganizationPage() {
 
     setLoading(true);
     setError("");
+    setLimitReached(false);
 
     try {
       const res = await fetch("/api/organizations", {
@@ -33,6 +35,9 @@ export default function NewOrganizationPage() {
         router.push(`/admin/organizations/${org.id}`);
       } else {
         const data = await res.json();
+        if (data.code === "LIMIT_REACHED") {
+          setLimitReached(true);
+        }
         setError(data.error || "Failed to create organization");
       }
     } catch {
@@ -85,23 +90,31 @@ export default function NewOrganizationPage() {
         {error && (
           <div className="text-danger text-sm bg-danger/10 px-4 py-2 rounded-lg border border-danger/20">
             {error}
+            {limitReached && (
+              <Link
+                href="/admin/settings/billing"
+                className="ml-2 text-accent hover:underline"
+              >
+                Upgrade now →
+              </Link>
+            )}
           </div>
         )}
 
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-6 py-3 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
-          >
-            {loading ? "Creating..." : "Create Organization"}
-          </button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
           <Link
             href="/admin/organizations"
-            className="px-6 py-3 border border-border rounded-lg hover:border-muted transition-colors"
+            className="w-full sm:w-auto text-center px-6 py-3 border border-border rounded-lg hover:border-muted transition-colors"
           >
             Cancel
           </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full sm:w-auto px-6 py-3 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+          >
+            {loading ? "Creating..." : "Create Organization"}
+          </button>
         </div>
       </form>
     </div>

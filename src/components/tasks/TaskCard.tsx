@@ -109,9 +109,9 @@ export function TaskCard({ task, milestones = [], onClick }: TaskCardProps) {
         {task.deadline && (
           <span
             className={`
-              ${isOverdue ? "text-red-400 bg-red-500/10 px-1 rounded" : ""}
-              ${isToday ? "text-orange-400" : ""}
-              ${isTomorrow ? "text-yellow-400" : ""}
+              ${isOverdue ? "text-danger bg-danger/10 px-1 rounded" : ""}
+              ${isToday ? "text-accent" : ""}
+              ${isTomorrow ? "text-muted" : ""}
             `}
           >
             {formatDeadline(task.deadline)}

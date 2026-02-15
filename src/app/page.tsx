@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || "https://my.codefor.food";
@@ -13,7 +14,16 @@ export default function Home() {
         {/* Header */}
         <header className="w-full py-6 px-4 border-b border-border/50">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="text-accent font-bold text-lg">{"<cff/>"}</div>
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
+              <Image
+                src="/logo.png"
+                alt="codeforfood"
+                width={24}
+                height={24}
+                className="size-6"
+              />
+              <span>codeforfood</span>
+            </Link>
             <div className="flex items-center gap-6 text-sm text-muted">
               <Link href="/pricing" className="hover:text-foreground transition-colors">
                 Pricing
@@ -32,12 +42,6 @@ export default function Home() {
         <section className="px-4 py-16 md:py-24">
           <div className="max-w-6xl mx-auto">
             <div className="max-w-3xl">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-full text-xs text-accent mb-6">
-                <span className="size-1.5 bg-accent rounded-full" />
-                For developers who code for food
-              </div>
-
               {/* Headline */}
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-balance leading-tight">
                 Billing tracker
@@ -60,8 +64,8 @@ export default function Home() {
                   Start Free Trial
                 </a>
                 <div className="flex flex-col text-sm text-muted">
-                  <span>14 days free</span>
-                  <span className="text-muted/60">Then $3.99/month</span>
+                  <span>7-day free trial</span>
+                  <span className="text-muted/60">Then from $4.99/month</span>
                 </div>
               </div>
             </div>
@@ -87,16 +91,12 @@ export default function Home() {
               </div>
 
               {/* Screenshot placeholder */}
-              <div className="aspect-video bg-background/50 flex items-center justify-center">
-                <div className="text-center text-muted">
-                  <div className="size-16 mx-auto mb-4 rounded-lg bg-border/50 flex items-center justify-center">
-                    <svg className="size-8 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm">Dashboard Screenshot</p>
-                  <p className="text-xs text-muted/50 mt-1">1920 × 1080</p>
-                </div>
+              <div className="aspect-video bg-background/50 flex items-center justify-center overflow-hidden">
+                <img
+                  src="/dashboard.png"
+                  alt="Dashboard Screenshot"
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
             </div>
           </div>
@@ -187,17 +187,13 @@ export default function Home() {
                 </ul>
               </div>
               <div className="order-1 lg:order-2">
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Project Creation Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/how1.png"
+                      alt="Project Creation Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -206,17 +202,13 @@ export default function Home() {
             {/* Step 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center mb-20">
               <div>
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Public Project Page Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/how2.png"
+                      alt="Public Project Page Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -267,17 +259,13 @@ export default function Home() {
                 </ul>
               </div>
               <div className="order-1 lg:order-2">
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Payment Tracking Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/how3.png"
+                      alt="Payment Tracking Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -312,11 +300,11 @@ export default function Home() {
                 <div className="bg-background/50 rounded-lg p-4 text-sm">
                   <div className="flex justify-between mb-2">
                     <span className="text-muted">Homepage design</span>
-                    <span className="tabular-nums">$1,500</span>
+                    <span className="tabular-nums font-mono">$1,500</span>
                   </div>
                   <div className="flex justify-between text-muted/60">
                     <span>Paid</span>
-                    <span className="tabular-nums text-success">$1,000</span>
+                    <span className="tabular-nums font-mono text-success">$1,000</span>
                   </div>
                 </div>
               </div>
@@ -335,19 +323,19 @@ export default function Home() {
                 <div className="bg-background/50 rounded-lg p-4 text-sm">
                   <div className="flex justify-between mb-2">
                     <span className="text-muted">Bug fixes @ $75/hr</span>
-                    <span className="tabular-nums">12.5 hrs</span>
+                    <span className="tabular-nums font-mono">12.5 hrs</span>
                   </div>
                   <div className="flex justify-between text-muted/60">
                     <span>Total</span>
-                    <span className="tabular-nums">$937.50</span>
+                    <span className="tabular-nums font-mono">$937.50</span>
                   </div>
                 </div>
               </div>
 
               {/* Per Unit */}
               <div className="bg-card border border-border rounded-xl p-6">
-                <div className="size-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
-                  <svg className="size-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="size-12 rounded-lg bg-neutral-500/10 flex items-center justify-center mb-4">
+                  <svg className="size-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
@@ -358,11 +346,11 @@ export default function Home() {
                 <div className="bg-background/50 rounded-lg p-4 text-sm">
                   <div className="flex justify-between mb-2">
                     <span className="text-muted">Blog posts @ $50/each</span>
-                    <span className="tabular-nums">8 posts</span>
+                    <span className="tabular-nums font-mono">8 posts</span>
                   </div>
                   <div className="flex justify-between text-muted/60">
                     <span>Total</span>
-                    <span className="tabular-nums">$400</span>
+                    <span className="tabular-nums font-mono">$400</span>
                   </div>
                 </div>
               </div>
@@ -434,17 +422,13 @@ export default function Home() {
               </div>
 
               <div>
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Client View Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/clientsees.png"
+                      alt="Client View Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -457,17 +441,13 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div className="order-2 lg:order-1">
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Project Settings Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/control.png"
+                      alt="Project Settings Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -583,18 +563,13 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Screenshot placeholder */}
             <div className="bg-card border border-border rounded-xl overflow-hidden mb-12">
-              <div className="aspect-video bg-background/50 flex items-center justify-center">
-                <div className="text-center text-muted">
-                  <div className="size-16 mx-auto mb-4 rounded-lg bg-border/50 flex items-center justify-center">
-                    <svg className="size-8 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm">Dashboard Overview Screenshot</p>
-                  <p className="text-xs text-muted/50 mt-1">1920 × 1080</p>
-                </div>
+              <div className="aspect-video bg-background/50">
+                <img
+                  src="/commandcenter.png"
+                  alt="Dashboard Overview Screenshot"
+                  className="w-full h-full object-cover object-top"
+                />
               </div>
             </div>
 
@@ -630,19 +605,19 @@ export default function Home() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted">Vercel Pro</span>
-                      <span className="tabular-nums">$20/mo</span>
+                      <span className="tabular-nums font-mono">$20/mo</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted">Domain renewal</span>
-                      <span className="tabular-nums">$15</span>
+                      <span className="tabular-nums font-mono">$15</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted">Stock images</span>
-                      <span className="tabular-nums">$45</span>
+                      <span className="tabular-nums font-mono">$45</span>
                     </div>
                     <div className="flex justify-between pt-3 border-t border-border font-medium">
                       <span>Total expenses</span>
-                      <span className="tabular-nums">$80</span>
+                      <span className="tabular-nums font-mono">$80</span>
                     </div>
                   </div>
                 </div>
@@ -652,17 +627,13 @@ export default function Home() {
               </div>
 
               <div>
-                {/* Screenshot placeholder */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <div className="aspect-[4/3] bg-background/50 flex items-center justify-center">
-                    <div className="text-center text-muted">
-                      <div className="size-12 mx-auto mb-3 rounded-lg bg-border/50 flex items-center justify-center">
-                        <svg className="size-6 text-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-xs">Operating Expenses Screenshot</p>
-                    </div>
+                  <div className="aspect-[4/3] bg-background/50">
+                    <img
+                      src="/expenses.png"
+                      alt="Operating Expenses Screenshot"
+                      className="w-full h-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
@@ -779,63 +750,70 @@ export default function Home() {
 
         {/* Pricing Section */}
         <section className="px-4 py-20 border-t border-border/50">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-balance">
                 Simple pricing
               </h2>
               <p className="text-muted text-pretty">
-                One plan, everything included. Cancel anytime.
+                7-day free trial. No credit card required.
               </p>
             </div>
 
-            <div className="bg-card border border-accent/30 rounded-2xl p-8 md:p-10">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
-                <div>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-4xl font-bold tabular-nums">$3.99</span>
-                    <span className="text-muted">/month</span>
+            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+              {/* Pro */}
+              <div className="bg-card border border-border rounded-2xl p-6 md:p-8 flex flex-col">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-muted mb-2">Pro</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold tabular-nums font-mono">$4.99</span>
+                    <span className="text-muted text-sm">/month</span>
                   </div>
-                  <p className="text-sm text-muted">
-                    or $39.90/year <span className="text-success">(save 17%)</span>
-                  </p>
                 </div>
+                <ul className="space-y-3 mb-6 text-sm flex-1">
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted"><strong className="text-foreground">3</strong> organizations</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted"><strong className="text-foreground">5</strong> projects per org</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted">Telegram bot</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted">All features</span></li>
+                </ul>
                 <a
                   href={`${adminUrl}/login`}
-                  className="btn-glow px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-center"
+                  className="block w-full py-3 text-center border border-border rounded-lg hover:border-accent/50 transition-colors text-sm mt-auto"
                 >
                   Start Free Trial
                 </a>
               </div>
 
-              <div className="border-t border-border pt-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    "Unlimited projects",
-                    "Unlimited milestones",
-                    "All billing types (fixed, hourly, per-unit)",
-                    "Public shareable links",
-                    "E2E encrypted notes",
-                    "Any payment methods",
-                    "Time tracking",
-                    "Operating expenses",
-                    "Attachments & comments",
-                    "Full API access"
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-3 text-sm">
-                      <span className="text-success">✓</span>
-                      <span className="text-muted">{feature}</span>
-                    </div>
-                  ))}
+              {/* Unlimited */}
+              <div className="bg-card border-2 border-accent rounded-2xl p-6 md:p-8 relative flex flex-col">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-accent text-background text-xs font-semibold px-3 py-1 rounded-full">Popular</span>
                 </div>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-border text-center">
-                <p className="text-sm text-muted">
-                  14 days free. 30-day money-back guarantee.
-                </p>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-muted mb-2">Unlimited</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold tabular-nums font-mono gradient-text">$9.99</span>
+                    <span className="text-muted text-sm">/month</span>
+                  </div>
+                </div>
+                <ul className="space-y-3 mb-6 text-sm flex-1">
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted"><strong className="text-foreground">Unlimited</strong> organizations</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted"><strong className="text-foreground">Unlimited</strong> projects</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted">Telegram bot</span></li>
+                  <li className="flex items-center gap-2"><span className="text-success">✓</span><span className="text-muted">Full API access</span></li>
+                </ul>
+                <a
+                  href={`${adminUrl}/login`}
+                  className="btn-glow block w-full py-3 text-center bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors text-sm mt-auto"
+                >
+                  Start Free Trial
+                </a>
               </div>
             </div>
+
+            <p className="text-center text-sm text-muted mt-8">
+              30-day money-back guarantee.
+            </p>
           </div>
         </section>
 
@@ -872,7 +850,7 @@ export default function Home() {
                 },
                 {
                   q: "Is there a free trial?",
-                  a: "Yes. 14 days free, no credit card required to start. You can also cancel within 30 days for a full refund."
+                  a: "Yes! Every plan comes with a 7-day free trial. No credit card required to start. After the trial, choose the plan that fits your needs."
                 },
                 {
                   q: "Can I cancel anytime?",
@@ -896,7 +874,6 @@ export default function Home() {
             </h2>
             <p className="text-lg text-muted mb-8 max-w-xl mx-auto text-pretty">
               One tool for billing instead of spreadsheets, notes, and message threads.
-              Try it free.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <a
@@ -907,7 +884,7 @@ export default function Home() {
               </a>
             </div>
             <p className="text-sm text-muted/60">
-              14-day trial · No credit card · Cancel anytime
+              7-day free trial · No credit card · Cancel anytime
             </p>
           </div>
         </section>

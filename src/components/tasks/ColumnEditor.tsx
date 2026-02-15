@@ -192,7 +192,7 @@ export function ColumnEditor({
                       index === 0 ||
                       (index === 1 && sortedColumns[0].is_system)
                     }
-                    className="text-muted hover:text-foreground disabled:opacity-30 text-xs leading-none"
+                    className="p-1.5 text-muted hover:text-foreground disabled:opacity-30 text-xs leading-none"
                   >
                     ▲
                   </button>
@@ -203,7 +203,7 @@ export function ColumnEditor({
                       column.is_done_column ||
                       sortedColumns[index + 1]?.is_done_column
                     }
-                    className="text-muted hover:text-foreground disabled:opacity-30 text-xs leading-none"
+                    className="p-1.5 text-muted hover:text-foreground disabled:opacity-30 text-xs leading-none"
                   >
                     ▼
                   </button>
@@ -240,7 +240,7 @@ export function ColumnEditor({
                   <button
                     onClick={() => handleDelete(column.id)}
                     disabled={saving}
-                    className="text-muted hover:text-red-400 text-xs transition-colors disabled:opacity-50"
+                    className="text-muted hover:text-danger text-xs transition-colors disabled:opacity-50"
                   >
                     x
                   </button>
@@ -256,7 +256,7 @@ export function ColumnEditor({
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
               placeholder="New column name..."
-              className="flex-1 bg-background border border-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-accent"
+              className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleAddColumn();
               }}
@@ -264,7 +264,7 @@ export function ColumnEditor({
             <button
               onClick={handleAddColumn}
               disabled={!newColumnName.trim() || saving}
-              className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
+              className="px-3 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
             >
               Add
             </button>
@@ -275,7 +275,7 @@ export function ColumnEditor({
         <div className="p-4 border-t border-border flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
+            className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
           >
             Close
           </button>

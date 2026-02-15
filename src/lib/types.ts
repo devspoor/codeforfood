@@ -237,3 +237,26 @@ export interface TaskBoardData {
   columns: TaskColumn[];
   tasks: Task[];
 }
+
+// Telegram integration types
+export type TelegramAccessMode = "owner_only" | "all";
+
+export interface TelegramUser {
+  id: string;
+  user_id: string;
+  telegram_id: number;
+  telegram_username?: string;
+  linked_at: string;
+  link_token?: string;
+  link_token_expires_at?: string;
+}
+
+export interface TelegramChatBinding {
+  id: string;
+  chat_id: number;
+  thread_id?: number;
+  project_id: string;
+  bound_by: string;
+  access_mode: TelegramAccessMode;
+  created_at: string;
+}

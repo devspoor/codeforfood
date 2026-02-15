@@ -124,7 +124,7 @@ export function AttachmentManager({ taskId, attachments, readOnly = false, onCha
                 <button
                   type="button"
                   onClick={() => handleDelete(attachment.id)}
-                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-400 text-xs transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-danger text-xs transition-opacity"
                 >
                   ✕
                 </button>

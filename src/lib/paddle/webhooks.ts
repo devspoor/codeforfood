@@ -1,12 +1,30 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Use service role for webhook operations (bypasses RLS)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy-loaded Supabase client for webhook operations (bypasses RLS)
+let supabaseInstance: SupabaseClient | null = null
+
+function getSupabase(): SupabaseClient {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+  }
+  return supabaseInstance
+}
 
 type SubscriptionStatus = 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled'
+
+// Paddle webhook subscription data
+interface PaddleSubscriptionData {
+  id: string
+  status: string
+  customerId: string
+  customData?: { userId?: string }
+  items?: Array<{ price?: { id: string } }>
+  currentBillingPeriod?: { endsAt?: string }
+  canceledAt?: string | null
+}
 
 function mapPaddleStatus(paddleStatus: string): SubscriptionStatus {
   switch (paddleStatus) {
@@ -19,57 +37,72 @@ function mapPaddleStatus(paddleStatus: string): SubscriptionStatus {
   }
 }
 
-function getPlanFromPriceId(priceId: string): 'pro' | 'unlimited' | null {
+function getPlanFromPriceId(priceId: string | undefined): 'pro' | 'unlimited' | null {
+  if (!priceId) return null
   if (priceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_PRO) return 'pro'
   if (priceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_ID_UNLIMITED) return 'unlimited'
   return null
 }
 
-export async function handleSubscriptionCreated(data: any): Promise<void> {
+export async function handleSubscriptionCreated(data: PaddleSubscriptionData): Promise<void> {
   const userId = data.customData?.userId
   if (!userId) {
-    console.error('[Paddle] No userId in subscription customData')
-    return
+    throw new Error('[Paddle] No userId in subscription customData, subscription_id=' + data.id)
   }
 
   const priceId = data.items?.[0]?.price?.id
   const plan = getPlanFromPriceId(priceId)
+  if (!plan) {
+    console.warn(`[Paddle] Unknown price ID: ${priceId}, subscription_id=${data.id}`)
+  }
   const status = mapPaddleStatus(data.status)
   const isTrialing = status === 'trialing'
 
-  await supabase
+  const { error } = await getSupabase()
     .from('subscriptions')
-    .update({
+    .upsert({
+      user_id: userId,
       paddle_customer_id: data.customerId,
       paddle_subscription_id: data.id,
       status,
       plan,
-      trial_used: isTrialing ? true : undefined,
-      trial_ends_at: data.currentBillingPeriod?.endsAt || null,
+      trial_used: true,
+      trial_ends_at: isTrialing ? (data.currentBillingPeriod?.endsAt || null) : null,
       current_period_ends_at: data.currentBillingPeriod?.endsAt || null,
       updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', userId)
+    }, { onConflict: 'user_id' })
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to upsert subscription: ${error.message}`)
+  }
 }
 
-export async function handleSubscriptionUpdated(data: any): Promise<void> {
+export async function handleSubscriptionUpdated(data: PaddleSubscriptionData): Promise<void> {
   const priceId = data.items?.[0]?.price?.id
   const plan = getPlanFromPriceId(priceId)
   const status = mapPaddleStatus(data.status)
 
-  await supabase
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status,
-      plan,
+      ...(plan !== null && { plan }),
       current_period_ends_at: data.currentBillingPeriod?.endsAt || null,
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to update subscription: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }
 
-export async function handleSubscriptionCanceled(data: any): Promise<void> {
-  await supabase
+export async function handleSubscriptionCanceled(data: PaddleSubscriptionData): Promise<void> {
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status: 'canceled',
@@ -77,49 +110,94 @@ export async function handleSubscriptionCanceled(data: any): Promise<void> {
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to cancel subscription: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }
 
-export async function handleSubscriptionPastDue(data: any): Promise<void> {
-  await supabase
+export async function handleSubscriptionPastDue(data: PaddleSubscriptionData): Promise<void> {
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status: 'past_due',
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to mark subscription past_due: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }
 
-export async function handleSubscriptionActivated(data: any): Promise<void> {
+export async function handleSubscriptionActivated(data: PaddleSubscriptionData): Promise<void> {
   const priceId = data.items?.[0]?.price?.id
   const plan = getPlanFromPriceId(priceId)
 
-  await supabase
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status: 'active',
-      plan,
+      ...(plan !== null && { plan }),
       current_period_ends_at: data.currentBillingPeriod?.endsAt || null,
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to activate subscription: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }
 
-export async function handleSubscriptionPaused(data: any): Promise<void> {
-  await supabase
+export async function handleSubscriptionPaused(data: PaddleSubscriptionData): Promise<void> {
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status: 'paused',
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to pause subscription: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }
 
-export async function handleSubscriptionResumed(data: any): Promise<void> {
-  await supabase
+export async function handleSubscriptionResumed(data: PaddleSubscriptionData): Promise<void> {
+  const priceId = data.items?.[0]?.price?.id
+  const plan = getPlanFromPriceId(priceId)
+
+  const { data: rows, error } = await getSupabase()
     .from('subscriptions')
     .update({
       status: 'active',
+      ...(plan !== null && { plan }),
+      current_period_ends_at: data.currentBillingPeriod?.endsAt || null,
       updated_at: new Date().toISOString(),
     })
     .eq('paddle_subscription_id', data.id)
+    .select('id')
+
+  if (error) {
+    throw new Error(`[Paddle] Failed to resume subscription: ${error.message}`)
+  }
+  if (!rows || rows.length === 0) {
+    throw new Error(`[Paddle] No subscription found for paddle_subscription_id=${data.id}`)
+  }
 }

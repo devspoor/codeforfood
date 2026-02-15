@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Pricing | CodeForFood',
@@ -19,8 +20,15 @@ export default function PricingPage() {
         {/* Header */}
         <header className="w-full py-6 px-4">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Link href="/" className="text-accent font-bold text-lg hover:opacity-80 transition-opacity">
-              {"<cff/>"}
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
+              <Image
+                src="/logo.png"
+                alt="codeforfood"
+                width={24}
+                height={24}
+                className="size-6"
+              />
+              <span>codeforfood</span>
             </Link>
             <a
               href={`${adminUrl}/login`}
@@ -33,35 +41,41 @@ export default function PricingPage() {
 
         {/* Main Content */}
         <main className="flex-1 px-4 py-16">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center mb-16">
               <h1 className="text-4xl sm:text-5xl font-bold mb-4">
                 <span className="gradient-text">Simple pricing</span>
               </h1>
               <p className="text-muted text-lg max-w-md mx-auto">
-                One plan, all features. No hidden fees.
+                7-day free trial. No credit card required.
               </p>
             </div>
 
             {/* Pricing Cards */}
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-              {/* Monthly Plan */}
-              <div className="card-glow bg-card border border-border rounded-2xl p-8">
+              {/* Pro Plan */}
+              <div className="bg-card border border-border rounded-2xl p-8 flex flex-col">
                 <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-muted mb-2">Monthly</h2>
+                  <h2 className="text-lg font-semibold text-muted mb-2">Pro</h2>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold">$3.99</span>
+                    <span className="text-4xl font-bold">$4.99</span>
                     <span className="text-muted">/month</span>
                   </div>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-1">
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Unlimited projects</span>
+                    <span><strong>3</strong> organizations</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span><strong>5</strong> projects per org</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,7 +87,7 @@ export default function PricingPage() {
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Public sharing links</span>
+                    <span>Telegram bot</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,57 +95,56 @@ export default function PricingPage() {
                     </svg>
                     <span>E2E encrypted notes</span>
                   </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Payment method display</span>
-                  </li>
                 </ul>
 
                 <a
                   href={`${adminUrl}/login`}
-                  className="block w-full py-3 px-4 text-center border border-border rounded-lg hover:border-accent/50 transition-colors"
+                  className="block w-full py-3 px-4 text-center border border-border rounded-lg hover:border-accent/50 transition-colors mt-auto"
                 >
-                  Get Started
+                  Start Free Trial
                 </a>
               </div>
 
-              {/* Yearly Plan */}
-              <div className="card-glow bg-card border-2 border-accent rounded-2xl p-8 relative">
+              {/* Unlimited Plan */}
+              <div className="card-glow bg-card border-2 border-accent rounded-2xl p-8 relative flex flex-col">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="bg-accent text-background text-xs font-semibold px-3 py-1 rounded-full">
-                    Save 17%
+                    Popular
                   </span>
                 </div>
 
                 <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-muted mb-2">Yearly</h2>
+                  <h2 className="text-lg font-semibold text-muted mb-2">Unlimited</h2>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold gradient-text">$39.90</span>
-                    <span className="text-muted">/year</span>
+                    <span className="text-4xl font-bold gradient-text">$9.99</span>
+                    <span className="text-muted">/month</span>
                   </div>
-                  <p className="text-sm text-muted mt-1">$3.33/month</p>
                 </div>
 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-1">
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Unlimited projects</span>
+                    <span><strong>Unlimited</strong> organizations</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Unlimited milestones</span>
+                    <span><strong>Unlimited</strong> projects</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Public sharing links</span>
+                    <span>Telegram bot</span>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm">
+                    <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Full API access</span>
                   </li>
                   <li className="flex items-center gap-3 text-sm">
                     <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,19 +152,13 @@ export default function PricingPage() {
                     </svg>
                     <span>E2E encrypted notes</span>
                   </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <svg className="w-5 h-5 text-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Payment method display</span>
-                  </li>
                 </ul>
 
                 <a
                   href={`${adminUrl}/login`}
-                  className="btn-glow block w-full py-3 px-4 text-center bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors"
+                  className="btn-glow block w-full py-3 px-4 text-center bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors mt-auto"
                 >
-                  Get Started
+                  Start Free Trial
                 </a>
               </div>
             </div>
@@ -187,10 +194,10 @@ export default function PricingPage() {
                 </div>
 
                 <div className="bg-card border border-border rounded-xl p-6">
-                  <h3 className="font-semibold mb-2">Is there a free trial?</h3>
+                  <h3 className="font-semibold mb-2">Can I upgrade or downgrade anytime?</h3>
                   <p className="text-sm text-muted">
-                    We don&apos;t offer a free trial, but with our affordable pricing you can try the
-                    full service for less than the cost of a coffee.
+                    Yes, you can change your plan at any time. When upgrading, you&apos;ll be charged
+                    the prorated difference. When downgrading, the change takes effect at the next billing cycle.
                   </p>
                 </div>
               </div>
@@ -203,7 +210,7 @@ export default function PricingPage() {
                 href={`${adminUrl}/login`}
                 className="btn-glow inline-block px-8 py-3.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover"
               >
-                Get Started Now
+                Start Free Trial
               </a>
             </div>
           </div>
@@ -212,8 +219,15 @@ export default function PricingPage() {
         {/* Footer */}
         <footer className="border-t border-border py-8 px-4">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link href="/" className="text-accent font-bold hover:opacity-80 transition-opacity">
-              {"<codeforfood/>"}
+            <Link href="/" className="flex items-center gap-2 text-accent font-bold hover:opacity-80 transition-opacity">
+              <Image
+                src="/logo.png"
+                alt="codeforfood"
+                width={20}
+                height={20}
+                className="size-5"
+              />
+              <span>codeforfood</span>
             </Link>
             <div className="flex items-center gap-4 text-xs text-muted/50">
               <Link href="/privacy" className="hover:text-muted transition-colors">

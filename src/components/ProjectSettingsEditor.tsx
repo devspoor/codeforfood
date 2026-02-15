@@ -5,6 +5,7 @@ import type { ProjectStatus } from "@/lib/types";
 
 interface Props {
   projectId: string;
+  projectHash: string;
   status: ProjectStatus;
   hideAmounts: boolean;
   hidePaid: boolean;
@@ -15,14 +16,15 @@ interface Props {
 }
 
 const STATUS_OPTIONS: { value: ProjectStatus; label: string; color: string }[] = [
-  { value: "in_progress", label: "In Progress", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  { value: "awaiting_payment", label: "Awaiting Payment", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+  { value: "in_progress", label: "In Progress", color: "bg-neutral-500/20 text-foreground border-neutral-500/30" },
+  { value: "awaiting_payment", label: "Awaiting Payment", color: "bg-accent/20 text-accent border-accent/30" },
   { value: "completed", label: "Completed", color: "bg-success/20 text-success border-success/30" },
-  { value: "on_hold", label: "On Hold", color: "bg-gray-500/20 text-gray-400 border-gray-500/30" },
+  { value: "on_hold", label: "On Hold", color: "bg-neutral-500/20 text-muted border-neutral-500/30" },
 ];
 
 export function ProjectSettingsEditor({
   projectId,
+  projectHash,
   status: initialStatus,
   hideAmounts: initialHideAmounts,
   hidePaid: initialHidePaid,
@@ -31,6 +33,7 @@ export function ProjectSettingsEditor({
   showTasksBoard: initialShowTasksBoard,
   hasPassword: initialHasPassword,
 }: Props) {
+  const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState(initialStatus);
   const [hideAmounts, setHideAmounts] = useState(initialHideAmounts);
   const [hidePaid, setHidePaid] = useState(initialHidePaid);
@@ -144,7 +147,7 @@ export function ProjectSettingsEditor({
               type="checkbox"
               checked={hideAmounts}
               onChange={(e) => handleVisibilityChange("hide_amounts", e.target.checked)}
-              className="w-4 h-4 rounded border-border bg-background accent-accent"
+              className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
             />
             <div>
               <span className="text-sm">Hide amounts</span>
@@ -156,7 +159,7 @@ export function ProjectSettingsEditor({
               type="checkbox"
               checked={hidePaid}
               onChange={(e) => handleVisibilityChange("hide_paid", e.target.checked)}
-              className="w-4 h-4 rounded border-border bg-background accent-accent"
+              className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
             />
             <div>
               <span className="text-sm">Hide payment status</span>
@@ -168,7 +171,7 @@ export function ProjectSettingsEditor({
               type="checkbox"
               checked={showPaymentHistory}
               onChange={(e) => handleVisibilityChange("show_payment_history", e.target.checked)}
-              className="w-4 h-4 rounded border-border bg-background accent-accent"
+              className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
             />
             <div>
               <span className="text-sm">Show payment history</span>
@@ -180,7 +183,7 @@ export function ProjectSettingsEditor({
               type="checkbox"
               checked={showExpenses}
               onChange={(e) => handleVisibilityChange("show_expenses", e.target.checked)}
-              className="w-4 h-4 rounded border-border bg-background accent-accent"
+              className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
             />
             <div>
               <span className="text-sm">Show operating expenses</span>
@@ -192,7 +195,7 @@ export function ProjectSettingsEditor({
               type="checkbox"
               checked={showTasksBoard}
               onChange={(e) => handleVisibilityChange("tasks_board_public", e.target.checked)}
-              className="w-4 h-4 rounded border-border bg-background accent-accent"
+              className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
             />
             <div>
               <span className="text-sm">Show tasks board</span>
@@ -261,6 +264,31 @@ export function ProjectSettingsEditor({
             + Add Password Protection
           </button>
         )}
+      </div>
+
+      {/* Telegram Bot */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Telegram Bot</h3>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <p className="text-sm text-muted mb-3">
+            To connect this project in Telegram, add the bot to your chat and send:
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-background rounded font-mono text-sm overflow-x-auto">
+              /connect {projectHash}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`/connect ${projectHash}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="px-3 py-2 text-sm border border-border rounded hover:border-accent hover:text-accent transition-colors shrink-0"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -179,8 +179,8 @@ export function TaskModal({
                       <div>
                         <span className="text-muted">Priority: </span>
                         <span className={`capitalize ${
-                          task.priority === "high" ? "text-red-400" :
-                          task.priority === "medium" ? "text-yellow-400" : "text-muted"
+                          task.priority === "high" ? "text-danger" :
+                          task.priority === "medium" ? "text-accent" : "text-muted"
                         }`}>
                           {task.priority}
                         </span>
@@ -189,7 +189,7 @@ export function TaskModal({
                       {task.deadline && (
                         <div>
                           <span className="text-muted">Deadline: </span>
-                          <span className={new Date(task.deadline) < new Date() ? "text-red-400" : ""}>
+                          <span className={new Date(task.deadline) < new Date() ? "text-danger" : ""}>
                             {new Date(task.deadline).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -240,7 +240,7 @@ export function TaskModal({
                     </div>
 
                     {/* Priority & Deadline */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-muted mb-1">Priority</label>
                         <select
@@ -319,7 +319,7 @@ export function TaskModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
+                    className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
                   >
                     Close
                   </button>
@@ -327,7 +327,7 @@ export function TaskModal({
                     <button
                       type="button"
                       onClick={onEditClick}
-                      className="px-4 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors"
+                      className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors"
                     >
                       Edit
                     </button>
@@ -346,7 +346,7 @@ export function TaskModal({
                           <button
                             type="button"
                             onClick={onDelete}
-                            className="text-sm text-red-400 hover:text-red-300"
+                            className="text-sm text-danger hover:text-danger/80"
                           >
                             Yes
                           </button>
@@ -362,7 +362,7 @@ export function TaskModal({
                         <button
                           type="button"
                           onClick={() => setShowDeleteConfirm(true)}
-                          className="text-sm text-red-400 hover:text-red-300"
+                          className="text-sm text-danger hover:text-danger/80"
                         >
                           Delete
                         </button>
@@ -376,7 +376,7 @@ export function TaskModal({
                     <button
                       type="button"
                       onClick={onArchive}
-                      className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
+                      className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
                     >
                       Archive
                     </button>
@@ -384,14 +384,14 @@ export function TaskModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-3 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
+                    className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={!title.trim()}
-                    className="px-4 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+                    className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
                   >
                     {task ? "Save" : "Create"}
                   </button>

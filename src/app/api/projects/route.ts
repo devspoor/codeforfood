@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProjects, createProject, getOrganizationById, getCurrentUser } from "@/lib/db";
+import { canUserCreateProject } from "@/lib/paddle/access";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -26,6 +27,15 @@ export async function POST(request: NextRequest) {
     const org = await getOrganizationById(organizationId);
     if (!org) {
       return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+    }
+
+    // Check subscription limits
+    const canCreate = await canUserCreateProject(user.id, organizationId);
+    if (!canCreate) {
+      return NextResponse.json(
+        { error: "Project limit reached for this organization. Upgrade your plan to create more.", code: "LIMIT_REACHED" },
+        { status: 403 }
+      );
     }
 
     const project = await createProject({ organizationId, name, description });

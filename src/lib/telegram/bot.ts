@@ -1,6 +1,6 @@
 import { Bot, InlineKeyboard, Context } from "grammy";
 import { createBotClient } from "@/lib/supabase/server";
-import { getSubscription, isSubscriptionActive } from "@/lib/paddle/subscriptions";
+import { getSubscriptionAdmin, isSubscriptionActive } from "@/lib/paddle/subscriptions";
 import {
   getTelegramUserByTelegramId,
   linkTelegramAccount,
@@ -208,9 +208,9 @@ if (bot) {
       .single();
 
     if (org) {
-      const subscription = await getSubscription(org.user_id);
+      const subscription = await getSubscriptionAdmin(org.user_id);
       if (!subscription || !isSubscriptionActive(subscription.status)) {
-        await ctx.reply("❌ Оплатите подписку для использования бота.\n\nПерейдите в настройки CodeForFood для оплаты.");
+        await ctx.reply("❌ Subscription required to use the bot.\n\nPlease subscribe at CodeForFood settings.");
         return null;
       }
     }
@@ -445,6 +445,22 @@ if (bot) {
     if (!allowed) {
       await ctx.answerCallbackQuery({ text: "No permission" });
       return;
+    }
+
+    // Check project owner's subscription
+    const supabase = createBotClient();
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("user_id")
+      .eq("id", binding.project.organization_id)
+      .single();
+
+    if (org) {
+      const subscription = await getSubscriptionAdmin(org.user_id);
+      if (!subscription || !isSubscriptionActive(subscription.status)) {
+        await ctx.answerCallbackQuery({ text: "Subscription required" });
+        return;
+      }
     }
 
     const project = await botGetProjectById(binding.project_id);

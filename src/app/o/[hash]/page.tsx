@@ -4,7 +4,7 @@ import Image from "next/image";
 import { getOrganizationByHash, getProjectsByOrganization, getProjectSummary } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
-import { getSubscription, isSubscriptionActive } from "@/lib/paddle/subscriptions";
+import { getSubscriptionAdmin, isSubscriptionActive } from "@/lib/paddle/subscriptions";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +46,8 @@ export default async function PublicOrganizationPage({
     notFound();
   }
 
-  // Check owner's subscription status
-  const subscription = await getSubscription(org.user_id)
+  // Check owner's subscription status (use admin client to bypass RLS on public pages)
+  const subscription = await getSubscriptionAdmin(org.user_id)
   if (!subscription || !isSubscriptionActive(subscription.status)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,8 +57,8 @@ export default async function PublicOrganizationPage({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold mb-2">Страница временно недоступна</h1>
-          <p className="text-muted text-sm">Владелец должен активировать подписку</p>
+          <h1 className="text-xl font-semibold mb-2">Page temporarily unavailable</h1>
+          <p className="text-muted text-sm">The project owner needs to activate their subscription</p>
         </div>
       </div>
     )
