@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProjectById, getOrganizationById, getProjectSummary, getTaskBoardData, createDefaultTaskColumns } from "@/lib/db";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatHours } from "@/lib/format";
 import { ProjectActions } from "@/components/ProjectActions";
 import { MilestonesEditor } from "@/components/MilestonesEditor";
 import { SecureNoteEditor } from "@/components/SecureNoteEditor";
@@ -106,7 +106,7 @@ export default async function ProjectDetailPage({
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
             <p className="text-muted text-xs sm:text-sm mb-1">Hours Logged</p>
-            <p className="text-lg sm:text-2xl font-bold font-mono">{summary.totalHours.toFixed(1)}h</p>
+            <p className="text-lg sm:text-2xl font-bold font-mono">{formatHours(summary.totalHours)}</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
             <p className="text-muted text-xs sm:text-sm mb-1">Hourly Revenue</p>

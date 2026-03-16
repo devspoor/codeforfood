@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getOrganizations, getProjects, getProjectSummary } from "@/lib/db";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatHours } from "@/lib/format";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 
@@ -128,7 +128,7 @@ export default async function AdminDashboard() {
           <div className="mt-6 pt-6 border-t border-border grid grid-cols-2 gap-6">
             <div>
               <p className="text-xs text-muted uppercase tracking-wider mb-1">Hours Logged</p>
-              <p className="text-xl font-bold tabular-nums font-mono">{totalStats.hours.toFixed(1)}h</p>
+              <p className="text-xl font-bold tabular-nums font-mono">{formatHours(totalStats.hours)}</p>
             </div>
             <div>
               <p className="text-xs text-muted uppercase tracking-wider mb-1">Hourly Revenue</p>
@@ -244,7 +244,7 @@ export default async function AdminDashboard() {
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {summary.totalHours.toFixed(1)}h logged
+                      {formatHours(summary.totalHours)} logged
                     </p>
                   )}
                 </Link>

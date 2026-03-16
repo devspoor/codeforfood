@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addTimeEntry, getCurrentUser, verifyMilestoneOwnership } from "@/lib/db";
+import { formatHours } from "@/lib/format";
 
 export async function POST(
   request: NextRequest,
@@ -60,7 +61,7 @@ export async function POST(
         if (existingHours + numHours > milestone.hours_limit) {
           const remaining = Math.max(0, milestone.hours_limit - existingHours);
           return NextResponse.json(
-            { error: `Would exceed hours limit. Remaining: ${remaining.toFixed(1)}h of ${milestone.hours_limit}h` },
+            { error: `Would exceed hours limit. Remaining: ${formatHours(remaining)} of ${formatHours(milestone.hours_limit)}` },
             { status: 400 }
           );
         }

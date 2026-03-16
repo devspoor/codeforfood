@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatHours } from "@/lib/format";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
 import { PublicTaskBoard } from "@/components/tasks/PublicTaskBoard";
@@ -156,7 +156,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-center gap-6">
                 <div className="text-center">
                   <p className="text-muted text-xs mb-1 uppercase tracking-wider">Hours Logged</p>
-                  <p className="text-xl font-bold font-mono">{summary.totalHours.toFixed(1)}h</p>
+                  <p className="text-xl font-bold font-mono">{formatHours(summary.totalHours)}</p>
                 </div>
                 {summary.hourlyAmount > 0 && (
                   <div className="text-center border-l border-border pl-6">
@@ -257,7 +257,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               <p className="text-xs text-muted mt-1">
                                 {!hideAmounts && `${formatCurrency(Number(m.hourly_rate || 0))}/hr`}
                                 {!hideAmounts && " - "}
-                                {totalHours.toFixed(1)}h logged
+                                {formatHours(totalHours)} logged
                               </p>
                             )}
                           </div>
@@ -338,7 +338,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                                 >
                                   <div className="flex items-center gap-3">
                                     <span className="text-muted">{entry.date}</span>
-                                    <span className="font-medium">{Number(entry.hours).toFixed(2)}h</span>
+                                    <span className="font-medium">{formatHours(Number(entry.hours))}</span>
                                     {entry.description && (
                                       <span className="text-muted truncate max-w-[120px]">{entry.description}</span>
                                     )}

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { Milestone, TimeEntry, PaymentHistoryEntry } from "@/lib/types";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatHours } from "@/lib/format";
 import { AlertDialog } from "./AlertDialog";
 import { MilestoneForm, type MilestoneFormData } from "./milestones";
 import {
@@ -30,6 +30,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   const [showTimeEntry, setShowTimeEntry] = useState<string | null>(null);
   const [timeEntryDate, setTimeEntryDate] = useState(new Date().toISOString().split("T")[0]);
   const [timeEntryHours, setTimeEntryHours] = useState("");
+  const [timeEntryMinutes, setTimeEntryMinutes] = useState("");
   const [timeEntryUnits, setTimeEntryUnits] = useState("");
   const [timeEntryDesc, setTimeEntryDesc] = useState("");
   const [timeEntryPaidAmount, setTimeEntryPaidAmount] = useState("");
@@ -234,12 +235,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   };
 
   const handleAddTimeEntry = async (milestoneId: string, isUnitEntry: boolean = false) => {
-    const hasHours = !isUnitEntry && timeEntryHours;
+    const hasHours = !isUnitEntry && (timeEntryHours || timeEntryMinutes);
     const hasUnits = isUnitEntry && timeEntryUnits;
     if (!timeEntryDate || (!hasHours && !hasUnits)) return;
 
-    // Validate numeric values
-    const hours = hasHours ? Number(timeEntryHours) : undefined;
+    // Validate numeric values - combine hours + minutes into decimal hours
+    const hours = hasHours ? (Number(timeEntryHours) || 0) + (Number(timeEntryMinutes) || 0) / 60 : undefined;
     const units = hasUnits ? Number(timeEntryUnits) : undefined;
     const paidAmount = timeEntryPaidAmount ? Number(timeEntryPaidAmount) : 0;
 
@@ -275,6 +276,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
         : m
     ));
     setTimeEntryHours("");
+    setTimeEntryMinutes("");
     setTimeEntryUnits("");
     setTimeEntryDesc("");
     setTimeEntryPaidAmount("");
@@ -466,9 +468,9 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         {isHourly && (
                           <p className="text-xs text-muted mt-1">
                             {formatCurrency(Number(m.hourly_rate || 0))}/hr
-                            {m.estimated_hours && ` · Est. ${m.estimated_hours}h`}
-                            {m.hours_limit && ` · Max ${m.hours_limit}h`}
-                            {` · Logged: ${totalHours.toFixed(1)}h`}
+                            {m.estimated_hours && ` · Est. ${formatHours(Number(m.estimated_hours))}`}
+                            {m.hours_limit && ` · Max ${formatHours(Number(m.hours_limit))}`}
+                            {` · Logged: ${formatHours(totalHours)}`}
                           </p>
                         )}
                         {isPerUnit && (
@@ -535,28 +537,40 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 onChange={(e) => setTimeEntryDate(e.target.value)}
                                 className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                               />
-                              <input
-                                type="number"
-                                value={timeEntryHours}
-                                onChange={(e) => setTimeEntryHours(e.target.value)}
-                                placeholder="Hours"
-                                min="0.25"
-                                max="24"
-                                step="0.25"
-                                className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
-                              />
+                              <div className="flex gap-1">
+                                <input
+                                  type="number"
+                                  value={timeEntryHours}
+                                  onChange={(e) => setTimeEntryHours(e.target.value)}
+                                  placeholder="0h"
+                                  min="0"
+                                  max="24"
+                                  step="1"
+                                  className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                />
+                                <input
+                                  type="number"
+                                  value={timeEntryMinutes}
+                                  onChange={(e) => setTimeEntryMinutes(e.target.value)}
+                                  placeholder="0m"
+                                  min="0"
+                                  max="59"
+                                  step="1"
+                                  className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                />
+                              </div>
                               <input
                                 type="number"
                                 value={timeEntryPaidAmount}
                                 onChange={(e) => setTimeEntryPaidAmount(e.target.value)}
-                                placeholder={timeEntryHours ? `$${(Number(timeEntryHours) * Number(m.hourly_rate || 0)).toFixed(0)} paid` : "Paid $"}
+                                placeholder={(timeEntryHours || timeEntryMinutes) ? `$${(((Number(timeEntryHours) || 0) + (Number(timeEntryMinutes) || 0) / 60) * Number(m.hourly_rate || 0)).toFixed(0)} paid` : "Paid $"}
                                 min="0"
                                 step="0.01"
                                 className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                               />
                               <button
                                 onClick={() => handleAddTimeEntry(m.id, false)}
-                                disabled={!timeEntryHours}
+                                disabled={!timeEntryHours && !timeEntryMinutes}
                                 className="px-3 py-1 text-sm bg-accent text-background rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
                               >
                                 Add
@@ -588,7 +602,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                   <div className="flex items-start justify-between text-xs gap-2">
                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                       <span className="text-muted">{entry.date}</span>
-                                      <span className="font-medium">{Number(entry.hours || 0).toFixed(2)}h</span>
+                                      <span className="font-medium">{formatHours(Number(entry.hours || 0))}</span>
                                       <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>

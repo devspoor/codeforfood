@@ -193,7 +193,7 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
               onChange={(e) => updateField("estimatedHours", e.target.value)}
               placeholder="e.g. 10"
               min="0"
-              step="0.5"
+              step="0.01"
               className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
             />
           </div>
@@ -205,7 +205,7 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
               onChange={(e) => updateField("hoursLimit", e.target.value)}
               placeholder="e.g. 20"
               min="0"
-              step="0.5"
+              step="0.01"
               className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
             />
           </div>
