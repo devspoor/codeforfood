@@ -334,13 +334,13 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               return (
                                 <div
                                   key={entry.id}
-                                  className={`flex items-center justify-between text-xs bg-background/50 rounded-lg px-2.5 py-1.5 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
+                                  className={`flex items-start justify-between text-xs bg-background/50 rounded-lg px-2.5 py-1.5 gap-2 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex flex-wrap items-start gap-x-3 gap-y-1 min-w-0 flex-1">
                                     <span className="text-muted">{entry.date}</span>
                                     <span className="font-medium">{formatHours(Number(entry.hours))}</span>
                                     {entry.description && (
-                                      <span className="text-muted truncate max-w-[120px]">{entry.description}</span>
+                                      <span className="text-muted break-words">{entry.description}</span>
                                     )}
                                   </div>
                                   {!hideAmounts && !hidePaid && (

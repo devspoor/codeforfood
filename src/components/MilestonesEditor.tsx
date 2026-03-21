@@ -607,7 +607,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>
                                       {entry.description && (
-                                        <span className="text-muted truncate max-w-[100px] sm:max-w-[150px]">{entry.description}</span>
+                                        <span className="text-muted break-words">{entry.description}</span>
                                       )}
                                     </div>
                                     <button
@@ -745,7 +745,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                         {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                       </span>
                                       {entry.description && (
-                                        <span className="text-muted truncate max-w-[100px] sm:max-w-[150px]">{entry.description}</span>
+                                        <span className="text-muted break-words">{entry.description}</span>
                                       )}
                                     </div>
                                     <button
