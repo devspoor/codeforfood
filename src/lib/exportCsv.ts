@@ -1,5 +1,5 @@
 import type { Milestone } from "./types";
-import { calculateAmount, roundCurrency } from "./format";
+import { calculateAmount, roundCurrency, formatHours } from "./format";
 
 function escapeCSV(value: string | number | undefined): string {
   if (value === undefined || value === null) return "";
@@ -60,7 +60,7 @@ export function exportMilestonesToCSV(milestones: Milestone[], filename: string)
           escapeCSV(m.title),
           escapeCSV(m.type),
           escapeCSV(entry.date),
-          escapeCSV(isHourly ? qty : ""),
+          escapeCSV(isHourly ? formatHours(qty) : ""),
           escapeCSV(isPerUnit ? qty : ""),
           escapeCSV(entry.description),
           escapeCSV(rate),
