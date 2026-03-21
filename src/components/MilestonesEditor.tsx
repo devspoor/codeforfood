@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { Milestone, TimeEntry, PaymentHistoryEntry } from "@/lib/types";
 import { formatCurrency, formatDate, formatHours } from "@/lib/format";
+import { exportMilestonesToCSV } from "@/lib/exportCsv";
 import { AlertDialog } from "./AlertDialog";
 import { MilestoneForm, type MilestoneFormData } from "./milestones";
 import {
@@ -892,12 +893,25 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
           </div>
 
           {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full py-3 border border-dashed border-border rounded-lg text-muted hover:border-accent hover:text-accent transition-colors"
-            >
-              + Add Milestone
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex-1 py-3 border border-dashed border-border rounded-lg text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                + Add Milestone
+              </button>
+              {milestones.length > 0 && (
+                <button
+                  onClick={() => exportMilestonesToCSV(milestones, "milestones")}
+                  className="px-4 py-3 border border-border rounded-lg text-muted hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  CSV
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

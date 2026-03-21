@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Project, ProjectSummary, Milestone, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense } from "@/lib/types";
 import { formatCurrency, formatDate, formatHours } from "@/lib/format";
+import { exportMilestonesToCSV } from "@/lib/exportCsv";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
 import { PublicTaskBoard } from "@/components/tasks/PublicTaskBoard";
@@ -183,12 +184,25 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
 
           {/* Milestones */}
           <div className="mb-10">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              Milestones
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Milestones
+              </h2>
+              {sortedMilestones.length > 0 && (
+                <button
+                  onClick={() => exportMilestonesToCSV(sortedMilestones, `${project.name || "project"}-milestones`)}
+                  className="text-xs text-muted hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  CSV
+                </button>
+              )}
+            </div>
             <div className="space-y-3">
               {sortedMilestones.map((m, index) => {
                   const isHourly = m.type === "hourly";
@@ -301,7 +315,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                             </svg>
                             Payment History
                           </p>
-                          <div className="space-y-1 max-h-28 overflow-y-auto">
+                          <div className="space-y-1">
                             {(m.payment_history || []).map((entry: PaymentHistoryEntry) => (
                               <div
                                 key={entry.id}
@@ -326,7 +340,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                             </svg>
                             Time Log
                           </p>
-                          <div className="space-y-1 max-h-28 overflow-y-auto">
+                          <div className="space-y-1">
                             {(m.time_entries || []).map((entry: TimeEntry) => {
                               const entryAmount = Number(entry.hours) * Number(m.hourly_rate || 0);
                               const entryPaid = Number(entry.paid_amount || 0);
