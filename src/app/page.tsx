@@ -77,10 +77,10 @@ export default function Home() {
               Milestones, payments, hours, expenses — one page your client can open
               anytime instead of messaging you.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 stagger-3">
+            <div className="flex flex-col items-center gap-3 stagger-3">
               <a
                 href={`${adminUrl}/login`}
-                className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
+                className="w-full max-w-md px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)] text-center block"
               >
                 Try free for 7 days
               </a>
