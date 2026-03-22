@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login/
+Disallow: /p/
+Disallow: /o/
+
+Sitemap: https://codefor.food/sitemap.xml

@@ -2,8 +2,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Terms of Use | CodeForFood',
-  description: 'Terms of Use for CodeForFood - Project billing tracker for freelancers',
+  title: 'Terms of Use',
+  description: 'Terms of Use for CodeForFood — rules and conditions for using the service.',
+  alternates: {
+    canonical: '/terms',
+  },
 }
 
 export default function TermsOfUsePage() {

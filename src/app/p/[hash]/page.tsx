@@ -32,6 +32,7 @@ export async function generateMetadata({
   return {
     title: `${project.name} | codeforfood`,
     description: `Project billing details for ${project.name}`,
+    robots: { index: false, follow: false },
     openGraph: {
       title: `${project.name} | codeforfood`,
       description: `Project billing details for ${project.name}`,

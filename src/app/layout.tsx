@@ -24,13 +24,61 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0a",
 };
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://codefor.food";
+
 export const metadata: Metadata = {
-  title: "codeforfood",
-  description: "Project billing tracker",
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: "CodeForFood — Project Billing Tracker for Freelancers",
+    template: "%s | CodeForFood",
+  },
+  description:
+    "Create projects with milestones, track payments, and share progress with clients via a single link. Billing tracker built for freelancers.",
+  keywords: [
+    "freelance billing",
+    "project tracker",
+    "milestone payments",
+    "invoice tracker",
+    "freelancer tools",
+    "payment tracking",
+    "client billing",
+  ],
+  authors: [{ name: "CodeForFood" }],
+  creator: "CodeForFood",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: baseUrl,
+    siteName: "CodeForFood",
+    title: "CodeForFood — Project Billing Tracker for Freelancers",
+    description:
+      "Create projects with milestones, track payments, and share progress with clients via a single link.",
+  },
+  twitter: {
+    card: "summary",
+    title: "CodeForFood — Project Billing Tracker for Freelancers",
+    description:
+      "Create projects with milestones, track payments, and share progress with clients via a single link.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: baseUrl,
+  },
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "codeforfood",
+    title: "CodeForFood",
   },
 };
 

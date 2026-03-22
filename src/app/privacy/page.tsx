@@ -2,8 +2,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | CodeForFood',
-  description: 'Privacy Policy for CodeForFood - Project billing tracker for freelancers',
+  title: 'Privacy Policy',
+  description: 'Privacy Policy for CodeForFood — how we collect, use, and protect your data.',
+  alternates: {
+    canonical: '/privacy',
+  },
 }
 
 export default function PrivacyPolicyPage() {
