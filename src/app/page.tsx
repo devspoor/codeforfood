@@ -41,24 +41,24 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
-        <header className="sticky top-0 z-50 w-full py-4 px-4 border-b border-border/50 bg-background/80 backdrop-blur-lg">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
-              <Image src="/logo.png" alt="codeforfood" width={24} height={24} className="size-6" />
-              <span>codeforfood</span>
+        <header className="sticky top-0 z-50 w-full px-4 pt-4 pb-2">
+          <nav className="max-w-3xl mx-auto flex items-center justify-between px-5 py-2.5 rounded-full border border-border/50 bg-card/80 backdrop-blur-xl shadow-lg shadow-black/20">
+            <Link href="/" className="flex items-center gap-2 font-bold text-accent hover:text-accent-hover transition-colors">
+              <Image src="/logo.png" alt="codeforfood" width={20} height={20} className="size-5" />
+              <span className="text-sm">codeforfood</span>
             </Link>
-            <div className="flex items-center gap-6 text-sm text-muted">
-              <Link href="/pricing" className="hover:text-foreground transition-colors">
+            <div className="flex items-center gap-4 text-sm">
+              <Link href="/pricing" className="text-muted hover:text-foreground transition-colors">
                 Pricing
               </Link>
               <a
                 href={`${adminUrl}/login`}
-                className="px-4 py-2 bg-accent text-background font-medium rounded-lg hover:bg-accent-hover transition-colors"
+                className="px-4 py-1.5 bg-accent text-background font-medium rounded-full hover:bg-accent-hover transition-colors"
               >
                 Sign In
               </a>
             </div>
-          </div>
+          </nav>
         </header>
 
         {/* Hero */}
@@ -561,7 +561,7 @@ export default function Home() {
               </div>
             </div>
 
-            <p className="text-sm text-muted/40 mt-6">
+            <p className="text-sm text-muted/40 mt-6 text-center max-w-2xl mx-auto">
               30-day money-back guarantee.{" "}
               <Link href="/pricing" className="hover:text-muted transition-colors underline underline-offset-4">
                 Compare plans
