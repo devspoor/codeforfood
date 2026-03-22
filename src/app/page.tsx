@@ -41,7 +41,7 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
-        <header className="w-full py-6 px-4 border-b border-border/50">
+        <header className="sticky top-0 z-50 w-full py-4 px-4 border-b border-border/50 bg-background/80 backdrop-blur-lg">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
               <Image src="/logo.png" alt="codeforfood" width={24} height={24} className="size-6" />

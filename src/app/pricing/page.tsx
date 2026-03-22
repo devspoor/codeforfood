@@ -60,17 +60,17 @@ export default function PricingPage() {
       />
       <div className="absolute inset-0 grid-pattern opacity-30" />
 
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
-        <header className="w-full py-6 px-4 border-b border-border/50">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <header className="sticky top-0 z-50 w-full py-4 px-4 border-b border-border/50 bg-background/80 backdrop-blur-lg">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
               <Image src="/logo.png" alt="codeforfood" width={24} height={24} className="size-6" />
               <span>codeforfood</span>
             </Link>
             <a
               href={`${adminUrl}/login`}
-              className="text-sm text-muted hover:text-foreground transition-colors"
+              className="px-4 py-2 bg-accent text-background font-medium rounded-lg hover:bg-accent-hover transition-colors text-sm"
             >
               Sign In
             </a>
@@ -79,8 +79,8 @@ export default function PricingPage() {
 
         <main className="flex-1 px-4 py-20">
           <div className="max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="max-w-2xl mb-16">
+            {/* Title */}
+            <div className="max-w-2xl mx-auto text-center mb-16">
               <h1 className="text-4xl sm:text-5xl font-bold mb-4">
                 Pricing
               </h1>
@@ -90,9 +90,9 @@ export default function PricingPage() {
             </div>
 
             {/* Cards */}
-            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-3xl mb-20">
+            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-3xl mx-auto mb-6">
               {/* Pro */}
-              <div className="bg-card p-8 md:p-10 flex flex-col">
+              <div className="bg-card p-8 md:p-10 flex flex-col hover:bg-card-hover transition-colors">
                 <p className="mono-tag mb-5">Pro</p>
                 <div className="flex items-baseline gap-1 mb-2">
                   <span className="text-5xl font-bold price-tag">$4.99</span>
@@ -116,31 +116,31 @@ export default function PricingPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Client sharing</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">All billing models</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Privacy controls</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Encrypted notes</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Telegram bot</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">CSV export</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">REST API</span>
-                    <span className="text-muted/30">—</span>
+                    <span className="text-muted/30">&mdash;</span>
                   </div>
                 </div>
 
@@ -153,9 +153,9 @@ export default function PricingPage() {
               </div>
 
               {/* Unlimited */}
-              <div className="bg-card p-8 md:p-10 flex flex-col border-l border-accent/20 relative">
+              <div className="bg-card p-8 md:p-10 flex flex-col relative hover:bg-card-hover transition-colors">
                 <div className="absolute top-6 right-6 md:top-8 md:right-8">
-                  <span className="text-xs font-mono text-accent/60 bg-accent/5 px-2 py-1 rounded">popular</span>
+                  <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded-full border border-accent/20">popular</span>
                 </div>
 
                 <p className="mono-tag mb-5">Unlimited</p>
@@ -168,11 +168,11 @@ export default function PricingPage() {
                 <div className="space-y-3 text-sm mb-10 flex-1">
                   <div className="flex justify-between">
                     <span className="text-muted">Organizations</span>
-                    <span className="font-medium font-mono text-accent">∞</span>
+                    <span className="font-medium font-mono text-accent">&infin;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Projects</span>
-                    <span className="font-medium font-mono text-accent">∞</span>
+                    <span className="font-medium font-mono text-accent">&infin;</span>
                   </div>
                   <div className="h-px bg-border/50 my-1" />
                   <div className="flex justify-between">
@@ -181,31 +181,31 @@ export default function PricingPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Client sharing</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">All billing models</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Privacy controls</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Encrypted notes</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">Telegram bot</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">CSV export</span>
-                    <span className="text-success">✓</span>
+                    <span className="text-success">&#10003;</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted">REST API</span>
-                    <span className="text-success font-medium">✓</span>
+                    <span className="text-success font-medium">&#10003;</span>
                   </div>
                 </div>
 
@@ -219,23 +219,23 @@ export default function PricingPage() {
             </div>
 
             {/* One liner */}
-            <p className="text-sm text-muted/40 mb-20">
+            <p className="text-sm text-muted/40 mb-24 text-center max-w-3xl mx-auto">
               30-day money-back guarantee. Upgrade or downgrade anytime.
             </p>
 
             {/* FAQ */}
-            <div className="max-w-2xl">
-              <h2 className="text-xl font-bold mb-8">Questions</h2>
+            <div className="max-w-2xl mx-auto">
+              <h2 className="text-xl font-bold mb-8 text-center">Questions</h2>
 
-              <div className="space-y-8">
-                <div>
+              <div className="divide-y divide-border/30">
+                <div className="pb-6">
                   <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
                   <p className="text-sm text-muted leading-relaxed">
                     Yes. One click. You keep access until the end of your billing period.
                   </p>
                 </div>
 
-                <div>
+                <div className="py-6">
                   <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
                   <p className="text-sm text-muted leading-relaxed">
                     30-day money-back guarantee. Not happy — we refund, no questions.
@@ -243,14 +243,14 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                <div>
+                <div className="py-6">
                   <h3 className="font-semibold mb-2">What payment methods?</h3>
                   <p className="text-sm text-muted leading-relaxed">
                     Visa, Mastercard, Amex through our payment processor.
                   </p>
                 </div>
 
-                <div>
+                <div className="pt-6">
                   <h3 className="font-semibold mb-2">Can I switch plans?</h3>
                   <p className="text-sm text-muted leading-relaxed">
                     Anytime. Upgrading charges the prorated difference. Downgrading kicks in at the next billing cycle.
@@ -260,12 +260,12 @@ export default function PricingPage() {
             </div>
 
             {/* CTA */}
-            <div className="mt-20 pt-16 border-t border-border/50 max-w-2xl">
+            <div className="mt-20 pt-16 border-t border-border/50 max-w-2xl mx-auto text-center">
               <h2 className="text-2xl font-bold mb-4">Ready?</h2>
               <p className="text-muted mb-6">7 days free, then pick a plan.</p>
               <a
                 href={`${adminUrl}/login`}
-                className="inline-block px-8 py-3.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors"
+                className="inline-block px-8 py-3.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
               >
                 Start trial
               </a>
@@ -274,8 +274,8 @@ export default function PricingPage() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border py-8 px-4">
-          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <footer className="border-t border-border py-12 px-4 mt-auto">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2 text-accent font-bold hover:opacity-80 transition-opacity">
               <Image src="/logo.png" alt="codeforfood" width={20} height={20} className="size-5" />
               <span>codeforfood</span>
