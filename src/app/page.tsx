@@ -61,8 +61,6 @@ export default function Home() {
 
         {/* Hero */}
         <section className="relative px-4 pt-24 md:pt-36 pb-20">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent/[0.04] rounded-full blur-[100px] pointer-events-none" />
-
           <div className="relative max-w-4xl mx-auto text-center mb-16 md:mb-20">
             <p className="mono-tag mb-5 animate-fade-in">for freelancers who bill clients</p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.05] tracking-tight stagger-1">
@@ -101,8 +99,8 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div className="aspect-video bg-background/50 overflow-hidden">
-                <img src="/dashboard.png" alt="Dashboard" className="w-full h-full object-cover object-top" />
+              <div className="aspect-video bg-background/50 overflow-hidden relative">
+                <Image src="/dashboard.png" alt="Dashboard" fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 1024px" priority />
               </div>
             </div>
           </div>
@@ -180,8 +178,8 @@ export default function Home() {
               </div>
               <div className="order-1 lg:order-2">
                 <div className="screenshot-frame bg-card">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img src="/how1.png" alt="Project creation" className="w-full h-full object-cover object-top" />
+                  <div className="aspect-[4/3] bg-background/50 relative">
+                    <Image src="/how1.png" alt="Project creation" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                   </div>
                 </div>
               </div>
@@ -191,8 +189,8 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center mb-24">
               <div>
                 <div className="screenshot-frame bg-card">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img src="/how2.png" alt="Public project page" className="w-full h-full object-cover object-top" />
+                  <div className="aspect-[4/3] bg-background/50 relative">
+                    <Image src="/how2.png" alt="Public project page" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                   </div>
                 </div>
               </div>
@@ -223,8 +221,8 @@ export default function Home() {
               </div>
               <div className="order-1 lg:order-2">
                 <div className="screenshot-frame bg-card">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img src="/how3.png" alt="Payment tracking" className="w-full h-full object-cover object-top" />
+                  <div className="aspect-[4/3] bg-background/50 relative">
+                    <Image src="/how3.png" alt="Payment tracking" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                   </div>
                 </div>
               </div>
@@ -305,8 +303,8 @@ export default function Home() {
               </div>
 
               <div className="screenshot-frame bg-card">
-                <div className="aspect-[4/3] bg-background/50">
-                  <img src="/clientsees.png" alt="Client view" className="w-full h-full object-cover object-top" />
+                <div className="aspect-[4/3] bg-background/50 relative">
+                  <Image src="/clientsees.png" alt="Client view" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                 </div>
               </div>
             </div>
@@ -319,8 +317,8 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div className="order-2 lg:order-1">
                 <div className="screenshot-frame bg-card">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img src="/control.png" alt="Privacy settings" className="w-full h-full object-cover object-top" />
+                  <div className="aspect-[4/3] bg-background/50 relative">
+                    <Image src="/control.png" alt="Privacy settings" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                   </div>
                 </div>
               </div>
@@ -401,8 +399,8 @@ export default function Home() {
             </div>
 
             <div className="screenshot-frame bg-card">
-              <div className="aspect-video bg-background/50">
-                <img src="/commandcenter.png" alt="Dashboard" className="w-full h-full object-cover object-top" />
+              <div className="aspect-video bg-background/50 relative">
+                <Image src="/commandcenter.png" alt="Dashboard" fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 1024px" />
               </div>
             </div>
           </div>
@@ -432,8 +430,8 @@ export default function Home() {
                 </div>
               </div>
               <div className="screenshot-frame bg-card">
-                <div className="aspect-[4/3] bg-background/50">
-                  <img src="/expenses.png" alt="Expenses" className="w-full h-full object-cover object-top" />
+                <div className="aspect-[4/3] bg-background/50 relative">
+                  <Image src="/expenses.png" alt="Expenses" fill className="object-cover object-top" sizes="(max-width: 1024px) 100vw, 512px" />
                 </div>
               </div>
             </div>
