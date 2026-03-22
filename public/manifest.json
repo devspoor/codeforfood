@@ -1,6 +1,6 @@
 {
-  "name": "CodeForFood — Project Billing Tracker",
-  "short_name": "CodeForFood",
+  "name": "codeforfood — Project Billing Tracker",
+  "short_name": "codeforfood",
   "description": "Project billing tracker for freelancers. Create projects with milestones, track payments, and share progress with clients.",
   "start_url": "/",
   "display": "standalone",

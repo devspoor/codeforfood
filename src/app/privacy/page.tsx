@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'Privacy Policy for CodeForFood — how we collect, use, and protect your data.',
+  description: 'Privacy Policy for codeforfood — how we collect, use, and protect your data.',
   alternates: {
     canonical: '/privacy',
   },
@@ -21,11 +21,11 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-600 mb-4">
               This Privacy Policy explains how PE Volodko Anton (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;),
-              operating as CodeForFood, collects, uses, and protects your personal information when you use
+              operating as codeforfood, collects, uses, and protects your personal information when you use
               our website at codefor.food (the &quot;Service&quot;).
             </p>
             <p className="text-gray-600">
-              CodeForFood is a project billing tracker for freelancers that helps you track milestones,
+              codeforfood is a project billing tracker for freelancers that helps you track milestones,
               share progress with clients, and get paid faster.
             </p>
           </section>
@@ -168,7 +168,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="mt-12 pt-8 border-t border-gray-200">
           <Link href="/" className="text-blue-600 hover:underline text-sm">
-            &larr; Back to CodeForFood
+            &larr; Back to codeforfood
           </Link>
         </div>
       </div>

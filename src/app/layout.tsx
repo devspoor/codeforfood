@@ -29,8 +29,8 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://codefor.food";
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "CodeForFood — Project Billing Tracker for Freelancers",
-    template: "%s | CodeForFood",
+    default: "codeforfood — Project Billing Tracker for Freelancers",
+    template: "%s | codeforfood",
   },
   description:
     "Create projects with milestones, track payments, and share progress with clients via a single link. Billing tracker built for freelancers.",
@@ -43,20 +43,20 @@ export const metadata: Metadata = {
     "payment tracking",
     "client billing",
   ],
-  authors: [{ name: "CodeForFood" }],
-  creator: "CodeForFood",
+  authors: [{ name: "codeforfood" }],
+  creator: "codeforfood",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: baseUrl,
-    siteName: "CodeForFood",
-    title: "CodeForFood — Project Billing Tracker for Freelancers",
+    siteName: "codeforfood",
+    title: "codeforfood — Project Billing Tracker for Freelancers",
     description:
       "Create projects with milestones, track payments, and share progress with clients via a single link.",
   },
   twitter: {
     card: "summary",
-    title: "CodeForFood — Project Billing Tracker for Freelancers",
+    title: "codeforfood — Project Billing Tracker for Freelancers",
     description:
       "Create projects with milestones, track payments, and share progress with clients via a single link.",
   },
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "CodeForFood",
+    title: "codeforfood",
   },
 };
 

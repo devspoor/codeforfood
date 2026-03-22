@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Pricing',
-  description: 'Simple, transparent pricing for CodeForFood. Pro plan at $4.99/mo and Unlimited at $9.99/mo. 7-day free trial, no credit card required.',
+  description: 'Simple, transparent pricing for codeforfood. Pro plan at $4.99/mo and Unlimited at $9.99/mo. 7-day free trial, no credit card required.',
   alternates: {
     canonical: '/pricing',
   },

@@ -48,19 +48,19 @@ if (bot) {
 
       if (linked) {
         await ctx.reply(
-          "✅ Successfully connected to your CodeForFood account\\!\n\n" +
+          "✅ Successfully connected to your codeforfood account\\!\n\n" +
           "You can now use /connect in group chats to link projects\\.",
           { parse_mode: "MarkdownV2" }
         );
       } else {
-        await ctx.reply("❌ Invalid or expired link. Please generate a new one from CodeForFood settings.");
+        await ctx.reply("❌ Invalid or expired link. Please generate a new one from codeforfood settings.");
       }
     } else {
       // Regular start
       await ctx.reply(
-        "👋 Welcome to CodeForFood Bot!\n\n" +
+        "👋 Welcome to codeforfood Bot!\n\n" +
         "To get started:\n" +
-        "1. Link your account at CodeForFood → Settings → Connect Telegram\n" +
+        "1. Link your account at codeforfood → Settings → Connect Telegram\n" +
         "2. Add me to a group chat\n" +
         "3. Use /connect <project_hash> to link a project\n\n" +
         "Commands:\n" +
@@ -80,14 +80,14 @@ if (bot) {
     const hash = ctx.match?.trim();
 
     if (!hash) {
-      await ctx.reply("Usage: /connect <project_hash>\n\nFind your project hash in CodeForFood project settings.");
+      await ctx.reply("Usage: /connect <project_hash>\n\nFind your project hash in codeforfood project settings.");
       return;
     }
 
     // Check if user is linked
     const telegramUser = await getTelegramUserByTelegramId(ctx.from!.id);
     if (!telegramUser || telegramUser.telegram_id === 0) {
-      await ctx.reply("❌ Please link your CodeForFood account first.\nGo to CodeForFood → Settings → Connect Telegram");
+      await ctx.reply("❌ Please link your codeforfood account first.\nGo to codeforfood → Settings → Connect Telegram");
       return;
     }
 
@@ -210,7 +210,7 @@ if (bot) {
     if (org) {
       const subscription = await getSubscriptionAdmin(org.user_id);
       if (!subscription || !isSubscriptionActive(subscription.status)) {
-        await ctx.reply("❌ Subscription required to use the bot.\n\nPlease subscribe at CodeForFood settings.");
+        await ctx.reply("❌ Subscription required to use the bot.\n\nPlease subscribe at codeforfood settings.");
         return null;
       }
     }
@@ -419,7 +419,7 @@ if (bot) {
 
     const projectName = project.name.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
     await ctx.reply(
-      `🤖 *CodeForFood*\n${projectName}\n\n📌 Pin this message for quick access`,
+      `🤖 *codeforfood*\n${projectName}\n\n📌 Pin this message for quick access`,
       { parse_mode: "MarkdownV2", reply_markup: keyboard }
     );
   });
@@ -523,7 +523,7 @@ if (bot) {
         }
         case "help": {
           await ctx.reply(
-            "📚 *CodeForFood Bot*\n\n" +
+            "📚 *codeforfood Bot*\n\n" +
             "*Commands:*\n" +
             "`/money` — Financial summary\n" +
             "`/tasks` — All tasks by column\n" +
@@ -547,7 +547,7 @@ if (bot) {
   // /help command
   bot.command("help", async (ctx) => {
     await ctx.reply(
-      "📚 *CodeForFood Bot*\n\n" +
+      "📚 *codeforfood Bot*\n\n" +
       "*Setup:*\n" +
       "`/connect abc123` — Connect project to this chat\n" +
       "`/disconnect` — Disconnect project\n\n" +

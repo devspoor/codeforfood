@@ -4,7 +4,7 @@ import Image from 'next/image'
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "CodeForFood",
+  name: "codeforfood",
   url: "https://codefor.food",
   description:
     "Create projects with milestones, track payments, and share progress with clients via a single link. Billing tracker built for freelancers.",
@@ -42,22 +42,21 @@ export default function Home() {
       <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
         <header className="sticky top-0 z-50 w-full px-4 pt-4 pb-2">
-          <nav className="max-w-3xl mx-auto flex items-center justify-between px-5 py-2.5 rounded-full border border-border/50 bg-card/80 backdrop-blur-xl shadow-lg shadow-black/20">
+          <nav className="w-fit mx-auto flex items-center gap-5 px-5 py-2.5 rounded-full border border-border/50 bg-card/80 backdrop-blur-xl shadow-lg shadow-black/20">
             <Link href="/" className="flex items-center gap-2 font-bold text-accent hover:text-accent-hover transition-colors">
               <Image src="/logo.png" alt="codeforfood" width={20} height={20} className="size-5" />
               <span className="text-sm">codeforfood</span>
             </Link>
-            <div className="flex items-center gap-4 text-sm">
-              <Link href="/pricing" className="text-muted hover:text-foreground transition-colors">
-                Pricing
-              </Link>
-              <a
-                href={`${adminUrl}/login`}
-                className="px-4 py-1.5 bg-accent text-background font-medium rounded-full hover:bg-accent-hover transition-colors"
-              >
-                Sign In
-              </a>
-            </div>
+            <div className="w-px h-4 bg-border/50" />
+            <Link href="/pricing" className="text-sm text-muted hover:text-foreground transition-colors">
+              Pricing
+            </Link>
+            <a
+              href={`${adminUrl}/login`}
+              className="px-4 py-1.5 bg-accent text-background font-medium rounded-full hover:bg-accent-hover transition-colors text-sm"
+            >
+              Sign In
+            </a>
           </nav>
         </header>
 
@@ -148,7 +147,7 @@ export default function Home() {
 
             <div className="accent-bar max-w-2xl">
               <p className="text-lg">
-                <span className="text-foreground font-medium">CodeForFood replaces all of this with one link.</span>{" "}
+                <span className="text-foreground font-medium">codeforfood replaces all of this with one link.</span>{" "}
                 <span className="text-muted">
                   Your client opens it and sees everything: progress, amounts, where to pay. You don&apos;t explain anything twice.
                 </span>

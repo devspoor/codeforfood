@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Terms of Use',
-  description: 'Terms of Use for CodeForFood — rules and conditions for using the service.',
+  description: 'Terms of Use for codeforfood — rules and conditions for using the service.',
   alternates: {
     canonical: '/terms',
   },
@@ -20,7 +20,7 @@ export default function TermsOfUsePage() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Agreement to Terms</h2>
             <p className="text-gray-600">
-              By accessing or using CodeForFood (codefor.food), operated by PE Volodko Anton, you agree to be bound
+              By accessing or using codeforfood (codefor.food), operated by PE Volodko Anton, you agree to be bound
               by these Terms of Use. If you do not agree to these terms, please do not use the Service.
             </p>
           </section>
@@ -28,7 +28,7 @@ export default function TermsOfUsePage() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
             <p className="text-gray-600">
-              CodeForFood is a project billing tracker for freelancers. The Service allows you to track
+              codeforfood is a project billing tracker for freelancers. The Service allows you to track
               project milestones, share progress with clients, and manage billing. We reserve the right
               to modify, suspend, or discontinue any part of the Service at any time.
             </p>
@@ -244,7 +244,7 @@ export default function TermsOfUsePage() {
           </Link>
           <span className="text-gray-300">|</span>
           <Link href="/" className="text-blue-600 hover:underline">
-            &larr; Back to CodeForFood
+            &larr; Back to codeforfood
           </Link>
         </div>
       </div>
