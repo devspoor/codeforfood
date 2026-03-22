@@ -62,37 +62,34 @@ export default function Home() {
         </header>
 
         {/* Hero */}
-        <section className="px-4 pt-20 md:pt-32 pb-16">
-          <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl">
-              <p className="mono-tag mb-4 animate-fade-in">for freelancers who bill clients</p>
-              <h1 className="text-4xl sm:text-5xl md:text-[4.25rem] font-bold mb-6 leading-[1.1] tracking-tight stagger-1">
-                Your client asks
-                <br />
-                <span className="text-accent">&quot;how much do I owe you?&quot;</span>
-                <br />
-                You send a link.
-              </h1>
-              <p className="text-lg text-muted mb-10 max-w-xl leading-relaxed stagger-2">
-                Milestones, payments, hours, expenses — one page your client can open
-                anytime instead of messaging you.
-              </p>
-              <div className="flex flex-col sm:flex-row items-start gap-4 stagger-3">
-                <a
-                  href={`${adminUrl}/login`}
-                  className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
-                >
-                  Try free for 7 days
-                </a>
-                <span className="text-sm text-muted/60 py-4">No card. From $4.99/mo after.</span>
-              </div>
+        <section className="relative px-4 pt-24 md:pt-36 pb-20">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-accent/[0.04] rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="relative max-w-4xl mx-auto text-center mb-16 md:mb-20">
+            <p className="mono-tag mb-5 animate-fade-in">for freelancers who bill clients</p>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.05] tracking-tight stagger-1">
+              Your client asks
+              <br />
+              <span className="text-accent">&quot;how much do I owe you?&quot;</span>
+              <br />
+              You send a link.
+            </h1>
+            <p className="text-lg md:text-xl text-muted mb-10 max-w-2xl mx-auto leading-relaxed stagger-2">
+              Milestones, payments, hours, expenses — one page your client can open
+              anytime instead of messaging you.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 stagger-3">
+              <a
+                href={`${adminUrl}/login`}
+                className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
+              >
+                Try free for 7 days
+              </a>
+              <span className="text-sm text-muted/60">No card. From $4.99/mo after.</span>
             </div>
           </div>
-        </section>
 
-        {/* Screenshot */}
-        <section className="px-4 py-12">
-          <div className="max-w-5xl mx-auto">
+          <div className="relative max-w-5xl mx-auto">
             <div className="screenshot-frame bg-card">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
                 <div className="flex gap-1.5">
