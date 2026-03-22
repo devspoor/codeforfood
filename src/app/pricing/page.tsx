@@ -58,7 +58,6 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
-      <div className="absolute inset-0 grid-pattern opacity-30" />
 
       <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
