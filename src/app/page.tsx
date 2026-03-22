@@ -37,292 +37,199 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <div className="absolute inset-0 grid-pattern opacity-30" />
 
-      {/* Background effects */}
-      <div className="absolute inset-0 grid-pattern opacity-20" />
-      <div className="aurora" />
-
-      {/* Content */}
       <div className="relative z-10 flex flex-col min-h-dvh">
         {/* Header */}
-        <header className="w-full py-5 px-4 border-b border-border/30 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
+        <header className="w-full py-6 px-4 border-b border-border/50">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover transition-colors">
-              <Image
-                src="/logo.png"
-                alt="codeforfood"
-                width={24}
-                height={24}
-                className="size-6"
-              />
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
+              <Image src="/logo.png" alt="codeforfood" width={24} height={24} className="size-6" />
               <span>codeforfood</span>
             </Link>
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/pricing" className="text-muted hover:text-foreground transition-colors hidden sm:block">
+            <div className="flex items-center gap-6 text-sm text-muted">
+              <Link href="/pricing" className="hover:text-foreground transition-colors">
                 Pricing
               </Link>
               <a
                 href={`${adminUrl}/login`}
-                className="px-5 py-2.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-all hover:shadow-lg hover:shadow-accent/20"
+                className="px-4 py-2 bg-accent text-background font-medium rounded-lg hover:bg-accent-hover transition-colors"
               >
-                Start Free
+                Sign In
               </a>
             </div>
           </div>
         </header>
 
-        {/* Hero Section */}
-        <section className="px-4 pt-20 md:pt-32 pb-16 relative">
-          <div className="hero-glow" />
+        {/* Hero */}
+        <section className="px-4 pt-20 md:pt-32 pb-8">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-3xl mx-auto text-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 border border-accent/20 text-accent text-sm font-medium mb-8 badge-float">
-                <span className="size-2 rounded-full bg-accent animate-pulse" />
-                7-day free trial &mdash; no credit card
-              </div>
-
-              {/* Headline */}
-              <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight">
-                Stop chasing
+            <div className="max-w-3xl">
+              <p className="mono-tag mb-6">for freelancers who bill clients</p>
+              <h1 className="text-4xl sm:text-5xl md:text-[4.25rem] font-bold mb-6 leading-[1.1] tracking-tight">
+                Your client asks
                 <br />
-                <span className="gradient-text">payments</span>
+                <span className="text-accent">&quot;how much do I owe you?&quot;</span>
+                <br />
+                You send a link.
               </h1>
-
-              {/* Subheadline */}
-              <p className="text-lg sm:text-xl text-muted mb-10 max-w-xl mx-auto text-pretty leading-relaxed">
-                Billing tracker for freelancers. Create projects, track milestones, and share a single link with your clients.
+              <p className="text-lg text-muted mb-10 max-w-xl leading-relaxed">
+                Milestones, payments, hours, expenses — one page your client can open
+                anytime instead of messaging you.
               </p>
-
-              {/* CTA */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
                 <a
                   href={`${adminUrl}/login`}
-                  className="btn-glow cta-pulse px-10 py-4 bg-accent text-background font-bold rounded-xl hover:bg-accent-hover text-lg transition-all hover:shadow-xl hover:shadow-accent/25"
+                  className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-colors"
                 >
-                  Start Free Trial
+                  Try free for 7 days
                 </a>
-                <span className="text-muted text-sm">Then from $4.99/mo</span>
-              </div>
-
-              {/* Social proof numbers */}
-              <div className="flex items-center justify-center gap-8 sm:gap-12 text-center">
-                {[
-                  { value: "$2M+", label: "Tracked" },
-                  { value: "500+", label: "Projects" },
-                  { value: "4.9/5", label: "Rating" },
-                ].map((stat, i) => (
-                  <div key={i}>
-                    <div className="text-2xl sm:text-3xl font-bold number-highlight stat-number">{stat.value}</div>
-                    <div className="text-xs sm:text-sm text-muted mt-1">{stat.label}</div>
-                  </div>
-                ))}
+                <span className="text-sm text-muted/60 py-4">No card. From $4.99/mo after.</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Screenshot Hero */}
-        <section className="px-4 pb-20">
+        {/* Screenshot */}
+        <section className="px-4 py-16">
           <div className="max-w-5xl mx-auto">
-            <div className="relative bg-card border border-border/60 rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
-              {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-card/80 border-b border-border/40">
+            <div className="screenshot-frame bg-card">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
                 <div className="flex gap-1.5">
                   <div className="size-3 rounded-full bg-[#ff5f57]" />
                   <div className="size-3 rounded-full bg-[#febc2e]" />
                   <div className="size-3 rounded-full bg-[#28c840]" />
                 </div>
-                <div className="flex-1 mx-4">
-                  <div className="max-w-sm mx-auto bg-background/60 rounded-md px-3 py-1.5 text-xs text-muted/60 text-center font-mono">
+                <div className="flex-1 mx-8">
+                  <div className="max-w-xs mx-auto bg-background/50 rounded px-3 py-1 text-xs text-muted/50 text-center font-mono">
                     my.codefor.food/p/acme-redesign
                   </div>
                 </div>
               </div>
-
-              {/* Screenshot */}
-              <div className="aspect-video bg-background/50 flex items-center justify-center overflow-hidden">
-                <img
-                  src="/dashboard.png"
-                  alt="Dashboard Screenshot"
-                  className="w-full h-full object-cover object-top"
-                />
+              <div className="aspect-video bg-background/50 overflow-hidden">
+                <img src="/dashboard.png" alt="Dashboard" className="w-full h-full object-cover object-top" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Problem Section */}
-        <section className="px-4 py-24 section-glow">
+        {/* The problem — conversational, not a formula */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="max-w-2xl mx-auto text-center mb-16">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">The problem</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-balance">
-                Sound familiar?
+            <div className="max-w-2xl mb-16">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                You probably recognize this
               </h2>
+              <p className="text-muted leading-relaxed">
+                A client asks where to send payment, you dig through Telegram for your wallet.
+                They ask what&apos;s left to pay — you open a spreadsheet. They want a status update — you type it out manually.
+                Every single time.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 rounded-xl overflow-hidden mb-16">
               {[
                 {
-                  emoji: "💬",
-                  problem: "\"How's the project going?\"",
-                  pain: "Endless status update messages from clients who just want to know the progress"
+                  q: "\"How's the project going?\"",
+                  detail: "You stop what you're doing to write a status update in the chat. Again."
                 },
                 {
-                  emoji: "💸",
-                  problem: "\"Where do I send payment?\"",
-                  pain: "Digging through chats for your own wallet address or bank details"
+                  q: "\"Where do I send payment?\"",
+                  detail: "Scrolling through messages looking for your own bank details or wallet address."
                 },
                 {
-                  emoji: "🤷",
-                  problem: "\"How much do I owe you?\"",
-                  pain: "Disputes about what was included in the price and what's been paid"
+                  q: "\"Wait, I thought that was included?\"",
+                  detail: "No written record of what was agreed. Now it's your word against theirs."
                 }
               ].map((item, i) => (
-                <div key={i} className="bg-card/80 border border-border/60 rounded-2xl p-6 feature-card">
-                  <div className="text-2xl mb-3">{item.emoji}</div>
-                  <h3 className="font-bold mb-2 text-lg">{item.problem}</h3>
-                  <p className="text-sm text-muted leading-relaxed">{item.pain}</p>
+                <div key={i} className="bg-card p-6">
+                  <h3 className="font-semibold mb-2 text-foreground">{item.q}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{item.detail}</p>
                 </div>
               ))}
             </div>
 
-            {/* Solution */}
-            <div className="border-gradient rounded-2xl">
-              <div className="bg-card rounded-2xl p-8 md:p-12">
-                <div className="flex items-start gap-5">
-                  <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-accent text-xl">✓</span>
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-bold mb-3 text-balance">
-                      One link — everything your client needs
-                    </h3>
-                    <p className="text-muted text-pretty leading-relaxed text-lg">
-                      Your client opens the project page and sees: what&apos;s done, what&apos;s in progress,
-                      how much is paid, and where to send money. No questions needed.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="accent-bar max-w-2xl">
+              <p className="text-lg">
+                <span className="text-foreground font-medium">CodeForFood replaces all of this with one link.</span>{" "}
+                <span className="text-muted">
+                  Your client opens it and sees everything: progress, amounts, where to pay. You don&apos;t explain anything twice.
+                </span>
+              </p>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="px-4 py-24 section-glow">
+        {/* How it works — step by step with screenshots */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-20">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">How it works</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-balance">
-                Three steps. That&apos;s it.
-              </h2>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-20">
+              How it works
+            </h2>
 
             {/* Step 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-28">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center mb-24">
               <div className="order-2 lg:order-1">
-                <div className="inline-flex items-center gap-3 text-accent text-sm font-semibold mb-5">
-                  <span className="size-8 rounded-full bg-accent text-background flex items-center justify-center text-sm font-bold">1</span>
-                  Create a project
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-balance">
-                  Break down work into milestones
+                <p className="mono-tag mb-4">Step 1</p>
+                <h3 className="text-xl font-bold mb-4">
+                  Create a project, add milestones
                 </h3>
-                <p className="text-muted mb-6 text-pretty leading-relaxed">
-                  Fixed price, hourly, or per-unit billing — mix and match as needed.
-                  Add private notes, attach Figma and GitHub links, track operating expenses.
+                <p className="text-muted mb-6 leading-relaxed">
+                  Fixed price, hourly, or per-unit — mix in one project. Attach Figma links, add private encrypted notes, track your costs.
                 </p>
-                <ul className="space-y-3 text-sm">
-                  {["Fixed, hourly & per-unit milestones", "E2E encrypted private notes", "Attachments & comments"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                      <span className="text-muted">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-2 text-sm text-muted">
+                  <p>→ &quot;Homepage design&quot; — $1,500 fixed</p>
+                  <p>→ &quot;Bug fixes&quot; — $75/hr</p>
+                  <p>→ &quot;Blog posts&quot; — $50 each</p>
+                </div>
               </div>
               <div className="order-1 lg:order-2">
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30 feature-card">
+                <div className="screenshot-frame bg-card">
                   <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/how1.png"
-                      alt="Project Creation Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
+                    <img src="/how1.png" alt="Project creation" className="w-full h-full object-cover object-top" />
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center mb-28">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center mb-24">
               <div>
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30 feature-card">
+                <div className="screenshot-frame bg-card">
                   <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/how2.png"
-                      alt="Public Project Page Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
+                    <img src="/how2.png" alt="Public project page" className="w-full h-full object-cover object-top" />
                   </div>
                 </div>
               </div>
               <div>
-                <div className="inline-flex items-center gap-3 text-accent text-sm font-semibold mb-5">
-                  <span className="size-8 rounded-full bg-accent text-background flex items-center justify-center text-sm font-bold">2</span>
-                  Share the link
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-balance">
-                  Client sees everything in real-time
+                <p className="mono-tag mb-4">Step 2</p>
+                <h3 className="text-xl font-bold mb-4">
+                  Send the link to your client
                 </h3>
-                <p className="text-muted mb-6 text-pretty leading-relaxed">
-                  Milestone progress, logged hours, amount paid and remaining — all updated live.
-                  Client doesn&apos;t need an account, just opens the link.
+                <p className="text-muted mb-6 leading-relaxed">
+                  They open it and see: milestones, progress, amounts, payment methods. Updated live, no signup required on their end.
                 </p>
-                <ul className="space-y-3 text-sm">
-                  {["No client signup required", "Optional: hide amounts", "Password protection available"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                      <span className="text-muted">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-sm text-muted/60 font-mono">
+                  codefor.food/p/acme-redesign
+                </p>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <div className="order-2 lg:order-1">
-                <div className="inline-flex items-center gap-3 text-accent text-sm font-semibold mb-5">
-                  <span className="size-8 rounded-full bg-accent text-background flex items-center justify-center text-sm font-bold">3</span>
-                  Track payments
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-balance">
-                  Mark when money arrives
+                <p className="mono-tag mb-4">Step 3</p>
+                <h3 className="text-xl font-bold mb-4">
+                  Mark payments as they come in
                 </h3>
-                <p className="text-muted mb-6 text-pretty leading-relaxed">
-                  Client pays you directly — crypto, bank transfer, PayPal, whatever works.
-                  You mark the payment in the tracker. Full history preserved.
+                <p className="text-muted mb-6 leading-relaxed">
+                  Client pays you however they want — crypto, bank, PayPal. You mark the payment, the page updates. Partial payments work too.
                 </p>
-                <ul className="space-y-3 text-sm">
-                  {["Any payment method you use", "Partial payments supported", "Complete payment history"].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                      <span className="text-muted">{item}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
               <div className="order-1 lg:order-2">
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30 feature-card">
+                <div className="screenshot-frame bg-card">
                   <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/how3.png"
-                      alt="Payment Tracking Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
+                    <img src="/how3.png" alt="Payment tracking" className="w-full h-full object-cover object-top" />
                   </div>
                 </div>
               </div>
@@ -330,225 +237,118 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Milestone Types */}
-        <section className="px-4 py-24 section-glow">
+        {/* Billing models */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Flexible billing</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-balance">
+            <div className="max-w-2xl mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                 Three billing models, one project
               </h2>
-              <p className="text-muted max-w-lg mx-auto text-pretty">
-                Mix fixed-price deliverables with hourly work and per-unit tasks. Bill however makes sense.
+              <p className="text-muted">
+                Use all three in the same project. Bill however makes sense for each task.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Fixed Price */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 feature-card">
-                <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
-                  <svg className="size-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg mb-2">Fixed Price</h3>
-                <p className="text-sm text-muted mb-5 text-pretty leading-relaxed">
-                  Set a fixed amount for a deliverable. Track partial payments if the client pays in installments.
-                </p>
-                <div className="bg-background/60 rounded-xl p-4 text-sm border border-border/30">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-muted">Homepage design</span>
-                    <span className="tabular-nums font-mono font-medium">$1,500</span>
-                  </div>
-                  <div className="flex justify-between text-muted/60">
-                    <span>Paid</span>
-                    <span className="tabular-nums font-mono text-success">$1,000</span>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 rounded-xl overflow-hidden">
+              <div className="bg-card p-6">
+                <h3 className="font-bold mb-1">Fixed Price</h3>
+                <p className="text-sm text-muted mb-4">&quot;Homepage — $1,500&quot;</p>
+                <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
+                  <div className="flex justify-between"><span className="text-muted">Price</span><span>$1,500</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Paid</span><span className="text-success">$1,000</span></div>
                 </div>
               </div>
-
-              {/* Hourly */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 feature-card">
-                <div className="size-12 rounded-xl bg-success/10 flex items-center justify-center mb-5">
-                  <svg className="size-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg mb-2">Hourly</h3>
-                <p className="text-sm text-muted mb-5 text-pretty leading-relaxed">
-                  Set your hourly rate and log time entries with descriptions. Total calculated automatically.
-                </p>
-                <div className="bg-background/60 rounded-xl p-4 text-sm border border-border/30">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-muted">Bug fixes @ $75/hr</span>
-                    <span className="tabular-nums font-mono font-medium">12.5 hrs</span>
-                  </div>
-                  <div className="flex justify-between text-muted/60">
-                    <span>Total</span>
-                    <span className="tabular-nums font-mono">$937.50</span>
-                  </div>
+              <div className="bg-card p-6">
+                <h3 className="font-bold mb-1">Hourly</h3>
+                <p className="text-sm text-muted mb-4">&quot;Bug fixes — $75/hr&quot;</p>
+                <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
+                  <div className="flex justify-between"><span className="text-muted">Logged</span><span>12.5 hrs</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Total</span><span>$937.50</span></div>
                 </div>
               </div>
-
-              {/* Per Unit */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 feature-card">
-                <div className="size-12 rounded-xl bg-neutral-500/10 flex items-center justify-center mb-5">
-                  <svg className="size-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg mb-2">Per Unit</h3>
-                <p className="text-sm text-muted mb-5 text-pretty leading-relaxed">
-                  Charge per item: &quot;$50 per blog post&quot;, &quot;$200 per landing page&quot;. Great for content work.
-                </p>
-                <div className="bg-background/60 rounded-xl p-4 text-sm border border-border/30">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-muted">Blog posts @ $50/each</span>
-                    <span className="tabular-nums font-mono font-medium">8 posts</span>
-                  </div>
-                  <div className="flex justify-between text-muted/60">
-                    <span>Total</span>
-                    <span className="tabular-nums font-mono">$400</span>
-                  </div>
+              <div className="bg-card p-6">
+                <h3 className="font-bold mb-1">Per Unit</h3>
+                <p className="text-sm text-muted mb-4">&quot;Blog posts — $50 each&quot;</p>
+                <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
+                  <div className="flex justify-between"><span className="text-muted">Units</span><span>8 posts</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Total</span><span>$400</span></div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Client View Features */}
-        <section className="px-4 py-24 section-glow">
+        {/* What client sees */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div>
-                <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Client experience</p>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-balance">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                   What your client sees
                 </h2>
-                <p className="text-muted mb-8 text-pretty leading-relaxed text-lg">
-                  A clean, professional project page. No signup, no app — just a link.
+                <p className="text-muted mb-8 leading-relaxed">
+                  A clean page with everything they need. No account, no app — just a link.
                 </p>
 
-                <div className="space-y-5">
+                <div className="space-y-4 text-sm">
                   {[
-                    {
-                      icon: (
-                        <svg className="size-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                      ),
-                      title: "Progress overview",
-                      desc: "Total value, amount paid, amount due, and visual progress bars"
-                    },
-                    {
-                      icon: (
-                        <svg className="size-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      ),
-                      title: "Time logs",
-                      desc: "Each entry with date, hours, and description. Full transparency."
-                    },
-                    {
-                      icon: (
-                        <svg className="size-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                      ),
-                      title: "Payment methods",
-                      desc: "All your payment options with one-click copy"
-                    },
-                    {
-                      icon: (
-                        <svg className="size-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      ),
-                      title: "Payment history",
-                      desc: "Timeline of all payments received with dates and amounts"
-                    }
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="size-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                        {item.icon}
-                      </div>
+                    ["Progress", "What's done, what's in progress, what's next"],
+                    ["Money", "Total, paid, remaining — at a glance"],
+                    ["Payment methods", "Your wallets and bank details with one-click copy"],
+                    ["Time logs", "For hourly milestones — date, hours, description"],
+                    ["Payment history", "Every payment with date and amount"],
+                  ].map(([title, desc], i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className="text-accent font-mono text-xs mt-1 shrink-0">{'>'}</span>
                       <div>
-                        <h3 className="font-semibold mb-1">{item.title}</h3>
-                        <p className="text-sm text-muted">{item.desc}</p>
+                        <span className="text-foreground font-medium">{title}</span>
+                        <span className="text-muted"> — {desc}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/clientsees.png"
-                      alt="Client View Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
+              <div className="screenshot-frame bg-card">
+                <div className="aspect-[4/3] bg-background/50">
+                  <img src="/clientsees.png" alt="Client view" className="w-full h-full object-cover object-top" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Privacy Controls */}
-        <section className="px-4 py-24 section-glow">
+        {/* Privacy controls */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div className="order-2 lg:order-1">
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30">
+                <div className="screenshot-frame bg-card">
                   <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/control.png"
-                      alt="Project Settings Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
+                    <img src="/control.png" alt="Privacy settings" className="w-full h-full object-cover object-top" />
                   </div>
                 </div>
               </div>
 
               <div className="order-1 lg:order-2">
-                <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Privacy</p>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-balance">
-                  You control what&apos;s visible
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  You decide what&apos;s visible
                 </h2>
-                <p className="text-muted mb-8 text-pretty leading-relaxed">
-                  Not every client needs to see every detail. Toggle visibility settings per project.
+                <p className="text-muted mb-8 leading-relaxed">
+                  Not every client needs to see every number. Toggle per project.
                 </p>
-
-                <div className="space-y-4">
+                <div className="space-y-3 text-sm">
                   {[
-                    {
-                      title: "Hide amounts",
-                      desc: "Show progress without dollar figures — useful during negotiations"
-                    },
-                    {
-                      title: "Hide payment info",
-                      desc: "Keep paid/unpaid status private until you're ready to share"
-                    },
-                    {
-                      title: "Password protection",
-                      desc: "Require a password to view the project page"
-                    },
-                    {
-                      title: "Hide operating expenses",
-                      desc: "Keep your project costs to yourself"
-                    }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 bg-card/50 border border-border/30 rounded-xl p-4 feature-card">
-                      <div className="size-5 rounded-md bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <svg className="size-3 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
+                    ["Hide amounts", "Show progress without dollar figures"],
+                    ["Hide payment info", "Keep paid/unpaid status private"],
+                    ["Password protect", "Require a password to view"],
+                    ["Hide expenses", "Keep your project costs to yourself"],
+                  ].map(([title, desc], i) => (
+                    <div key={i} className="flex items-start gap-3 py-2">
+                      <span className="text-accent mt-0.5">—</span>
                       <div>
-                        <h3 className="font-semibold text-sm">{item.title}</h3>
-                        <p className="text-sm text-muted">{item.desc}</p>
+                        <span className="text-foreground font-medium">{title}</span>
+                        <span className="text-muted"> — {desc}</span>
                       </div>
                     </div>
                   ))}
@@ -558,56 +358,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Encrypted Notes */}
-        <section className="px-4 py-24 section-glow">
+        {/* Encrypted notes */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="border-gradient rounded-2xl">
-              <div className="bg-card rounded-2xl p-8 md:p-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                  <div>
-                    <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                      <svg className="size-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-balance">
-                      End-to-end encrypted notes
-                    </h2>
-                    <p className="text-muted mb-6 text-pretty leading-relaxed">
-                      Keep sensitive project details encrypted. Your password never leaves your device —
-                      we literally cannot read your notes.
-                    </p>
-                    <ul className="space-y-3 text-sm">
-                      {[
-                        "Client secrets and API keys",
-                        "Internal cost breakdowns",
-                        "Negotiation notes",
-                        "Anything you want private"
-                      ].map((item, i) => (
-                        <li key={i} className="flex items-center gap-3">
-                          <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                          <span className="text-muted">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="bg-card border border-border rounded-xl p-8 md:p-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">
+                    Encrypted notes
+                  </h2>
+                  <p className="text-muted mb-6 leading-relaxed">
+                    AES-256. The password never leaves your device. We can&apos;t read your notes even if we want to.
+                  </p>
+                  <div className="text-sm text-muted space-y-1">
+                    <p>Good for client API keys, cost breakdowns,</p>
+                    <p>negotiation notes, anything private.</p>
                   </div>
-                  <div className="bg-background/60 rounded-xl p-6 border border-border/30">
-                    <div className="flex items-center gap-2 mb-4">
-                      <svg className="size-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      <span className="text-sm font-medium">Private Note</span>
-                      <span className="text-xs text-accent/50 ml-auto">AES-256</span>
-                    </div>
-                    <div className="space-y-2 text-sm text-muted font-mono">
-                      <p>Client&apos;s AWS credentials:</p>
-                      <p className="text-muted/40">••••••••••••••••••••</p>
-                      <p className="mt-4">Actual cost breakdown:</p>
-                      <p className="text-muted/40">••••••••••••••••••••</p>
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-border/30">
-                      <p className="text-xs text-muted/40">Encrypted with AES-256. Only you can decrypt.</p>
-                    </div>
+                </div>
+                <div className="bg-background rounded-lg p-5 font-mono text-sm border border-border/50">
+                  <div className="flex items-center gap-2 mb-4 text-xs text-muted/50">
+                    <span>🔒</span>
+                    <span>ENCRYPTED NOTE</span>
+                  </div>
+                  <p className="text-muted mb-1">Client&apos;s AWS credentials:</p>
+                  <p className="text-muted/30 mb-3">••••••••••••••••</p>
+                  <p className="text-muted mb-1">Real cost breakdown:</p>
+                  <p className="text-muted/30">••••••••••••••••</p>
+                  <div className="mt-5 pt-3 border-t border-border/30 text-xs text-muted/30">
+                    AES-256 · client-side only
                   </div>
                 </div>
               </div>
@@ -615,343 +393,220 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Dashboard Features */}
-        <section className="px-4 py-24 section-glow">
+        {/* Dashboard */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Dashboard</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-balance">
-                Your freelance command center
+            <div className="max-w-2xl mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                All projects, one dashboard
               </h2>
-              <p className="text-muted max-w-lg mx-auto text-pretty">
-                See all your projects, earnings, and outstanding payments at a glance.
+              <p className="text-muted">
+                Total earned, outstanding, hours logged — across everything.
               </p>
             </div>
 
-            <div className="bg-card border border-border/60 rounded-2xl overflow-hidden mb-10 shadow-xl shadow-black/30">
+            <div className="screenshot-frame bg-card">
               <div className="aspect-video bg-background/50">
-                <img
-                  src="/commandcenter.png"
-                  alt="Dashboard Overview Screenshot"
-                  className="w-full h-full object-cover object-top"
-                />
+                <img src="/commandcenter.png" alt="Dashboard" className="w-full h-full object-cover object-top" />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: "Total Value", desc: "Sum of all milestones", color: "text-foreground" },
-                { label: "Received", desc: "Total amount paid", color: "text-success" },
-                { label: "Outstanding", desc: "What's still due", color: "text-accent" },
-                { label: "Hours Logged", desc: "Across all hourly work", color: "text-foreground" }
-              ].map((stat, i) => (
-                <div key={i} className="bg-card/80 border border-border/40 rounded-xl p-5 text-center feature-card">
-                  <h3 className={`font-bold text-lg mb-1 ${stat.color}`}>{stat.label}</h3>
-                  <p className="text-xs text-muted">{stat.desc}</p>
-                </div>
-              ))}
             </div>
           </div>
         </section>
 
-        {/* Operating Expenses */}
-        <section className="px-4 py-24 section-glow">
+        {/* Expenses */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               <div>
-                <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Profitability</p>
-                <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-balance">
-                  Track operating expenses
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                  Track what you spend
                 </h2>
-                <p className="text-muted mb-6 text-pretty leading-relaxed">
-                  Every project has costs: hosting, domains, API subscriptions, stock photos.
-                  Log them to see your true profit margin.
+                <p className="text-muted mb-6 leading-relaxed">
+                  Hosting, domains, APIs, stock photos — log them to see real profit.
                 </p>
-                <div className="bg-card/80 border border-border/40 rounded-xl p-5 mb-6">
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted">Vercel Pro</span>
-                      <span className="tabular-nums font-mono">$20/mo</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted">Domain renewal</span>
-                      <span className="tabular-nums font-mono">$15</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted">Stock images</span>
-                      <span className="tabular-nums font-mono">$45</span>
-                    </div>
-                    <div className="flex justify-between pt-3 border-t border-border/40 font-semibold">
-                      <span>Total expenses</span>
-                      <span className="tabular-nums font-mono text-danger">$80</span>
+                <div className="bg-card border border-border rounded-lg p-4">
+                  <div className="space-y-2.5 text-sm font-mono">
+                    <div className="flex justify-between"><span className="text-muted">Vercel Pro</span><span>$20/mo</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Domain</span><span>$15</span></div>
+                    <div className="flex justify-between"><span className="text-muted">Stock images</span><span>$45</span></div>
+                    <div className="flex justify-between pt-2.5 border-t border-border font-medium">
+                      <span>Total</span>
+                      <span>$80</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-muted">
-                  Optionally show expenses to clients or keep them private.
-                </p>
               </div>
-
-              <div>
-                <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-xl shadow-black/30">
-                  <div className="aspect-[4/3] bg-background/50">
-                    <img
-                      src="/expenses.png"
-                      alt="Operating Expenses Screenshot"
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
+              <div className="screenshot-frame bg-card">
+                <div className="aspect-[4/3] bg-background/50">
+                  <img src="/expenses.png" alt="Expenses" className="w-full h-full object-cover object-top" />
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Attachments & Comments */}
-        <section className="px-4 py-24 section-glow">
+        {/* Attachments + Comments */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Organization</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-balance">
-                Keep everything in one place
-              </h2>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-12">
+              Attachments &amp; comments
+            </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Attachments */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 feature-card">
-                <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
-                  <svg className="size-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg mb-2">Attachments</h3>
-                <p className="text-sm text-muted mb-5 text-pretty">
-                  Link to anything related to the project. Clients see these on the public page.
-                </p>
-                <div className="space-y-2">
-                  {[
-                    { icon: "🎨", label: "Figma designs", url: "figma.com/..." },
-                    { icon: "📦", label: "GitHub repo", url: "github.com/..." },
-                    { icon: "🌐", label: "Staging site", url: "staging.client.com" },
-                    { icon: "📄", label: "Project brief", url: "notion.so/..." }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 text-sm bg-background/50 rounded-lg px-3 py-2.5 border border-border/20">
-                      <span>{item.icon}</span>
-                      <span className="text-muted">{item.label}</span>
-                      <span className="text-muted/40 text-xs ml-auto truncate font-mono">{item.url}</span>
-                    </div>
-                  ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden">
+              <div className="bg-card p-6">
+                <h3 className="font-bold mb-1">Links to everything</h3>
+                <p className="text-sm text-muted mb-4">Figma, GitHub, staging — visible to client.</p>
+                <div className="space-y-1.5 text-sm font-mono text-muted/60">
+                  <p>figma.com/acme-redesign</p>
+                  <p>github.com/acme/frontend</p>
+                  <p>staging.acme.com</p>
                 </div>
               </div>
-
-              {/* Comments */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 feature-card">
-                <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center mb-5">
-                  <svg className="size-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h3 className="font-bold text-lg mb-2">Comments</h3>
-                <p className="text-sm text-muted mb-5 text-pretty">
-                  Post project updates visible to your client. Keep a timeline of decisions.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { date: "Jan 15", text: "Homepage design approved, moving to development" },
-                    { date: "Jan 18", text: "Header and footer components complete" },
-                    { date: "Jan 22", text: "Deployed to staging for review" }
-                  ].map((item, i) => (
-                    <div key={i} className="text-sm bg-background/50 rounded-lg px-3 py-2.5 border border-border/20">
-                      <span className="text-muted/40 text-xs font-mono">{item.date}</span>
-                      <p className="text-muted mt-1">{item.text}</p>
-                    </div>
-                  ))}
+              <div className="bg-card p-6">
+                <h3 className="font-bold mb-1">Project timeline</h3>
+                <p className="text-sm text-muted mb-4">Post updates your client can see.</p>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-muted/40 font-mono text-xs">Jan 15</span> <span className="text-muted ml-2">Design approved</span></p>
+                  <p><span className="text-muted/40 font-mono text-xs">Jan 18</span> <span className="text-muted ml-2">Header + footer done</span></p>
+                  <p><span className="text-muted/40 font-mono text-xs">Jan 22</span> <span className="text-muted ml-2">Deployed to staging</span></p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* API Section */}
-        <section className="px-4 py-24 section-glow">
+        {/* API */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto">
-            <div className="border-gradient rounded-2xl">
-              <div className="bg-card rounded-2xl p-8 md:p-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                  <div>
-                    <div className="size-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                      <svg className="size-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                      </svg>
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-balance">
-                      REST API included
-                    </h2>
-                    <p className="text-muted mb-6 text-pretty leading-relaxed">
-                      Automate your workflow. Create projects, log time, record payments — all via API.
-                      Integrate with your existing tools.
-                    </p>
-                    <ul className="space-y-2 text-sm text-muted">
-                      <li className="flex items-center gap-2"><span className="text-accent">&#8250;</span> Create and manage projects</li>
-                      <li className="flex items-center gap-2"><span className="text-accent">&#8250;</span> Add milestones and time entries</li>
-                      <li className="flex items-center gap-2"><span className="text-accent">&#8250;</span> Record payments programmatically</li>
-                      <li className="flex items-center gap-2"><span className="text-accent">&#8250;</span> Idempotent endpoints for safe retries</li>
-                    </ul>
+            <div className="bg-card border border-border rounded-xl p-8 md:p-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">REST API</h2>
+                  <p className="text-muted mb-6 leading-relaxed">
+                    Create projects, log time, record payments — programmatically.
+                    Wire it into your invoicing tool or a script.
+                  </p>
+                  <div className="text-sm text-muted/60 space-y-1">
+                    <p>→ Projects, milestones, time entries</p>
+                    <p>→ Payments and expenses</p>
+                    <p>→ Idempotent, safe to retry</p>
                   </div>
-                  <div className="bg-background/80 rounded-xl p-5 font-mono text-sm overflow-x-auto border border-border/30">
-                    <div className="text-muted/40 mb-2"># Log time entry</div>
-                    <div className="text-accent font-semibold">POST</div>
-                    <div className="text-muted">/api/v1/time-entries</div>
-                    <div className="mt-4 text-muted/40"># Request body</div>
-                    <pre className="text-muted">{`{
+                </div>
+                <div className="bg-background rounded-lg p-5 font-mono text-sm overflow-x-auto border border-border/50">
+                  <p className="text-muted/40"># log time</p>
+                  <p><span className="text-accent">POST</span> <span className="text-muted">/api/v1/time-entries</span></p>
+                  <pre className="text-muted mt-3">{`{
   "milestone_id": "...",
   "hours": 2.5,
   "description": "Bug fixes",
   "date": "2024-01-15"
 }`}</pre>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section className="px-4 py-24 section-glow">
+        {/* Pricing */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-14">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">Pricing</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-balance">
-                Simple, transparent pricing
-              </h2>
-              <p className="text-muted text-pretty text-lg">
-                7-day free trial. No credit card required.
-              </p>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+              Pricing
+            </h2>
+            <p className="text-muted mb-12">
+              7-day trial, no card. Cancel anytime.
+            </p>
 
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-              {/* Pro */}
-              <div className="bg-card border border-border/60 rounded-2xl p-7 md:p-8 flex flex-col feature-card">
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Pro</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tabular-nums">$4.99</span>
-                    <span className="text-muted text-sm">/month</span>
-                  </div>
+            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-2xl">
+              <div className="bg-card p-8 flex flex-col">
+                <p className="mono-tag mb-4">Pro</p>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className="text-3xl font-bold price-tag">$4.99</span>
+                  <span className="text-muted text-sm">/mo</span>
                 </div>
-                <ul className="space-y-3 mb-8 text-sm flex-1">
-                  {[
-                    { text: "3 organizations", bold: "3" },
-                    { text: "5 projects per org", bold: "5" },
-                    { text: "Telegram bot" },
-                    { text: "All features" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                      <span className="text-muted">{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-2 text-sm text-muted mb-8 flex-1">
+                  <p>3 organizations</p>
+                  <p>5 projects per org</p>
+                  <p>Telegram bot</p>
+                  <p>All features</p>
+                </div>
                 <a
                   href={`${adminUrl}/login`}
-                  className="block w-full py-3.5 text-center border border-border/60 rounded-xl hover:border-accent/50 transition-all text-sm font-medium mt-auto hover:bg-card-hover"
+                  className="block w-full py-3 text-center border border-border rounded-lg hover:border-accent/50 transition-colors text-sm"
                 >
-                  Start Free Trial
+                  Start trial
                 </a>
               </div>
-
-              {/* Unlimited */}
-              <div className="pricing-popular rounded-2xl p-7 md:p-8 relative flex flex-col">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-accent text-background text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-accent/20">
-                    Most Popular
-                  </span>
+              <div className="bg-card p-8 flex flex-col relative">
+                <div className="absolute top-4 right-4">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/5 px-2 py-1 rounded">popular</span>
                 </div>
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Unlimited</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tabular-nums gradient-text">$9.99</span>
-                    <span className="text-muted text-sm">/month</span>
-                  </div>
+                <p className="mono-tag mb-4">Unlimited</p>
+                <div className="flex items-baseline gap-1 mb-6">
+                  <span className="text-3xl font-bold price-tag gradient-text">$9.99</span>
+                  <span className="text-muted text-sm">/mo</span>
                 </div>
-                <ul className="space-y-3 mb-8 text-sm flex-1">
-                  {[
-                    { text: "Unlimited organizations" },
-                    { text: "Unlimited projects" },
-                    { text: "Telegram bot" },
-                    { text: "Full API access" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs">✓</span>
-                      <span className="text-muted">{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-2 text-sm text-muted mb-8 flex-1">
+                  <p>Unlimited orgs &amp; projects</p>
+                  <p>Telegram bot</p>
+                  <p>Full API access</p>
+                  <p>Everything in Pro</p>
+                </div>
                 <a
                   href={`${adminUrl}/login`}
-                  className="btn-glow block w-full py-3.5 text-center bg-accent text-background font-bold rounded-xl hover:bg-accent-hover transition-all text-sm mt-auto hover:shadow-lg hover:shadow-accent/20"
+                  className="block w-full py-3 text-center bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors text-sm"
                 >
-                  Start Free Trial
+                  Start trial
                 </a>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted">
-              <span className="trust-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium">
-                <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                30-day money-back guarantee
-              </span>
-            </div>
+            <p className="text-sm text-muted/40 mt-6">
+              30-day money-back guarantee.{" "}
+              <Link href="/pricing" className="hover:text-muted transition-colors underline underline-offset-4">
+                Compare plans
+              </Link>
+            </p>
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <section className="px-4 py-24 section-glow">
+        {/* FAQ */}
+        <section className="px-4 py-20 border-t border-border/50">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-14">
-              <p className="text-accent text-sm font-semibold tracking-wide uppercase mb-4">FAQ</p>
-              <h2 className="text-3xl sm:text-4xl font-bold text-balance">
-                Questions &amp; Answers
-              </h2>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-12">
+              Questions
+            </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-8">
               {[
                 {
                   q: "Do payments go through you?",
-                  a: "No. Clients pay you directly — bank transfer, crypto, PayPal, whatever you use. We just help you track what's been paid and what's outstanding."
+                  a: "No. Clients pay you directly — bank, crypto, PayPal, whatever. We track what's been paid, that's it."
                 },
                 {
                   q: "Does my client need an account?",
-                  a: "No. Clients just open the link you share. No signup, no app download. You can optionally add password protection."
+                  a: "No. They open a link and see the project page. No signup, nothing to install."
                 },
                 {
-                  q: "Can I hide amounts from clients?",
-                  a: "Yes. Show progress without dollar figures — great for early negotiations. You can also hide payment status and expenses."
+                  q: "Can I hide amounts?",
+                  a: "Yes. Show progress without numbers, hide payment status, password-protect the page — your choice per project."
                 },
                 {
                   q: "How do encrypted notes work?",
-                  a: "Your notes are encrypted in your browser with a password you set. The password never leaves your device. Even we can't read your notes."
+                  a: "Encryption happens in your browser. The password stays on your device. We literally cannot read your notes."
                 },
                 {
                   q: "What's fixed vs hourly vs per-unit?",
-                  a: "Fixed: set price for a deliverable ($500 for logo). Hourly: rate × logged hours ($75/hr × 10 hrs). Per-unit: rate × quantity ($50/post × 8 posts). Mix all three in one project."
+                  a: "Fixed: $500 for logo. Hourly: $75/hr × hours logged. Per-unit: $50/post × 8 posts. Mix all three in one project."
                 },
                 {
-                  q: "Is there a free trial?",
-                  a: "Yes! 7-day free trial on every plan. No credit card required. After the trial, choose the plan that fits."
-                },
-                {
-                  q: "Can I cancel anytime?",
-                  a: "Yes. Cancel in one click. You keep access until the end of your billing period."
+                  q: "Can I cancel?",
+                  a: "Anytime, one click. You keep access until the period ends."
                 }
               ].map((item, i) => (
-                <div key={i} className="bg-card/80 border border-border/40 rounded-xl p-6 feature-card">
-                  <h3 className="font-bold mb-2">{item.q}</h3>
-                  <p className="text-sm text-muted text-pretty leading-relaxed">{item.a}</p>
+                <div key={i}>
+                  <h3 className="font-semibold mb-2">{item.q}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{item.a}</p>
                 </div>
               ))}
             </div>
@@ -959,60 +614,35 @@ export default function Home() {
         </section>
 
         {/* Final CTA */}
-        <section className="px-4 py-28 relative">
-          <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.03] to-transparent pointer-events-none" />
-          <div className="max-w-3xl mx-auto text-center relative">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-balance leading-tight">
-              Stop managing
-              <br />
-              <span className="gradient-text">projects in chat</span>
+        <section className="px-4 py-24 border-t border-border/50">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Stop explaining your own invoices
             </h2>
-            <p className="text-lg text-muted mb-10 max-w-xl mx-auto text-pretty">
-              One tool for billing instead of spreadsheets, notes, and message threads.
+            <p className="text-muted mb-8 text-lg">
+              One link instead of a spreadsheet, a chat thread, and a notes app.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <a
-                href={`${adminUrl}/login`}
-                className="btn-glow cta-pulse px-12 py-4 bg-accent text-background font-bold rounded-xl hover:bg-accent-hover text-lg transition-all hover:shadow-xl hover:shadow-accent/25"
-              >
-                Start Free Trial
-              </a>
-            </div>
-            <p className="text-sm text-muted/50">
-              7-day free trial · No credit card · Cancel anytime
-            </p>
+            <a
+              href={`${adminUrl}/login`}
+              className="inline-block px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-colors"
+            >
+              Try free for 7 days
+            </a>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-border/30 py-8 px-4 bg-background/50 backdrop-blur-sm">
+        <footer className="border-t border-border py-8 px-4">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-2 text-accent font-bold hover:opacity-80 transition-opacity">
-              <Image
-                src="/logo.png"
-                alt="codeforfood"
-                width={20}
-                height={20}
-                className="size-5"
-              />
-              <span>codeforfood</span>
-            </Link>
-            <div className="flex items-center gap-6 text-xs text-muted/40">
-              <Link href="/pricing" className="hover:text-muted transition-colors">
-                Pricing
-              </Link>
-              <Link href="/privacy" className="hover:text-muted transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-muted transition-colors">
-                Terms
-              </Link>
+            <div className="text-accent font-bold font-mono text-sm">{"<codeforfood/>"}</div>
+            <div className="flex items-center gap-6 text-xs text-muted/50">
+              <Link href="/pricing" className="hover:text-muted transition-colors">Pricing</Link>
+              <Link href="/privacy" className="hover:text-muted transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-muted transition-colors">Terms</Link>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted">
-              <a href={`${adminUrl}/login`} className="hover:text-foreground transition-colors">
-                Sign In
-              </a>
-            </div>
+            <a href={`${adminUrl}/login`} className="text-sm text-muted hover:text-foreground transition-colors">
+              Sign In
+            </a>
           </div>
         </footer>
       </div>

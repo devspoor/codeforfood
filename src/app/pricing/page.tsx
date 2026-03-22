@@ -49,21 +49,6 @@ const faqJsonLd = {
   ],
 }
 
-const features = [
-  { name: "Organizations", pro: "3", unlimited: "Unlimited" },
-  { name: "Projects per org", pro: "5", unlimited: "Unlimited" },
-  { name: "Milestones", pro: "Unlimited", unlimited: "Unlimited" },
-  { name: "Client sharing links", pro: true, unlimited: true },
-  { name: "Fixed, hourly & per-unit billing", pro: true, unlimited: true },
-  { name: "Privacy controls", pro: true, unlimited: true },
-  { name: "Operating expenses", pro: true, unlimited: true },
-  { name: "Attachments & comments", pro: true, unlimited: true },
-  { name: "Telegram bot", pro: true, unlimited: true },
-  { name: "E2E encrypted notes", pro: true, unlimited: true },
-  { name: "Full REST API access", pro: false, unlimited: true },
-  { name: "CSV export", pro: true, unlimited: true },
-]
-
 export default function PricingPage() {
   const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || "https://my.codefor.food"
 
@@ -73,24 +58,14 @@ export default function PricingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
+      <div className="absolute inset-0 grid-pattern opacity-30" />
 
-      {/* Background */}
-      <div className="absolute inset-0 grid-pattern opacity-20" />
-      <div className="aurora" />
-
-      {/* Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="w-full py-5 px-4 border-b border-border/30 backdrop-blur-sm bg-background/80">
+        <header className="w-full py-6 px-4 border-b border-border/50">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover transition-colors">
-              <Image
-                src="/logo.png"
-                alt="codeforfood"
-                width={24}
-                height={24}
-                className="size-6"
-              />
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-accent hover:text-accent-hover">
+              <Image src="/logo.png" alt="codeforfood" width={24} height={24} className="size-6" />
               <span>codeforfood</span>
             </Link>
             <a
@@ -102,241 +77,216 @@ export default function PricingPage() {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 px-4 py-20">
           <div className="max-w-5xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/5 border border-accent/20 text-accent text-sm font-medium mb-6">
-                <span className="size-2 rounded-full bg-accent animate-pulse" />
-                7-day free trial &mdash; no credit card
-              </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-5">
-                <span className="gradient-text">Simple pricing</span>
+            <div className="max-w-2xl mb-16">
+              <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+                Pricing
               </h1>
-              <p className="text-muted text-lg max-w-md mx-auto">
-                Choose the plan that fits your workload. Upgrade or downgrade anytime.
+              <p className="text-muted text-lg">
+                7-day trial, no card required. Both plans include every feature — the difference is limits.
               </p>
             </div>
 
-            {/* Pricing Cards */}
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-20">
-              {/* Pro Plan */}
-              <div className="bg-card border border-border/60 rounded-2xl p-8 flex flex-col feature-card">
-                <div className="mb-8">
-                  <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Pro</h2>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-5xl font-bold stat-number">$4.99</span>
-                    <span className="text-muted">/month</span>
-                  </div>
-                  <p className="text-sm text-muted">Perfect for solo freelancers</p>
+            {/* Cards */}
+            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-3xl mb-20">
+              {/* Pro */}
+              <div className="bg-card p-8 md:p-10 flex flex-col">
+                <p className="mono-tag mb-5">Pro</p>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-5xl font-bold price-tag">$4.99</span>
+                  <span className="text-muted">/mo</span>
                 </div>
+                <p className="text-sm text-muted mb-8">For freelancers getting started.</p>
 
-                <ul className="space-y-3.5 mb-8 flex-1">
-                  {[
-                    { text: "3 organizations", highlight: true },
-                    { text: "5 projects per org", highlight: true },
-                    { text: "Unlimited milestones" },
-                    { text: "Telegram bot" },
-                    { text: "E2E encrypted notes" },
-                    { text: "CSV export" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs flex-shrink-0">✓</span>
-                      <span className={item.highlight ? "text-foreground" : "text-muted"}>{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-3 text-sm mb-10 flex-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted">Organizations</span>
+                    <span className="font-medium font-mono">3</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Projects per org</span>
+                    <span className="font-medium font-mono">5</span>
+                  </div>
+                  <div className="h-px bg-border/50 my-1" />
+                  <div className="flex justify-between">
+                    <span className="text-muted">Milestones</span>
+                    <span className="text-muted/60">unlimited</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Client sharing</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">All billing models</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Privacy controls</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Encrypted notes</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Telegram bot</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">CSV export</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">REST API</span>
+                    <span className="text-muted/30">—</span>
+                  </div>
+                </div>
 
                 <a
                   href={`${adminUrl}/login`}
-                  className="block w-full py-3.5 text-center border border-border/60 rounded-xl hover:border-accent/50 transition-all font-medium mt-auto hover:bg-card-hover"
+                  className="block w-full py-3 text-center border border-border rounded-lg hover:border-accent/50 transition-colors text-sm"
                 >
-                  Start Free Trial
+                  Start trial
                 </a>
               </div>
 
-              {/* Unlimited Plan */}
-              <div className="pricing-popular rounded-2xl p-8 relative flex flex-col">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-accent text-background text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-accent/20">
-                    Most Popular
-                  </span>
+              {/* Unlimited */}
+              <div className="bg-card p-8 md:p-10 flex flex-col border-l border-accent/20 relative">
+                <div className="absolute top-6 right-6 md:top-8 md:right-8">
+                  <span className="text-xs font-mono text-accent/60 bg-accent/5 px-2 py-1 rounded">popular</span>
                 </div>
 
-                <div className="mb-8">
-                  <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">Unlimited</h2>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-5xl font-bold gradient-text stat-number">$9.99</span>
-                    <span className="text-muted">/month</span>
+                <p className="mono-tag mb-5">Unlimited</p>
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-5xl font-bold price-tag gradient-text">$9.99</span>
+                  <span className="text-muted">/mo</span>
+                </div>
+                <p className="text-sm text-muted mb-8">No limits on anything.</p>
+
+                <div className="space-y-3 text-sm mb-10 flex-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted">Organizations</span>
+                    <span className="font-medium font-mono text-accent">∞</span>
                   </div>
-                  <p className="text-sm text-muted">For growing freelance businesses</p>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Projects</span>
+                    <span className="font-medium font-mono text-accent">∞</span>
+                  </div>
+                  <div className="h-px bg-border/50 my-1" />
+                  <div className="flex justify-between">
+                    <span className="text-muted">Milestones</span>
+                    <span className="text-muted/60">unlimited</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Client sharing</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">All billing models</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Privacy controls</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Encrypted notes</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">Telegram bot</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">CSV export</span>
+                    <span className="text-success">✓</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted">REST API</span>
+                    <span className="text-success font-medium">✓</span>
+                  </div>
                 </div>
-
-                <ul className="space-y-3.5 mb-8 flex-1">
-                  {[
-                    { text: "Unlimited organizations", highlight: true },
-                    { text: "Unlimited projects", highlight: true },
-                    { text: "Unlimited milestones" },
-                    { text: "Telegram bot" },
-                    { text: "E2E encrypted notes" },
-                    { text: "Full REST API access", highlight: true },
-                    { text: "CSV export" },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-sm">
-                      <span className="size-5 rounded-full bg-success/10 text-success flex items-center justify-center text-xs flex-shrink-0">✓</span>
-                      <span className={item.highlight ? "text-foreground font-medium" : "text-muted"}>{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
 
                 <a
                   href={`${adminUrl}/login`}
-                  className="btn-glow block w-full py-3.5 text-center bg-accent text-background font-bold rounded-xl hover:bg-accent-hover transition-all mt-auto hover:shadow-lg hover:shadow-accent/20"
+                  className="block w-full py-3 text-center bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors text-sm"
                 >
-                  Start Free Trial
+                  Start trial
                 </a>
               </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-20">
-              {[
-                { icon: "🔒", text: "Secure payments" },
-                { icon: "↩️", text: "30-day money-back" },
-                { icon: "⚡", text: "Cancel anytime" },
-              ].map((badge, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/80 border border-border/40 text-sm text-muted">
-                  <span>{badge.icon}</span>
-                  <span>{badge.text}</span>
-                </div>
-              ))}
-            </div>
+            {/* One liner */}
+            <p className="text-sm text-muted/40 mb-20">
+              30-day money-back guarantee. Upgrade or downgrade anytime.
+            </p>
 
-            {/* Feature Comparison Table */}
-            <div className="max-w-3xl mx-auto mb-20">
-              <h2 className="text-2xl font-bold text-center mb-10">Compare plans</h2>
-              <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
-                {/* Table header */}
-                <div className="grid grid-cols-3 gap-4 px-6 py-4 border-b border-border/40 text-sm font-semibold">
-                  <div className="text-muted">Feature</div>
-                  <div className="text-center">Pro</div>
-                  <div className="text-center text-accent">Unlimited</div>
-                </div>
-                {/* Table rows */}
-                {features.map((feature, i) => (
-                  <div key={i} className={`grid grid-cols-3 gap-4 px-6 py-3.5 text-sm ${i < features.length - 1 ? 'border-b border-border/20' : ''}`}>
-                    <div className="text-muted">{feature.name}</div>
-                    <div className="text-center">
-                      {typeof feature.pro === 'boolean' ? (
-                        feature.pro ? (
-                          <span className="text-success">✓</span>
-                        ) : (
-                          <span className="text-muted/30">—</span>
-                        )
-                      ) : (
-                        <span className="font-medium">{feature.pro}</span>
-                      )}
-                    </div>
-                    <div className="text-center">
-                      {typeof feature.unlimited === 'boolean' ? (
-                        feature.unlimited ? (
-                          <span className="text-success">✓</span>
-                        ) : (
-                          <span className="text-muted/30">—</span>
-                        )
-                      ) : (
-                        <span className="font-medium text-accent">{feature.unlimited}</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* FAQ */}
+            <div className="max-w-2xl">
+              <h2 className="text-xl font-bold mb-8">Questions</h2>
 
-            {/* FAQ Section */}
-            <div className="max-w-2xl mx-auto mb-20">
-              <h2 className="text-2xl font-bold text-center mb-10">Frequently Asked Questions</h2>
-
-              <div className="space-y-4">
-                <div className="bg-card/80 border border-border/40 rounded-xl p-6 feature-card">
-                  <h3 className="font-bold mb-2">Can I cancel anytime?</h3>
+              <div className="space-y-8">
+                <div>
+                  <h3 className="font-semibold mb-2">Can I cancel anytime?</h3>
                   <p className="text-sm text-muted leading-relaxed">
-                    Yes, you can cancel your subscription at any time. You&apos;ll continue to have access
-                    until the end of your billing period.
+                    Yes. One click. You keep access until the end of your billing period.
                   </p>
                 </div>
 
-                <div className="bg-card/80 border border-border/40 rounded-xl p-6 feature-card">
-                  <h3 className="font-bold mb-2">Do you offer refunds?</h3>
+                <div>
+                  <h3 className="font-semibold mb-2">Do you offer refunds?</h3>
                   <p className="text-sm text-muted leading-relaxed">
-                    Yes! We offer a <span className="text-foreground font-medium">30-day money-back guarantee</span>.
-                    If you&apos;re not satisfied, contact us within 30 days for a full refund. See our{" "}
-                    <Link href="/terms" className="text-accent hover:underline">Terms of Use</Link> for details.
+                    30-day money-back guarantee. Not happy — we refund, no questions.
+                    See <Link href="/terms" className="text-accent hover:underline underline-offset-4">Terms</Link> for details.
                   </p>
                 </div>
 
-                <div className="bg-card/80 border border-border/40 rounded-xl p-6 feature-card">
-                  <h3 className="font-bold mb-2">What payment methods do you accept?</h3>
+                <div>
+                  <h3 className="font-semibold mb-2">What payment methods?</h3>
                   <p className="text-sm text-muted leading-relaxed">
-                    We accept all major credit cards (Visa, Mastercard, American Express) through our
-                    secure payment processor.
+                    Visa, Mastercard, Amex through our payment processor.
                   </p>
                 </div>
 
-                <div className="bg-card/80 border border-border/40 rounded-xl p-6 feature-card">
-                  <h3 className="font-bold mb-2">Can I upgrade or downgrade anytime?</h3>
+                <div>
+                  <h3 className="font-semibold mb-2">Can I switch plans?</h3>
                   <p className="text-sm text-muted leading-relaxed">
-                    Yes, you can change your plan at any time. When upgrading, you&apos;ll be charged
-                    the prorated difference. When downgrading, the change takes effect at the next billing cycle.
+                    Anytime. Upgrading charges the prorated difference. Downgrading kicks in at the next billing cycle.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* CTA */}
-            <div className="text-center relative py-8">
-              <div className="absolute inset-0 bg-gradient-to-t from-accent/[0.03] to-transparent pointer-events-none rounded-3xl" />
-              <div className="relative">
-                <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to get started?</h2>
-                <p className="text-muted mb-8">Start your 7-day free trial. No credit card required.</p>
-                <a
-                  href={`${adminUrl}/login`}
-                  className="btn-glow cta-pulse inline-block px-10 py-4 bg-accent text-background font-bold rounded-xl hover:bg-accent-hover transition-all hover:shadow-xl hover:shadow-accent/25 text-lg"
-                >
-                  Start Free Trial
-                </a>
-              </div>
+            <div className="mt-20 pt-16 border-t border-border/50 max-w-2xl">
+              <h2 className="text-2xl font-bold mb-4">Ready?</h2>
+              <p className="text-muted mb-6">7 days free, then pick a plan.</p>
+              <a
+                href={`${adminUrl}/login`}
+                className="inline-block px-8 py-3.5 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover transition-colors"
+              >
+                Start trial
+              </a>
             </div>
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border/30 py-8 px-4 bg-background/50 backdrop-blur-sm">
+        <footer className="border-t border-border py-8 px-4">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2 text-accent font-bold hover:opacity-80 transition-opacity">
-              <Image
-                src="/logo.png"
-                alt="codeforfood"
-                width={20}
-                height={20}
-                className="size-5"
-              />
+              <Image src="/logo.png" alt="codeforfood" width={20} height={20} className="size-5" />
               <span>codeforfood</span>
             </Link>
-            <div className="flex items-center gap-4 text-xs text-muted/40">
-              <Link href="/privacy" className="hover:text-muted transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-muted transition-colors">
-                Terms
-              </Link>
+            <div className="flex items-center gap-4 text-xs text-muted/50">
+              <Link href="/privacy" className="hover:text-muted transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-muted transition-colors">Terms</Link>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted">
-              <a href={`${adminUrl}/login`} className="hover:text-foreground transition-colors">
-                Sign In
-              </a>
-            </div>
+            <a href={`${adminUrl}/login`} className="text-sm text-muted hover:text-foreground transition-colors">
+              Sign In
+            </a>
           </div>
         </footer>
       </div>
