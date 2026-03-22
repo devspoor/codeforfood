@@ -62,25 +62,25 @@ export default function Home() {
         </header>
 
         {/* Hero */}
-        <section className="px-4 pt-20 md:pt-32 pb-8">
+        <section className="px-4 pt-20 md:pt-32 pb-16">
           <div className="max-w-6xl mx-auto">
             <div className="max-w-3xl">
-              <p className="mono-tag mb-6">for freelancers who bill clients</p>
-              <h1 className="text-4xl sm:text-5xl md:text-[4.25rem] font-bold mb-6 leading-[1.1] tracking-tight">
+              <p className="mono-tag mb-4 animate-fade-in">for freelancers who bill clients</p>
+              <h1 className="text-4xl sm:text-5xl md:text-[4.25rem] font-bold mb-6 leading-[1.1] tracking-tight stagger-1">
                 Your client asks
                 <br />
                 <span className="text-accent">&quot;how much do I owe you?&quot;</span>
                 <br />
                 You send a link.
               </h1>
-              <p className="text-lg text-muted mb-10 max-w-xl leading-relaxed">
+              <p className="text-lg text-muted mb-10 max-w-xl leading-relaxed stagger-2">
                 Milestones, payments, hours, expenses — one page your client can open
                 anytime instead of messaging you.
               </p>
-              <div className="flex flex-col sm:flex-row items-start gap-4">
+              <div className="flex flex-col sm:flex-row items-start gap-4 stagger-3">
                 <a
                   href={`${adminUrl}/login`}
-                  className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-colors"
+                  className="px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
                 >
                   Try free for 7 days
                 </a>
@@ -91,7 +91,7 @@ export default function Home() {
         </section>
 
         {/* Screenshot */}
-        <section className="px-4 py-16">
+        <section className="px-4 py-12">
           <div className="max-w-5xl mx-auto">
             <div className="screenshot-frame bg-card">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
@@ -142,7 +142,7 @@ export default function Home() {
                   detail: "No written record of what was agreed. Now it's your word against theirs."
                 }
               ].map((item, i) => (
-                <div key={i} className="bg-card p-6">
+                <div key={i} className="bg-card p-6 hover:bg-card-hover transition-colors">
                   <h3 className="font-semibold mb-2 text-foreground">{item.q}</h3>
                   <p className="text-sm text-muted leading-relaxed">{item.detail}</p>
                 </div>
@@ -250,7 +250,7 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 rounded-xl overflow-hidden">
-              <div className="bg-card p-6">
+              <div className="bg-card p-6 hover:bg-card-hover transition-colors">
                 <h3 className="font-bold mb-1">Fixed Price</h3>
                 <p className="text-sm text-muted mb-4">&quot;Homepage — $1,500&quot;</p>
                 <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
@@ -258,7 +258,7 @@ export default function Home() {
                   <div className="flex justify-between"><span className="text-muted">Paid</span><span className="text-success">$1,000</span></div>
                 </div>
               </div>
-              <div className="bg-card p-6">
+              <div className="bg-card p-6 hover:bg-card-hover transition-colors">
                 <h3 className="font-bold mb-1">Hourly</h3>
                 <p className="text-sm text-muted mb-4">&quot;Bug fixes — $75/hr&quot;</p>
                 <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
@@ -266,7 +266,7 @@ export default function Home() {
                   <div className="flex justify-between"><span className="text-muted">Total</span><span>$937.50</span></div>
                 </div>
               </div>
-              <div className="bg-card p-6">
+              <div className="bg-card p-6 hover:bg-card-hover transition-colors">
                 <h3 className="font-bold mb-1">Per Unit</h3>
                 <p className="text-sm text-muted mb-4">&quot;Blog posts — $50 each&quot;</p>
                 <div className="bg-background/50 rounded-lg p-3 text-sm font-mono space-y-1">
@@ -453,7 +453,7 @@ export default function Home() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden">
-              <div className="bg-card p-6">
+              <div className="bg-card p-6 hover:bg-card-hover transition-colors">
                 <h3 className="font-bold mb-1">Links to everything</h3>
                 <p className="text-sm text-muted mb-4">Figma, GitHub, staging — visible to client.</p>
                 <div className="space-y-1.5 text-sm font-mono text-muted/60">
@@ -462,7 +462,7 @@ export default function Home() {
                   <p>staging.acme.com</p>
                 </div>
               </div>
-              <div className="bg-card p-6">
+              <div className="bg-card p-6 hover:bg-card-hover transition-colors">
                 <h3 className="font-bold mb-1">Project timeline</h3>
                 <p className="text-sm text-muted mb-4">Post updates your client can see.</p>
                 <div className="space-y-2 text-sm">
@@ -517,8 +517,8 @@ export default function Home() {
               7-day trial, no card. Cancel anytime.
             </p>
 
-            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-2xl">
-              <div className="bg-card p-8 flex flex-col">
+            <div className="grid md:grid-cols-2 gap-px bg-border/50 rounded-xl overflow-hidden max-w-2xl mx-auto">
+              <div className="bg-card p-8 flex flex-col hover:bg-card-hover transition-colors">
                 <p className="mono-tag mb-4">Pro</p>
                 <div className="flex items-baseline gap-1 mb-6">
                   <span className="text-3xl font-bold price-tag">$4.99</span>
@@ -537,9 +537,9 @@ export default function Home() {
                   Start trial
                 </a>
               </div>
-              <div className="bg-card p-8 flex flex-col relative">
+              <div className="bg-card p-8 flex flex-col relative hover:bg-card-hover transition-colors">
                 <div className="absolute top-4 right-4">
-                  <span className="text-xs font-mono text-accent/60 bg-accent/5 px-2 py-1 rounded">popular</span>
+                  <span className="text-xs font-mono text-accent bg-accent/10 px-2.5 py-1 rounded-full border border-accent/20">popular</span>
                 </div>
                 <p className="mono-tag mb-4">Unlimited</p>
                 <div className="flex items-baseline gap-1 mb-6">
@@ -577,7 +577,7 @@ export default function Home() {
               Questions
             </h2>
 
-            <div className="space-y-8">
+            <div className="divide-y divide-border/30">
               {[
                 {
                   q: "Do payments go through you?",
@@ -604,7 +604,7 @@ export default function Home() {
                   a: "Anytime, one click. You keep access until the period ends."
                 }
               ].map((item, i) => (
-                <div key={i}>
+                <div key={i} className="py-6 first:pt-0 last:pb-0">
                   <h3 className="font-semibold mb-2">{item.q}</h3>
                   <p className="text-sm text-muted leading-relaxed">{item.a}</p>
                 </div>
@@ -615,7 +615,7 @@ export default function Home() {
 
         {/* Final CTA */}
         <section className="px-4 py-24 border-t border-border/50">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Stop explaining your own invoices
             </h2>
@@ -624,7 +624,7 @@ export default function Home() {
             </p>
             <a
               href={`${adminUrl}/login`}
-              className="inline-block px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-colors"
+              className="inline-block px-8 py-4 bg-accent text-background font-semibold rounded-lg hover:bg-accent-hover text-lg transition-all hover:shadow-[0_0_30px_rgba(250,204,21,0.3)]"
             >
               Try free for 7 days
             </a>
@@ -632,7 +632,7 @@ export default function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-border py-8 px-4">
+        <footer className="border-t border-border py-12 px-4 mt-auto">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-accent font-bold font-mono text-sm">{"<codeforfood/>"}</div>
             <div className="flex items-center gap-6 text-xs text-muted/50">
