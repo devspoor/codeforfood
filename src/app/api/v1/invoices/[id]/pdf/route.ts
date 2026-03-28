@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { withAuth, apiNotFound } from "@/lib/api-auth";
+import { getCurrentUser } from "@/lib/db";
+import { createClient } from "@/lib/supabase/server";
 import { InvoicePDF } from "@/components/invoices/InvoicePDF";
 import { formatCurrency } from "@/lib/format";
 
@@ -9,66 +10,70 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  return withAuth(request, async ({ user, supabase }) => {
-    // Fetch invoice with items
-    const { data: invoice, error: invoiceError } = await supabase
-      .from("invoices")
-      .select("*, invoice_items(*)")
-      .eq("id", id)
-      .single();
+  const supabase = await createClient();
 
-    if (invoiceError || !invoice) {
-      return apiNotFound("Invoice");
-    }
+  // Fetch invoice with items
+  const { data: invoice, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("*, invoice_items(*)")
+    .eq("id", id)
+    .single();
 
-    // Sort items by order
-    if (invoice.invoice_items) {
-      invoice.invoice_items.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
-    }
+  if (invoiceError || !invoice) {
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  }
 
-    // Verify ownership: invoice -> project -> org -> user_id
-    const { data: project } = await supabase
-      .from("projects")
-      .select("id, organization_id, organizations!inner(id, name, user_id, payment_methods(*))")
-      .eq("id", invoice.project_id)
-      .single();
+  // Sort items by order
+  if (invoice.invoice_items) {
+    invoice.invoice_items.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
+  }
 
-    if (!project) {
-      return apiNotFound("Project");
-    }
+  // Verify ownership: invoice -> project -> org -> user_id
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, organization_id, organizations!inner(id, name, user_id, payment_methods(*))")
+    .eq("id", invoice.project_id)
+    .single();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const org = project.organizations as any;
-    if (org?.user_id !== user.id) {
-      return apiNotFound("Invoice");
-    }
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
 
-    const orgName = org?.name || "Unknown";
-    const paymentMethods = org?.payment_methods || [];
-    const formatAmount = (amount: number) => formatCurrency(amount, invoice.currency);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const org = project.organizations as any;
+  if (org?.user_id !== user.id) {
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  }
 
-    // Assign items to the invoice object for the PDF component
-    const invoiceForPdf = {
-      ...invoice,
-      items: invoice.invoice_items,
-    };
+  const orgName = org?.name || "Unknown";
+  const paymentMethods = org?.payment_methods || [];
+  const formatAmount = (amount: number) => formatCurrency(amount, invoice.currency);
 
-    const pdfElement = InvoicePDF({
-      invoice: invoiceForPdf,
-      orgName,
-      paymentMethods,
-      formatAmount,
-    });
+  // Assign items to the invoice object for the PDF component
+  const invoiceForPdf = {
+    ...invoice,
+    items: invoice.invoice_items,
+  };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfBuffer = await renderToBuffer(pdfElement as any);
+  const pdfElement = InvoicePDF({
+    invoice: invoiceForPdf,
+    orgName,
+    paymentMethods,
+    formatAmount,
+  });
 
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename=${invoice.number}.pdf`,
-      },
-    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfBuffer = await renderToBuffer(pdfElement as any);
+
+  return new NextResponse(pdfBuffer, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename=${invoice.number}.pdf`,
+    },
   });
 }

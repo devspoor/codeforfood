@@ -35,8 +35,9 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
   // Import from milestones
   const [showImport, setShowImport] = useState(false);
   const [selectedMilestoneIds, setSelectedMilestoneIds] = useState<Set<string>>(new Set());
+  const [includePaid, setIncludePaid] = useState(false);
 
-  const unpaidMilestones = milestones.filter((m) => !m.is_paid);
+  const importableMilestones = includePaid ? milestones : milestones.filter((m) => !m.is_paid);
 
   const toggleMilestone = (id: string) => {
     setSelectedMilestoneIds((prev) => {
@@ -50,15 +51,22 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
     });
   };
 
+  const buildDescription = (m: Milestone, suffix?: string) => {
+    const parts = [m.title];
+    if (suffix) parts[0] += ` (${suffix})`;
+    if (m.description) parts.push(m.description);
+    return parts.join("\n");
+  };
+
   const importSelected = () => {
     const newItems: InvoiceItemDraft[] = [];
-    for (const m of unpaidMilestones) {
+    for (const m of importableMilestones) {
       if (!selectedMilestoneIds.has(m.id)) continue;
 
       if (m.type === "hourly") {
         const totalHours = (m.time_entries || []).reduce((sum, e) => sum + (e.hours || 0), 0);
         newItems.push({
-          description: `${m.title} (${totalHours}h logged)`,
+          description: buildDescription(m, `${totalHours}h logged`),
           quantity: totalHours || 1,
           unit_price: m.hourly_rate || 0,
           milestone_id: m.id,
@@ -66,14 +74,14 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
       } else if (m.type === "per_unit") {
         const totalUnits = (m.time_entries || []).reduce((sum, e) => sum + (e.units || 0), 0);
         newItems.push({
-          description: `${m.title} (${totalUnits} ${m.unit_label || "units"})`,
+          description: buildDescription(m, `${totalUnits} ${m.unit_label || "units"}`),
           quantity: totalUnits || 1,
           unit_price: m.unit_rate || 0,
           milestone_id: m.id,
         });
       } else {
         newItems.push({
-          description: m.title,
+          description: buildDescription(m),
           quantity: 1,
           unit_price: m.amount,
           milestone_id: m.id,
@@ -190,7 +198,7 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium">Items</label>
-          {unpaidMilestones.length > 0 && (
+          {milestones.length > 0 && (
             <button
               type="button"
               onClick={() => setShowImport(!showImport)}
@@ -204,23 +212,44 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
         {/* Import from milestones panel */}
         {showImport && (
           <div className="bg-background border border-border rounded-lg p-3 mb-3 space-y-2">
-            <p className="text-xs text-muted">Select milestones to import:</p>
-            {unpaidMilestones.map((m) => (
-              <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted">Select milestones to import:</p>
+              <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selectedMilestoneIds.has(m.id)}
-                  onChange={() => toggleMilestone(m.id)}
+                  checked={includePaid}
+                  onChange={(e) => setIncludePaid(e.target.checked)}
                   className="rounded"
                 />
-                <span>{m.title}</span>
-                <span className="text-muted text-xs ml-auto">
-                  {m.type === "fixed" && formatCurrency(m.amount, currency)}
-                  {m.type === "hourly" && `${m.hourly_rate}/hr`}
-                  {m.type === "per_unit" && `${m.unit_rate}/${m.unit_label || "unit"}`}
-                </span>
+                Include paid
               </label>
-            ))}
+            </div>
+            {importableMilestones.length === 0 ? (
+              <p className="text-xs text-muted py-2 text-center">No milestones available</p>
+            ) : (
+              importableMilestones.map((m) => (
+                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedMilestoneIds.has(m.id)}
+                    onChange={() => toggleMilestone(m.id)}
+                    className="rounded"
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="block truncate">{m.title}</span>
+                    {m.description && (
+                      <span className="block text-xs text-muted truncate">{m.description}</span>
+                    )}
+                  </span>
+                  <span className="text-muted text-xs whitespace-nowrap flex items-center gap-1.5">
+                    {m.is_paid && <span className="text-success">paid</span>}
+                    {m.type === "fixed" && formatCurrency(m.amount, currency)}
+                    {m.type === "hourly" && `${m.hourly_rate}/hr`}
+                    {m.type === "per_unit" && `${m.unit_rate}/${m.unit_label || "unit"}`}
+                  </span>
+                </label>
+              ))
+            )}
             <div className="flex gap-2 pt-1">
               <button
                 type="button"
@@ -246,7 +275,13 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
           <div className="space-y-1 mb-3">
             {items.map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm bg-background border border-border rounded px-3 py-2">
-                <span className="flex-1 truncate">{item.description}</span>
+                <span className="flex-1 min-w-0">
+                  {item.description.split("\n").map((line, j) => (
+                    <span key={j} className={j === 0 ? "block truncate" : "block truncate text-xs text-muted"}>
+                      {line}
+                    </span>
+                  ))}
+                </span>
                 <span className="text-muted whitespace-nowrap">{item.quantity} x {formatCurrency(item.unit_price, currency)}</span>
                 <span className="font-medium whitespace-nowrap">{formatCurrency(item.quantity * item.unit_price, currency)}</span>
                 <button
