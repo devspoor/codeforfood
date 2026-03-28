@@ -74,7 +74,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error("[GET /invoices/[id]] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }
 
@@ -173,7 +173,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     });
   } catch (error) {
     console.error("[PATCH /invoices/[id]] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }
 
@@ -214,6 +214,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     return NextResponse.json({ data: { success: true } });
   } catch (error) {
     console.error("[DELETE /invoices/[id]] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }

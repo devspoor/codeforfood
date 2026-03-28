@@ -145,12 +145,16 @@ export async function POST(
     );
 
     // Count existing invoices across all org projects
-    const { count } = await supabase
-      .from("invoices")
-      .select("id", { count: "exact", head: true })
-      .in("project_id", orgProjectIds);
+    let count = 0;
+    if (orgProjectIds.length > 0) {
+      const { count: invoiceCount } = await supabase
+        .from("invoices")
+        .select("id", { count: "exact", head: true })
+        .in("project_id", orgProjectIds);
+      count = invoiceCount || 0;
+    }
 
-    const invoiceNumber = `INV-${String((count || 0) + 1).padStart(3, "0")}`;
+    const invoiceNumber = `INV-${String(count + 1).padStart(3, "0")}`;
     const hash = randomBytes(12).toString("base64url");
 
     // Insert invoice
@@ -236,6 +240,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("[POST /invoices] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }
