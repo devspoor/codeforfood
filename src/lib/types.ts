@@ -278,6 +278,13 @@ export interface InvoiceItem {
   created_at: string;
 }
 
+export interface Reminder {
+  id: string;
+  type: "before_due" | "on_due" | "overdue";
+  scheduled_for: string;
+  sent_at?: string | null;
+}
+
 export interface Invoice {
   id: string;
   project_id: string;
@@ -292,5 +299,6 @@ export interface Invoice {
   client_email?: string | null;
   currency: string;
   items?: InvoiceItem[];
+  reminders?: Reminder[];
   created_at: string;
 }

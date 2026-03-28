@@ -147,6 +147,38 @@ export function InvoiceDetail({ invoice, currency, onUpdate, onClose }: Props) {
         </div>
       )}
 
+      {/* Reminder Schedule */}
+      {invoice.due_date && (
+        <div>
+          <p className="text-xs text-muted mb-2 font-medium">Reminder Schedule</p>
+          <div className="space-y-1">
+            {[
+              { type: "before_due" as const, label: "3 days before due" },
+              { type: "on_due" as const, label: "On due date" },
+              { type: "overdue" as const, label: "7 days after due" },
+            ].map((row) => {
+              const reminder = (invoice.reminders || []).find((r) => r.type === row.type);
+              return (
+                <div key={row.type} className="flex items-center justify-between text-xs">
+                  <span className="text-muted">{row.label}</span>
+                  <span>
+                    {reminder ? (
+                      reminder.sent_at ? (
+                        <span className="text-success">Sent {formatDate(reminder.sent_at)}</span>
+                      ) : (
+                        <span className="text-accent">{formatDate(reminder.scheduled_for)}</span>
+                      )
+                    ) : (
+                      <span className="text-muted">--</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-wrap gap-2 border-t border-border pt-3">
         {(invoice.status === "draft" || invoice.client_email) && (

@@ -33,12 +33,20 @@ export async function GET(request: NextRequest, { params }: Params) {
       return apiNotFound("Invoice");
     }
 
+    // Fetch reminders for this invoice
+    const { data: reminders } = await supabase
+      .from("reminders")
+      .select("id, type, scheduled_for, sent_at")
+      .eq("invoice_id", id)
+      .order("scheduled_for", { ascending: true });
+
     return apiSuccess({
       ...invoice,
       items: (invoice.invoice_items || []).sort(
         (a: { order: number }, b: { order: number }) => a.order - b.order
       ),
       invoice_items: undefined,
+      reminders: reminders || [],
     });
   });
 }
