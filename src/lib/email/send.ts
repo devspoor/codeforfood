@@ -9,7 +9,7 @@ interface SendEmailParams {
 }
 
 export async function sendEmail({ to, subject, react, from }: SendEmailParams): Promise<{ success: boolean; error?: string }> {
-  if (!process.env.RESEND_API_KEY) {
+  if (!process.env.RESEND_API_KEY || !resend) {
     console.warn("Email not sent (no RESEND_API_KEY):", subject, "to:", to);
     return { success: false, error: "Email not configured" };
   }
