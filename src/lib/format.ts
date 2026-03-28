@@ -58,19 +58,23 @@ export function calculatePercent(paid: number, total: number): number {
   return Math.min(100, Math.floor((paid / total) * 100));
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number, currencyCode: string = "USD"): string {
   // Handle invalid numbers gracefully
   if (typeof amount !== "number" || !Number.isFinite(amount)) {
     return "$0";
   }
-  // Round before formatting to ensure consistency
   const rounded = roundCurrency(amount);
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(rounded);
+
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: currencyCode === "JPY" || currencyCode === "CLP" || currencyCode === "COP" ? 0 : 2,
+    }).format(rounded);
+  } catch {
+    return `${rounded} ${currencyCode}`;
+  }
 }
 
 /**
