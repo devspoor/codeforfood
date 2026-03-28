@@ -89,6 +89,22 @@ export default async function SettingsPage() {
         )}
       </section>
 
+      {/* Tax Summary */}
+      <section className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Tax Summary</h2>
+            <p className="text-sm text-muted mt-1">Quarterly income, expenses, and profit breakdown</p>
+          </div>
+          <Link
+            href="/admin/settings/tax"
+            className="text-sm text-accent hover:underline"
+          >
+            View
+          </Link>
+        </div>
+      </section>
+
       {/* Integrations Section */}
       <section className="bg-card border border-border rounded-lg p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Integrations</h2>
