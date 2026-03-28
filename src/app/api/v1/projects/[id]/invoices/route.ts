@@ -27,30 +27,53 @@ export async function GET(
     }
 
     const supabase = await createClient();
-    const { data: invoices, error } = await supabase
+
+    // Fetch invoices
+    const { data: invoices, error: invoicesError } = await supabase
       .from("invoices")
-      .select("*, invoice_items(*)")
+      .select("*")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("[GET /invoices] Supabase error:", error);
-      return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
+    if (invoicesError) {
+      console.error("[GET /invoices] Supabase error:", invoicesError);
+      return NextResponse.json({ error: `Failed to fetch invoices: ${invoicesError.message}` }, { status: 500 });
     }
 
-    // Sort items by order within each invoice
-    const result = (invoices || []).map((inv) => ({
+    if (!invoices || invoices.length === 0) {
+      return NextResponse.json({ data: [] });
+    }
+
+    // Fetch all items for these invoices
+    const invoiceIds = invoices.map((inv) => inv.id);
+    const { data: allItems, error: itemsError } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .in("invoice_id", invoiceIds)
+      .order("order", { ascending: true });
+
+    if (itemsError) {
+      console.error("[GET /invoices] Items error:", itemsError);
+      // Return invoices without items rather than failing completely
+    }
+
+    // Group items by invoice_id
+    const itemsByInvoice = new Map<string, typeof allItems>();
+    for (const item of allItems || []) {
+      const existing = itemsByInvoice.get(item.invoice_id) || [];
+      existing.push(item);
+      itemsByInvoice.set(item.invoice_id, existing);
+    }
+
+    const result = invoices.map((inv) => ({
       ...inv,
-      items: (inv.invoice_items || []).sort(
-        (a: { order: number }, b: { order: number }) => a.order - b.order
-      ),
-      invoice_items: undefined,
+      items: itemsByInvoice.get(inv.id) || [],
     }));
 
     return NextResponse.json({ data: result });
   } catch (error) {
     console.error("[GET /invoices] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }
 
@@ -148,7 +171,7 @@ export async function POST(
 
     if (invoiceError || !invoice) {
       console.error("[POST /invoices] Insert error:", invoiceError);
-      return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 });
+      return NextResponse.json({ error: `Failed to create invoice: ${invoiceError?.message || "unknown"}` }, { status: 500 });
     }
 
     // Insert items
@@ -189,7 +212,7 @@ export async function POST(
       console.error("[POST /invoices] Items insert error:", itemsError);
       // Clean up the invoice if items failed
       await supabase.from("invoices").delete().eq("id", invoice.id);
-      return NextResponse.json({ error: "Failed to create invoice items" }, { status: 500 });
+      return NextResponse.json({ error: `Failed to create invoice items: ${itemsError.message}` }, { status: 500 });
     }
 
     // Sync payment reminders

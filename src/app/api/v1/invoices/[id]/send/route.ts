@@ -24,13 +24,19 @@ export async function POST(request: NextRequest, { params }: Params) {
     // Fetch invoice with items
     const { data: invoice, error } = await supabase
       .from("invoices")
-      .select("*, invoice_items(*)")
+      .select("*")
       .eq("id", id)
       .single();
 
     if (error || !invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
+
+    // Fetch items separately
+    const { data: invoiceItems } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id);
 
     // Fetch project with org name and verify ownership
     const { data: project } = await supabase
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     // Calculate total from items
-    const items = invoice.invoice_items || [];
+    const items = invoiceItems || [];
     const total = items.reduce((sum: number, item: { amount: number }) => sum + (item.amount || 0), 0);
 
     // Format due date

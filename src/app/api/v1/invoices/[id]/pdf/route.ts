@@ -21,7 +21,7 @@ export async function GET(
     // Fetch invoice with items
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
-      .select("*, invoice_items(*)")
+      .select("*")
       .eq("id", id)
       .single();
 
@@ -29,10 +29,12 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Sort items by order
-    if (invoice.invoice_items) {
-      invoice.invoice_items.sort((a: { order: number }, b: { order: number }) => a.order - b.order);
-    }
+    // Fetch items separately
+    const { data: invoiceItems } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id)
+      .order("order", { ascending: true });
 
     // Verify ownership: invoice -> project -> org -> user_id
     const { data: project } = await supabase
@@ -58,7 +60,7 @@ export async function GET(
     // Assign items to the invoice object for the PDF component
     const invoiceForPdf = {
       ...invoice,
-      items: invoice.invoice_items,
+      items: invoiceItems || [],
     };
 
     const pdfElement = InvoicePDF({

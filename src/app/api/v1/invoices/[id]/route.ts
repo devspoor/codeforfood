@@ -10,7 +10,7 @@ async function getInvoiceWithOwnershipCheck(id: string, userId: string) {
 
   const { data: invoice, error } = await supabase
     .from("invoices")
-    .select("*, invoice_items(*)")
+    .select("*")
     .eq("id", id)
     .single();
 
@@ -26,7 +26,14 @@ async function getInvoiceWithOwnershipCheck(id: string, userId: string) {
 
   if (!project) return null;
 
-  return invoice;
+  // Fetch items separately
+  const { data: items } = await supabase
+    .from("invoice_items")
+    .select("*")
+    .eq("invoice_id", id)
+    .order("order", { ascending: true });
+
+  return { ...invoice, invoice_items: items || [] };
 }
 
 /**
@@ -134,12 +141,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       .from("invoices")
       .update(updates)
       .eq("id", id)
-      .select("*, invoice_items(*)")
+      .select("*")
       .single();
 
     if (updateError || !updated) {
       console.error("[PATCH /invoices/[id]] Update error:", updateError);
-      return NextResponse.json({ error: "Failed to update invoice" }, { status: 500 });
+      return NextResponse.json({ error: `Failed to update invoice: ${updateError?.message || "unknown"}` }, { status: 500 });
     }
 
     // Sync reminders if due_date or client_email changed
@@ -151,13 +158,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       }
     }
 
+    // Fetch items separately
+    const { data: items } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id)
+      .order("order", { ascending: true });
+
     return NextResponse.json({
       data: {
         ...updated,
-        items: (updated.invoice_items || []).sort(
-          (a: { order: number }, b: { order: number }) => a.order - b.order
-        ),
-        invoice_items: undefined,
+        items: items || [],
       },
     });
   } catch (error) {
