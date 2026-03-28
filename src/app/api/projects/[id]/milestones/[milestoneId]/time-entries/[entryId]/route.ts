@@ -21,7 +21,7 @@ export async function PATCH(
 
     const data = await request.json();
 
-    const allowedFields = ["date", "hours", "description", "paid_amount"];
+    const allowedFields = ["date", "hours", "units", "description", "paid_amount"];
     const sanitizedData: Record<string, unknown> = {};
 
     for (const key of allowedFields) {
@@ -35,6 +35,12 @@ export async function PATCH(
             return NextResponse.json({ error: "Hours cannot exceed 24 per entry" }, { status: 400 });
           }
           sanitizedData[key] = numHours;
+        } else if (key === "units") {
+          const numUnits = Number(data[key]);
+          if (!Number.isFinite(numUnits) || numUnits < 1 || numUnits > 10000) {
+            return NextResponse.json({ error: "Units must be between 1 and 10000" }, { status: 400 });
+          }
+          sanitizedData[key] = numUnits;
         } else if (key === "paid_amount") {
           const numPaidAmount = Number(data[key]);
           if (!Number.isFinite(numPaidAmount) || numPaidAmount < 0) {
@@ -47,7 +53,7 @@ export async function PATCH(
       }
     }
 
-    const entry = await updateTimeEntry(entryId, sanitizedData as { date?: string; hours?: number; description?: string; paid_amount?: number });
+    const entry = await updateTimeEntry(entryId, sanitizedData as { date?: string; hours?: number; units?: number; description?: string; paid_amount?: number });
     if (!entry) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }

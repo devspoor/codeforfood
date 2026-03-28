@@ -39,6 +39,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
   const [deleteDialogMilestoneId, setDeleteDialogMilestoneId] = useState<string | null>(null);
   const [deleteDialogEntryId, setDeleteDialogEntryId] = useState<{ milestoneId: string; entryId: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editEntryDate, setEditEntryDate] = useState("");
+  const [editEntryHours, setEditEntryHours] = useState("");
+  const [editEntryMinutes, setEditEntryMinutes] = useState("");
+  const [editEntryUnits, setEditEntryUnits] = useState("");
+  const [editEntryDesc, setEditEntryDesc] = useState("");
 
   const editingMilestone = editingId ? milestones.find(m => m.id === editingId) : null;
 
@@ -313,6 +319,64 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
       setMilestones((prev) => prev.map((m) =>
         m.id === milestoneId
           ? { ...m, time_entries: (m.time_entries || []).filter((e) => e.id !== tempId) }
+          : m
+      ));
+    }
+  };
+
+  const startEditEntry = (entry: TimeEntry) => {
+    setEditingEntryId(entry.id);
+    setEditEntryDate(entry.date);
+    const h = Number(entry.hours || 0);
+    setEditEntryHours(String(Math.floor(h)) || "");
+    const mins = Math.round((h - Math.floor(h)) * 60);
+    setEditEntryMinutes(mins > 0 ? String(mins) : "");
+    setEditEntryUnits(String(entry.units || ""));
+    setEditEntryDesc(entry.description || "");
+  };
+
+  const cancelEditEntry = () => {
+    setEditingEntryId(null);
+  };
+
+  const handleSaveEntry = async (milestoneId: string, entry: TimeEntry, isUnitEntry: boolean) => {
+    const updates: Record<string, unknown> = { date: editEntryDate, description: editEntryDesc.trim() || "" };
+    if (isUnitEntry) {
+      const units = Number(editEntryUnits);
+      if (!Number.isFinite(units) || units < 1) return;
+      updates.units = units;
+    } else {
+      const hours = (Number(editEntryHours) || 0) + (Number(editEntryMinutes) || 0) / 60;
+      if (!Number.isFinite(hours) || hours <= 0 || hours > 24) return;
+      updates.hours = hours;
+    }
+
+    // Optimistic update
+    setMilestones(milestones.map((m) =>
+      m.id === milestoneId
+        ? { ...m, time_entries: (m.time_entries || []).map((e) => e.id === entry.id ? { ...e, ...updates } as TimeEntry : e) }
+        : m
+    ));
+    setEditingEntryId(null);
+
+    const res = await fetch(`/api/projects/${projectId}/milestones/${milestoneId}/time-entries/${entry.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setMilestones((prev) => prev.map((m) =>
+        m.id === milestoneId
+          ? { ...m, time_entries: (m.time_entries || []).map((e) => e.id === entry.id ? updated : e) }
+          : m
+      ));
+      router.refresh();
+    } else {
+      // Rollback
+      setMilestones((prev) => prev.map((m) =>
+        m.id === milestoneId
+          ? { ...m, time_entries: (m.time_entries || []).map((e) => e.id === entry.id ? entry : e) }
           : m
       ));
     }
@@ -595,69 +659,139 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                               const entryRemaining = entryAmount - entryPaid;
                               const isPaid = entryPaid >= entryAmount && entryAmount > 0;
                               const inputValue = timeEntryPaymentInputs[entry.id] ?? "";
+                              const isEditing = editingEntryId === entry.id;
                               return (
                                 <div
                                   key={entry.id}
                                   className={`bg-background rounded px-2 py-2 ${isPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex items-start justify-between text-xs gap-2">
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                      <span className="text-muted">{entry.date}</span>
-                                      <span className="font-medium">{formatHours(Number(entry.hours || 0))}</span>
-                                      <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
-                                        {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
-                                      </span>
-                                      {entry.description && (
-                                        <span className="text-muted break-words">{entry.description}</span>
-                                      )}
-                                    </div>
-                                    <button
-                                      onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
-                                      className="text-muted hover:text-danger transition-colors"
-                                      aria-label="Delete entry"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                  {!isPaid && entryAmount > 0 && (
-                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                      <span className="text-xs text-muted">$</span>
-                                      <input
-                                        type="number"
-                                        value={inputValue}
-                                        onChange={(e) => setTimeEntryPaymentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
-                                        placeholder={entryRemaining.toFixed(2)}
-                                        min="0"
-                                        max={entryAmount}
-                                        step="0.01"
-                                        className="flex-1 px-2 py-1 text-xs rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        <input
+                                          type="date"
+                                          value={editEntryDate}
+                                          onChange={(e) => setEditEntryDate(e.target.value)}
+                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                        />
+                                        <div className="flex gap-1">
+                                          <input
+                                            type="number"
+                                            value={editEntryHours}
+                                            onChange={(e) => setEditEntryHours(e.target.value)}
+                                            placeholder="0h"
+                                            min="0"
+                                            max="24"
+                                            step="1"
+                                            className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          />
+                                          <input
+                                            type="number"
+                                            value={editEntryMinutes}
+                                            onChange={(e) => setEditEntryMinutes(e.target.value)}
+                                            placeholder="0m"
+                                            min="0"
+                                            max="59"
+                                            step="1"
+                                            className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          />
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => handleSaveEntry(m.id, entry, false)}
+                                            className="px-3 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                          >
+                                            Save
+                                          </button>
+                                          <button
+                                            onClick={cancelEditEntry}
+                                            className="px-3 py-1 text-xs border border-border text-muted rounded hover:text-foreground transition-colors"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <textarea
+                                        value={editEntryDesc}
+                                        onChange={(e) => setEditEntryDesc(e.target.value)}
+                                        placeholder="Description (optional)"
+                                        rows={2}
+                                        className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                                       />
-                                      <button
-                                        onClick={() => {
-                                          const addAmount = Number(inputValue) || entryRemaining;
-                                          const newPaid = Math.min(entryPaid + addAmount, entryAmount);
-                                          handleUpdateTimeEntryPayment(m.id, entry, newPaid);
-                                        }}
-                                        className="px-2 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
-                                      >
-                                        +Add
-                                      </button>
-                                      <button
-                                        onClick={() => handleUpdateTimeEntryPayment(m.id, entry, entryAmount)}
-                                        className="px-2 py-1 text-xs border border-success text-success rounded hover:bg-success/10 transition-colors"
-                                        title="Pay full amount"
-                                      >
-                                        Full
-                                      </button>
-                                      {entryPaid > 0 && (
-                                        <button
-                                          onClick={() => handleUpdateTimeEntryPayment(m.id, entry, 0)}
-                                          className="px-2 py-1 text-xs border border-border text-muted rounded hover:border-danger hover:text-danger transition-colors"
-                                        >
-                                          Clear
-                                        </button>
-                                      )}
                                     </div>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-start justify-between text-xs gap-2">
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                          <span className="text-muted">{entry.date}</span>
+                                          <span className="font-medium">{formatHours(Number(entry.hours || 0))}</span>
+                                          <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
+                                            {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                          </span>
+                                          {entry.description && (
+                                            <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                          <button
+                                            onClick={() => startEditEntry(entry)}
+                                            className="text-muted hover:text-accent transition-colors"
+                                            aria-label="Edit entry"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
+                                            className="text-muted hover:text-danger transition-colors"
+                                            aria-label="Delete entry"
+                                          >
+                                            ×
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {!isPaid && entryAmount > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                          <span className="text-xs text-muted">$</span>
+                                          <input
+                                            type="number"
+                                            value={inputValue}
+                                            onChange={(e) => setTimeEntryPaymentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
+                                            placeholder={entryRemaining.toFixed(2)}
+                                            min="0"
+                                            max={entryAmount}
+                                            step="0.01"
+                                            className="flex-1 px-2 py-1 text-xs rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const addAmount = Number(inputValue) || entryRemaining;
+                                              const newPaid = Math.min(entryPaid + addAmount, entryAmount);
+                                              handleUpdateTimeEntryPayment(m.id, entry, newPaid);
+                                            }}
+                                            className="px-2 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                          >
+                                            +Add
+                                          </button>
+                                          <button
+                                            onClick={() => handleUpdateTimeEntryPayment(m.id, entry, entryAmount)}
+                                            className="px-2 py-1 text-xs border border-success text-success rounded hover:bg-success/10 transition-colors"
+                                            title="Pay full amount"
+                                          >
+                                            Full
+                                          </button>
+                                          {entryPaid > 0 && (
+                                            <button
+                                              onClick={() => handleUpdateTimeEntryPayment(m.id, entry, 0)}
+                                              className="px-2 py-1 text-xs border border-border text-muted rounded hover:border-danger hover:text-danger transition-colors"
+                                            >
+                                              Clear
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               );
@@ -733,69 +867,126 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                               const entryRemaining = entryAmount - entryPaid;
                               const isPaid = entryPaid >= entryAmount && entryAmount > 0;
                               const inputValue = timeEntryPaymentInputs[entry.id] ?? "";
+                              const isEditing = editingEntryId === entry.id;
                               return (
                                 <div
                                   key={entry.id}
                                   className={`bg-background rounded px-2 py-2 ${isPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex items-start justify-between text-xs gap-2">
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                      <span className="text-muted">{entry.date}</span>
-                                      <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
-                                      <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
-                                        {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
-                                      </span>
-                                      {entry.description && (
-                                        <span className="text-muted break-words">{entry.description}</span>
-                                      )}
-                                    </div>
-                                    <button
-                                      onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
-                                      className="text-muted hover:text-danger transition-colors"
-                                      aria-label="Delete entry"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                  {!isPaid && entryAmount > 0 && (
-                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                      <span className="text-xs text-muted">$</span>
-                                      <input
-                                        type="number"
-                                        value={inputValue}
-                                        onChange={(e) => setTimeEntryPaymentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
-                                        placeholder={entryRemaining.toFixed(2)}
-                                        min="0"
-                                        max={entryAmount}
-                                        step="0.01"
-                                        className="flex-1 px-2 py-1 text-xs rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                  {isEditing ? (
+                                    <div className="space-y-2">
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        <input
+                                          type="date"
+                                          value={editEntryDate}
+                                          onChange={(e) => setEditEntryDate(e.target.value)}
+                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                        />
+                                        <input
+                                          type="number"
+                                          value={editEntryUnits}
+                                          onChange={(e) => setEditEntryUnits(e.target.value)}
+                                          placeholder={`# of ${m.unit_label || "unit"}s`}
+                                          min="1"
+                                          step="1"
+                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                        />
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={() => handleSaveEntry(m.id, entry, true)}
+                                            className="px-3 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                          >
+                                            Save
+                                          </button>
+                                          <button
+                                            onClick={cancelEditEntry}
+                                            className="px-3 py-1 text-xs border border-border text-muted rounded hover:text-foreground transition-colors"
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <textarea
+                                        value={editEntryDesc}
+                                        onChange={(e) => setEditEntryDesc(e.target.value)}
+                                        placeholder="Description (optional)"
+                                        rows={2}
+                                        className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                                       />
-                                      <button
-                                        onClick={() => {
-                                          const addAmount = Number(inputValue) || entryRemaining;
-                                          const newPaid = Math.min(entryPaid + addAmount, entryAmount);
-                                          handleUpdateTimeEntryPayment(m.id, entry, newPaid);
-                                        }}
-                                        className="px-2 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
-                                      >
-                                        +Add
-                                      </button>
-                                      <button
-                                        onClick={() => handleUpdateTimeEntryPayment(m.id, entry, entryAmount)}
-                                        className="px-2 py-1 text-xs border border-success text-success rounded hover:bg-success/10 transition-colors"
-                                        title="Pay full amount"
-                                      >
-                                        Full
-                                      </button>
-                                      {entryPaid > 0 && (
-                                        <button
-                                          onClick={() => handleUpdateTimeEntryPayment(m.id, entry, 0)}
-                                          className="px-2 py-1 text-xs border border-border text-muted rounded hover:border-danger hover:text-danger transition-colors"
-                                        >
-                                          Clear
-                                        </button>
-                                      )}
                                     </div>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-start justify-between text-xs gap-2">
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                          <span className="text-muted">{entry.date}</span>
+                                          <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
+                                          <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
+                                            {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                          </span>
+                                          {entry.description && (
+                                            <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                          <button
+                                            onClick={() => startEditEntry(entry)}
+                                            className="text-muted hover:text-accent transition-colors"
+                                            aria-label="Edit entry"
+                                          >
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
+                                            className="text-muted hover:text-danger transition-colors"
+                                            aria-label="Delete entry"
+                                          >
+                                            ×
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {!isPaid && entryAmount > 0 && (
+                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                          <span className="text-xs text-muted">$</span>
+                                          <input
+                                            type="number"
+                                            value={inputValue}
+                                            onChange={(e) => setTimeEntryPaymentInputs((prev) => ({ ...prev, [entry.id]: e.target.value }))}
+                                            placeholder={entryRemaining.toFixed(2)}
+                                            min="0"
+                                            max={entryAmount}
+                                            step="0.01"
+                                            className="flex-1 px-2 py-1 text-xs rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const addAmount = Number(inputValue) || entryRemaining;
+                                              const newPaid = Math.min(entryPaid + addAmount, entryAmount);
+                                              handleUpdateTimeEntryPayment(m.id, entry, newPaid);
+                                            }}
+                                            className="px-2 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                          >
+                                            +Add
+                                          </button>
+                                          <button
+                                            onClick={() => handleUpdateTimeEntryPayment(m.id, entry, entryAmount)}
+                                            className="px-2 py-1 text-xs border border-success text-success rounded hover:bg-success/10 transition-colors"
+                                            title="Pay full amount"
+                                          >
+                                            Full
+                                          </button>
+                                          {entryPaid > 0 && (
+                                            <button
+                                              onClick={() => handleUpdateTimeEntryPayment(m.id, entry, 0)}
+                                              className="px-2 py-1 text-xs border border-border text-muted rounded hover:border-danger hover:text-danger transition-colors"
+                                            >
+                                              Clear
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               );
