@@ -595,6 +595,11 @@ export async function addMilestone(projectId: string, data: {
   estimated_units?: number;
   units_limit?: number;
   due_date?: string | null;
+  // Recurring
+  is_recurring?: boolean;
+  recurrence_interval?: string | null;
+  recurrence_next_date?: string | null;
+  recurrence_end_date?: string | null;
 }): Promise<Milestone | null> {
   const supabase = await createClient();
 
@@ -616,6 +621,10 @@ export async function addMilestone(projectId: string, data: {
     type: milestoneType,
     order: nextOrder,
     due_date: data.due_date || null,
+    is_recurring: data.is_recurring || false,
+    recurrence_interval: data.is_recurring ? data.recurrence_interval : null,
+    recurrence_next_date: data.is_recurring ? data.recurrence_next_date : null,
+    recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
   };
 
   if (milestoneType === "fixed") {

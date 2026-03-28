@@ -72,6 +72,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         hours_limit,
         order,
         due_date,
+        is_recurring,
+        recurrence_interval,
+        recurrence_next_date,
+        recurrence_end_date,
       } = body;
 
       // Validate all numeric fields before any update
@@ -113,6 +117,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         if (hours_limit !== undefined) otherFields.hours_limit = hours_limit;
         if (order !== undefined) otherFields.order = order;
         if (due_date !== undefined) otherFields.due_date = due_date;
+        if (is_recurring !== undefined) otherFields.is_recurring = is_recurring;
+        if (recurrence_interval !== undefined) otherFields.recurrence_interval = recurrence_interval;
+        if (recurrence_next_date !== undefined) otherFields.recurrence_next_date = recurrence_next_date;
+        if (recurrence_end_date !== undefined) otherFields.recurrence_end_date = recurrence_end_date;
 
         // Update other fields first if any exist
         if (Object.keys(otherFields).length > 0) {
@@ -140,6 +148,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (hours_limit !== undefined) updateData.hours_limit = hours_limit;
       if (order !== undefined) updateData.order = order;
       if (due_date !== undefined) updateData.due_date = due_date;
+      if (is_recurring !== undefined) updateData.is_recurring = is_recurring;
+      if (recurrence_interval !== undefined) updateData.recurrence_interval = recurrence_interval;
+      if (recurrence_next_date !== undefined) updateData.recurrence_next_date = recurrence_next_date;
+      if (recurrence_end_date !== undefined) updateData.recurrence_end_date = recurrence_end_date;
 
       const milestone = await updateMilestone(supabase, user.id, id, updateData);
       if (!milestone) {
