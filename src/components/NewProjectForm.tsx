@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CURRENCIES } from "@/lib/currencies";
+import { Select } from "@/components/ui/Select";
 
 export function NewProjectForm({ organizationId }: { organizationId: string }) {
   const router = useRouter();
@@ -108,17 +109,11 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
       </div>
       <div>
         <label className="block text-sm text-muted mb-1">Currency</label>
-        <select
+        <Select
           value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-          className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
-        >
-          {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.code} — {c.symbol} — {c.name}
-            </option>
-          ))}
-        </select>
+          onChange={setCurrency}
+          options={CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.symbol} — ${c.name}` }))}
+        />
       </div>
       <div className="flex gap-2">
         <button

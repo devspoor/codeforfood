@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Task, TaskPriority, Milestone } from "@/lib/types";
+import { Select } from "@/components/ui/Select";
 import { ChecklistEditor } from "./ChecklistEditor";
 import { AttachmentManager } from "./AttachmentManager";
 
@@ -243,15 +244,15 @@ export function TaskModal({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm text-muted mb-1">Priority</label>
-                        <select
+                        <Select
                           value={priority}
-                          onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                          className="w-full bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent"
-                        >
-                          <option value="low">Low</option>
-                          <option value="medium">Medium</option>
-                          <option value="high">High</option>
-                        </select>
+                          onChange={(v) => setPriority(v as TaskPriority)}
+                          options={[
+                            { value: "low", label: "Low" },
+                            { value: "medium", label: "Medium" },
+                            { value: "high", label: "High" },
+                          ]}
+                        />
                       </div>
 
                       <div>
@@ -269,18 +270,14 @@ export function TaskModal({
                     {milestones.length > 0 && (
                       <div>
                         <label className="block text-sm text-muted mb-1">Milestone</label>
-                        <select
+                        <Select
                           value={milestoneId}
-                          onChange={(e) => setMilestoneId(e.target.value)}
-                          className="w-full bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent"
-                        >
-                          <option value="">No milestone</option>
-                          {milestones.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.title}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={setMilestoneId}
+                          options={[
+                            { value: "", label: "No milestone" },
+                            ...milestones.map((m) => ({ value: m.id, label: m.title })),
+                          ]}
+                        />
                       </div>
                     )}
                   </>

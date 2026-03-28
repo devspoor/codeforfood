@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
+import { Select } from "@/components/ui/Select";
 
 interface QuarterlyData {
   q1: number;
@@ -110,15 +111,11 @@ export default function TaxSummaryPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground mt-1">Tax Summary</h1>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value, 10))}
-            className="bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <Select
+            value={String(year)}
+            onChange={(v) => setYear(parseInt(v, 10))}
+            options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+          />
           {data && data.currencies.length > 0 && (
             <button
               onClick={handleExportCSV}

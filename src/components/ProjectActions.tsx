@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AlertDialog } from "./AlertDialog";
+import { Select } from "@/components/ui/Select";
 import type { Organization } from "@/lib/types";
 
 export function ProjectActions({ projectId, organizationId }: { projectId: string; organizationId: string }) {
@@ -109,18 +110,12 @@ export function ProjectActions({ projectId, organizationId }: { projectId: strin
         ) : organizations.length === 0 ? (
           <span className="text-sm text-muted">No other organizations available</span>
         ) : (
-          <select
+          <Select
             value={selectedOrgId}
-            onChange={(e) => setSelectedOrgId(e.target.value)}
-            className="w-full px-3 py-2 bg-background border border-border rounded text-sm focus:outline-none focus:border-accent"
+            onChange={setSelectedOrgId}
+            options={organizations.map((org) => ({ value: org.id, label: org.name }))}
             disabled={transferring}
-          >
-            {organizations.map((org) => (
-              <option key={org.id} value={org.id}>
-                {org.name}
-              </option>
-            ))}
-          </select>
+          />
         )}
         {transferError && (
           <span className="text-sm text-danger">{transferError}</span>

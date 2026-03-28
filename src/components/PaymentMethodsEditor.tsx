@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PaymentMethod } from "@/lib/types";
 import { AlertDialog } from "./AlertDialog";
+import { Select } from "@/components/ui/Select";
 
 interface Props {
   organizationId: string;
@@ -165,15 +166,15 @@ export function PaymentMethodsEditor({ organizationId, paymentMethods }: Props) 
             </div>
             <div>
               <label className="block text-sm text-muted mb-1">Type</label>
-              <select
+              <Select
                 value={type}
-                onChange={(e) => setType(e.target.value as "crypto" | "bank" | "other")}
-                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-              >
-                <option value="crypto">Crypto</option>
-                <option value="bank">Bank</option>
-                <option value="other">Other</option>
-              </select>
+                onChange={(v) => setType(v as "crypto" | "bank" | "other")}
+                options={[
+                  { value: "crypto", label: "Crypto" },
+                  { value: "bank", label: "Bank" },
+                  { value: "other", label: "Other" },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-sm text-muted mb-1">Value</label>

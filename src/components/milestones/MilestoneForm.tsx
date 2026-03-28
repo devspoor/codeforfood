@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Milestone } from "@/lib/types";
+import { Select } from "@/components/ui/Select";
 
 export type MilestoneType = "fixed" | "hourly" | "per_unit";
 
@@ -303,15 +304,15 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6">
             <div>
               <label className="block text-sm text-muted mb-1">Interval</label>
-              <select
+              <Select
                 value={formData.recurrenceInterval}
-                onChange={(e) => updateField("recurrenceInterval", e.target.value)}
-                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
-              >
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-              </select>
+                onChange={(v) => updateField("recurrenceInterval", v)}
+                options={[
+                  { value: "weekly", label: "Weekly" },
+                  { value: "monthly", label: "Monthly" },
+                  { value: "quarterly", label: "Quarterly" },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-sm text-muted mb-1">End Date <span className="text-muted font-normal">(optional)</span></label>

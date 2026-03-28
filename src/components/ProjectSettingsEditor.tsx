@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ProjectStatus } from "@/lib/types";
 import { CURRENCIES } from "@/lib/currencies";
+import { Select } from "@/components/ui/Select";
 
 interface Props {
   projectId: string;
@@ -159,17 +160,11 @@ export function ProjectSettingsEditor({
       {/* Currency */}
       <div>
         <h3 className="text-sm font-semibold mb-3">Currency</h3>
-        <select
+        <Select
           value={currency}
-          onChange={(e) => handleCurrencyChange(e.target.value)}
-          className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
-        >
-          {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.code} — {c.symbol} — {c.name}
-            </option>
-          ))}
-        </select>
+          onChange={handleCurrencyChange}
+          options={CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.symbol} — ${c.name}` }))}
+        />
       </div>
 
       {/* Visibility Settings */}
