@@ -50,6 +50,7 @@ export interface Milestone {
   time_entries?: TimeEntry[];
   payment_history?: PaymentHistoryEntry[];
   order: number;
+  due_date?: string;
   created_at: string;
 }
 
@@ -103,6 +104,7 @@ export interface Project {
   secure_note_encrypted?: string | null;
   secure_note_password_hash?: string | null;
   tasks_board_public?: boolean;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
