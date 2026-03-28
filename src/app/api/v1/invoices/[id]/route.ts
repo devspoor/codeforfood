@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { withAuth, apiSuccess, apiError, apiNotFound, handleApiError } from "@/lib/api-auth";
+import { syncReminders } from "@/lib/reminders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -121,6 +122,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
       if (updateError || !updated) {
         return apiError("Failed to update invoice");
+      }
+
+      // Sync reminders if due_date or client_email changed
+      if (body.due_date !== undefined || body.client_email !== undefined) {
+        await syncReminders(supabase, id, updated.due_date, updated.client_email);
       }
 
       return apiSuccess({

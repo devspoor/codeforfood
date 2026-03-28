@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { randomBytes } from "crypto";
 import { withAuth, apiSuccess, apiError, apiNotFound, handleApiError } from "@/lib/api-auth";
+import { syncReminders } from "@/lib/reminders";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -181,6 +182,9 @@ export async function POST(request: NextRequest, { params }: Params) {
         await supabase.from("invoices").delete().eq("id", invoice.id);
         return apiError("Failed to create invoice items");
       }
+
+      // Sync payment reminders
+      await syncReminders(supabase, invoice.id, invoice.due_date, invoice.client_email);
 
       return apiSuccess(
         {
