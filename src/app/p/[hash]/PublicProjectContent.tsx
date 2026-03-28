@@ -371,22 +371,24 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               return (
                                 <div
                                   key={entry.id}
-                                  className={`flex items-start justify-between text-sm bg-background/50 rounded-lg px-3 py-2 gap-2 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
+                                  className={`text-sm bg-background/50 rounded-lg px-3 py-2 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
-                                  <div className="flex flex-wrap items-start gap-x-3 gap-y-1 min-w-0 flex-1">
-                                    <span className="text-muted">{entry.date}</span>
-                                    <span className="font-medium">{formatHours(Number(entry.hours))}</span>
-                                    {entry.description && (
-                                      <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-3">
+                                      <span className="text-muted">{entry.date}</span>
+                                      <span className="font-medium">{formatHours(Number(entry.hours))}</span>
+                                    </div>
+                                    {!hideAmounts && !hidePaid && (
+                                      <span className={`flex-shrink-0 ${entryFullyPaid ? "text-success font-medium" : entryPaid > 0 ? "text-accent font-medium" : "text-muted"}`}>
+                                        {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                      </span>
+                                    )}
+                                    {!hideAmounts && hidePaid && (
+                                      <span className="text-muted flex-shrink-0">{formatCurrency(entryAmount)}</span>
                                     )}
                                   </div>
-                                  {!hideAmounts && !hidePaid && (
-                                    <span className={entryFullyPaid ? "text-success font-medium" : entryPaid > 0 ? "text-accent font-medium" : "text-muted"}>
-                                      {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
-                                    </span>
-                                  )}
-                                  {!hideAmounts && hidePaid && (
-                                    <span className="text-muted">{formatCurrency(entryAmount)}</span>
+                                  {entry.description && (
+                                    <p className="text-muted mt-1 whitespace-pre-wrap">{entry.description}</p>
                                   )}
                                 </div>
                               );

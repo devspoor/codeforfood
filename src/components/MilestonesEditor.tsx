@@ -667,14 +667,14 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 >
                                   {isEditing ? (
                                     <div className="space-y-2">
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      <div className="flex flex-wrap items-center gap-2">
                                         <input
                                           type="date"
                                           value={editEntryDate}
                                           onChange={(e) => setEditEntryDate(e.target.value)}
-                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          className="px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                                         />
-                                        <div className="flex gap-1">
+                                        <div className="flex gap-1 items-center">
                                           <input
                                             type="number"
                                             value={editEntryHours}
@@ -683,8 +683,9 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                             min="0"
                                             max="24"
                                             step="1"
-                                            className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                            className="w-16 px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                                           />
+                                          <span className="text-xs text-muted">h</span>
                                           <input
                                             type="number"
                                             value={editEntryMinutes}
@@ -693,22 +694,9 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                             min="0"
                                             max="59"
                                             step="1"
-                                            className="w-16 px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                            className="w-16 px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                                           />
-                                        </div>
-                                        <div className="flex gap-1">
-                                          <button
-                                            onClick={() => handleSaveEntry(m.id, entry, false)}
-                                            className="px-3 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
-                                          >
-                                            Save
-                                          </button>
-                                          <button
-                                            onClick={cancelEditEntry}
-                                            className="px-3 py-1 text-xs border border-border text-muted rounded hover:text-foreground transition-colors"
-                                          >
-                                            Cancel
-                                          </button>
+                                          <span className="text-xs text-muted">m</span>
                                         </div>
                                       </div>
                                       <textarea
@@ -716,41 +704,53 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                         onChange={(e) => setEditEntryDesc(e.target.value)}
                                         placeholder="Description (optional)"
                                         rows={2}
-                                        className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
+                                        className="w-full px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                                       />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleSaveEntry(m.id, entry, false)}
+                                          className="px-4 py-1.5 text-sm bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={cancelEditEntry}
+                                          className="px-4 py-1.5 text-sm border border-border text-muted rounded hover:text-foreground transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="flex items-start justify-between text-xs gap-2">
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                      <div className="flex items-center justify-between text-xs gap-2">
+                                        <div className="flex items-center gap-x-3">
                                           <span className="text-muted">{entry.date}</span>
                                           <span className="font-medium">{formatHours(Number(entry.hours || 0))}</span>
                                           <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                             {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                           </span>
-                                          {entry.description && (
-                                            <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
-                                          )}
                                         </div>
-                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                           <button
                                             onClick={() => startEditEntry(entry)}
-                                            className="text-muted hover:text-accent transition-colors"
+                                            className="text-xs text-muted hover:text-accent transition-colors"
                                             aria-label="Edit entry"
                                           >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
+                                            Edit
                                           </button>
                                           <button
                                             onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
-                                            className="text-muted hover:text-danger transition-colors"
+                                            className="text-xs text-muted hover:text-danger transition-colors"
                                             aria-label="Delete entry"
                                           >
-                                            ×
+                                            Delete
                                           </button>
                                         </div>
                                       </div>
+                                      {entry.description && (
+                                        <p className="text-xs text-muted mt-1 whitespace-pre-wrap">{entry.description}</p>
+                                      )}
                                       {!isPaid && entryAmount > 0 && (
                                         <div className="flex flex-wrap items-center gap-2 mt-2">
                                           <span className="text-xs text-muted">$</span>
@@ -875,12 +875,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 >
                                   {isEditing ? (
                                     <div className="space-y-2">
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      <div className="flex flex-wrap items-center gap-2">
                                         <input
                                           type="date"
                                           value={editEntryDate}
                                           onChange={(e) => setEditEntryDate(e.target.value)}
-                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          className="px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                                         />
                                         <input
                                           type="number"
@@ -889,63 +889,61 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                           placeholder={`# of ${m.unit_label || "unit"}s`}
                                           min="1"
                                           step="1"
-                                          className="px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                                          className="w-24 px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
                                         />
-                                        <div className="flex gap-1">
-                                          <button
-                                            onClick={() => handleSaveEntry(m.id, entry, true)}
-                                            className="px-3 py-1 text-xs bg-accent text-background rounded hover:bg-accent-hover transition-colors"
-                                          >
-                                            Save
-                                          </button>
-                                          <button
-                                            onClick={cancelEditEntry}
-                                            className="px-3 py-1 text-xs border border-border text-muted rounded hover:text-foreground transition-colors"
-                                          >
-                                            Cancel
-                                          </button>
-                                        </div>
                                       </div>
                                       <textarea
                                         value={editEntryDesc}
                                         onChange={(e) => setEditEntryDesc(e.target.value)}
                                         placeholder="Description (optional)"
                                         rows={2}
-                                        className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
+                                        className="w-full px-2 py-1.5 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                                       />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleSaveEntry(m.id, entry, true)}
+                                          className="px-4 py-1.5 text-sm bg-accent text-background rounded hover:bg-accent-hover transition-colors"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={cancelEditEntry}
+                                          className="px-4 py-1.5 text-sm border border-border text-muted rounded hover:text-foreground transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
                                     </div>
                                   ) : (
                                     <>
-                                      <div className="flex items-start justify-between text-xs gap-2">
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                      <div className="flex items-center justify-between text-xs gap-2">
+                                        <div className="flex items-center gap-x-3">
                                           <span className="text-muted">{entry.date}</span>
                                           <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
                                           <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
                                             {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
                                           </span>
-                                          {entry.description && (
-                                            <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
-                                          )}
                                         </div>
-                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                        <div className="flex items-center gap-2 flex-shrink-0">
                                           <button
                                             onClick={() => startEditEntry(entry)}
-                                            className="text-muted hover:text-accent transition-colors"
+                                            className="text-xs text-muted hover:text-accent transition-colors"
                                             aria-label="Edit entry"
                                           >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                            </svg>
+                                            Edit
                                           </button>
                                           <button
                                             onClick={() => setDeleteDialogEntryId({ milestoneId: m.id, entryId: entry.id })}
-                                            className="text-muted hover:text-danger transition-colors"
+                                            className="text-xs text-muted hover:text-danger transition-colors"
                                             aria-label="Delete entry"
                                           >
-                                            ×
+                                            Delete
                                           </button>
                                         </div>
                                       </div>
+                                      {entry.description && (
+                                        <p className="text-xs text-muted mt-1 whitespace-pre-wrap">{entry.description}</p>
+                                      )}
                                       {!isPaid && entryAmount > 0 && (
                                         <div className="flex flex-wrap items-center gap-2 mt-2">
                                           <span className="text-xs text-muted">$</span>
