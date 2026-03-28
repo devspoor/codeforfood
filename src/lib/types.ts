@@ -262,3 +262,35 @@ export interface TelegramChatBinding {
   access_mode: TelegramAccessMode;
   created_at: string;
 }
+
+// Invoice types
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  milestone_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+  order: number;
+  created_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  project_id: string;
+  hash: string;
+  number: string;
+  status: InvoiceStatus;
+  due_date?: string | null;
+  issued_at?: string | null;
+  paid_at?: string | null;
+  note?: string | null;
+  client_name?: string | null;
+  client_email?: string | null;
+  currency: string;
+  items?: InvoiceItem[];
+  created_at: string;
+}
