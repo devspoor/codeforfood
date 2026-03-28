@@ -15,11 +15,12 @@ interface Props {
   projectId: string;
   milestones: Milestone[];
   currency: string;
+  invoicedMilestoneIds?: Set<string>;
   onSave: () => void;
   onCancel: () => void;
 }
 
-export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel }: Props) {
+export function InvoiceForm({ projectId, milestones, currency, invoicedMilestoneIds, onSave, onCancel }: Props) {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -38,7 +39,10 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
   const [selectedMilestoneIds, setSelectedMilestoneIds] = useState<Set<string>>(new Set());
   const [includePaid, setIncludePaid] = useState(false);
 
-  const importableMilestones = includePaid ? milestones : milestones.filter((m) => !m.is_paid);
+  const importableMilestones = milestones.filter((m) => {
+    if (!includePaid && (m.is_paid || invoicedMilestoneIds?.has(m.id))) return false;
+    return true;
+  });
 
   const toggleMilestone = (id: string) => {
     setSelectedMilestoneIds((prev) => {
@@ -236,7 +240,7 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
                   onChange={(e) => setIncludePaid(e.target.checked)}
                   className="rounded"
                 />
-                Include paid
+                Include paid / invoiced
               </label>
             </div>
             {importableMilestones.length === 0 ? (

@@ -1,11 +1,26 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import type { Invoice, InvoiceItem, PaymentMethod } from "@/lib/types";
+
+// Register Inter font with Cyrillic support
+Font.register({
+  family: "Inter",
+  fonts: [
+    {
+      src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hjQ.woff2",
+      fontWeight: 400,
+    },
+    {
+      src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYAZ9hjQ.woff2",
+      fontWeight: 700,
+    },
+  ],
+});
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
     color: "#1a1a1a",
   },
   header: {
@@ -15,11 +30,11 @@ const styles = StyleSheet.create({
   },
   orgName: {
     fontSize: 20,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
   },
   invoiceTitle: {
     fontSize: 24,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
     color: "#666666",
     textAlign: "right",
   },
@@ -46,7 +61,7 @@ const styles = StyleSheet.create({
   },
   metaValue: {
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
   },
   billTo: {
     marginBottom: 30,
@@ -60,7 +75,7 @@ const styles = StyleSheet.create({
   },
   billToName: {
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
   },
   billToEmail: {
     fontSize: 10,
@@ -115,14 +130,14 @@ const styles = StyleSheet.create({
     flex: 8.5,
     textAlign: "right",
     fontSize: 12,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
     paddingRight: 10,
   },
   totalValue: {
     flex: 2,
     textAlign: "right",
     fontSize: 14,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
   },
   paymentSection: {
     marginTop: 30,
@@ -130,7 +145,7 @@ const styles = StyleSheet.create({
   },
   paymentTitle: {
     fontSize: 10,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
     marginBottom: 8,
     color: "#333333",
   },
@@ -142,7 +157,7 @@ const styles = StyleSheet.create({
   },
   paymentLabel: {
     fontSize: 9,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter", fontWeight: 700,
     marginBottom: 2,
   },
   paymentType: {

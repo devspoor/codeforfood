@@ -91,6 +91,12 @@ export function InvoiceList({ projectId, milestones, currency }: Props) {
           projectId={projectId}
           milestones={milestones}
           currency={currency}
+          invoicedMilestoneIds={new Set(
+            invoices
+              .flatMap((inv) => inv.items || [])
+              .map((item) => item.milestone_id)
+              .filter((id): id is string => !!id)
+          )}
           onSave={handleSave}
           onCancel={() => setShowForm(false)}
         />
