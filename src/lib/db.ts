@@ -443,7 +443,7 @@ export async function getProjectByHash(hash: string): Promise<Project | null> {
   return normalizeProjectData(data, { isPublic: true });
 }
 
-export async function createProject(data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
+export async function createProject(data: { organizationId: string; name: string; description?: string; currency?: string }): Promise<Project | null> {
   const supabase = await createClient();
 
   // Get organization owner for subscription check
@@ -469,6 +469,7 @@ export async function createProject(data: { organizationId: string; name: string
       hash: generateHash(),
       name: data.name,
       description: data.description,
+      ...(data.currency ? { currency: data.currency } : {}),
     })
     .select()
     .single();

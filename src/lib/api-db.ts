@@ -273,7 +273,7 @@ export async function getProjectById(supabase: SupabaseClientType, userId: strin
   return normalizeProjectData(data);
 }
 
-export async function createProject(supabase: SupabaseClientType, userId: string, data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
+export async function createProject(supabase: SupabaseClientType, userId: string, data: { organizationId: string; name: string; description?: string; currency?: string }): Promise<Project | null> {
   const org = await getOrganizationById(supabase, userId, data.organizationId);
   if (!org) return null;
 
@@ -284,6 +284,7 @@ export async function createProject(supabase: SupabaseClientType, userId: string
       hash: generateHash(),
       name: data.name,
       description: data.description,
+      ...(data.currency ? { currency: data.currency } : {}),
     })
     .select()
     .single();

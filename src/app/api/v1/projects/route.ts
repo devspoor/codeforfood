@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAuth(request, async ({ user, supabase }) => {
     try {
-      const { organization_id, name, description } = await request.json();
+      const { organization_id, name, description, currency } = await request.json();
 
       if (!organization_id) {
         return apiError("organization_id is required");
@@ -61,10 +61,15 @@ export async function POST(request: NextRequest) {
         return apiError(descValidation.error!);
       }
 
+      if (currency !== undefined && (typeof currency !== "string" || currency.length !== 3)) {
+        return apiError("Currency must be a 3-letter code");
+      }
+
       const project = await createProject(supabase, user.id, {
         organizationId: organization_id,
         name: name.trim(),
         description: description?.trim(),
+        currency,
       });
 
       if (!project) {

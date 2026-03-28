@@ -19,9 +19,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { organizationId, name, description } = await request.json();
+    const { organizationId, name, description, currency } = await request.json();
     if (!organizationId || !name) {
       return NextResponse.json({ error: "Organization ID and name required" }, { status: 400 });
+    }
+
+    if (currency !== undefined && (typeof currency !== "string" || currency.length !== 3)) {
+      return NextResponse.json({ error: "Currency must be a 3-letter code" }, { status: 400 });
     }
 
     const org = await getOrganizationById(organizationId);
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const project = await createProject({ organizationId, name, description });
+    const project = await createProject({ organizationId, name, description, currency });
     if (!project) {
       return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
     }
