@@ -12,15 +12,15 @@ type Params = { params: Promise<{ id: string }> };
  * Send payment reminder email to client
  */
 export async function POST(request: NextRequest, { params }: Params) {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabase = await createClient();
-
   try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const supabase = await createClient();
+
     // Fetch invoice with items
     const { data: invoice, error } = await supabase
       .from("invoices")
@@ -90,12 +90,12 @@ export async function POST(request: NextRequest, { params }: Params) {
     });
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error || "Failed to send reminder" }, { status: 400 });
+      return NextResponse.json({ error: result.error || "Failed to send reminder" }, { status: 500 });
     }
 
     return NextResponse.json({ data: { sent: true } });
   } catch (err) {
-    console.error("POST /api/v1/invoices/[id]/remind error:", err);
-    return NextResponse.json({ error: "Request failed" }, { status: 400 });
+    console.error("[POST /invoices/[id]/remind] Error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

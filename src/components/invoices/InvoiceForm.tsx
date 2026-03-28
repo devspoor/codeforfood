@@ -26,6 +26,7 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
   const [note, setNote] = useState("");
   const [items, setItems] = useState<InvoiceItemDraft[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   // Manual item fields
   const [newDesc, setNewDesc] = useState("");
@@ -55,6 +56,14 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
     const parts = [m.title];
     if (suffix) parts[0] += ` (${suffix})`;
     if (m.description) parts.push(m.description);
+    // Include time entry descriptions for hourly/per_unit milestones
+    const entries = (m.time_entries || []).filter((e) => e.description);
+    if (entries.length > 0) {
+      for (const e of entries) {
+        const qty = m.type === "hourly" ? `${e.hours || 0}h` : `${e.units || 0} ${m.unit_label || "units"}`;
+        parts.push(`- ${e.description} (${qty})`);
+      }
+    }
     return parts.join("\n");
   };
 
@@ -117,6 +126,7 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
   const handleSave = async () => {
     if (items.length === 0) return;
     setSaving(true);
+    setError("");
     try {
       const res = await fetch(`/api/v1/projects/${projectId}/invoices`, {
         method: "POST",
@@ -137,7 +147,12 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
       });
       if (res.ok) {
         onSave();
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error || `Failed to create invoice (${res.status})`);
       }
+    } catch {
+      setError("Network error");
     } finally {
       setSaving(false);
     }
@@ -345,6 +360,11 @@ export function InvoiceForm({ projectId, milestones, currency, onSave, onCancel 
         <span className="text-sm text-muted mr-2">Total:</span>
         <span className="text-sm font-bold">{formatCurrency(total, currency)}</span>
       </div>
+
+      {/* Error */}
+      {error && (
+        <p className="text-sm text-danger">{error}</p>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2">

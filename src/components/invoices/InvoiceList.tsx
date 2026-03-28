@@ -27,17 +27,24 @@ function getInvoiceTotal(invoice: Invoice): number {
 export function InvoiceList({ projectId, milestones, currency }: Props) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
+    setFetchError("");
     try {
       const res = await fetch(`/api/v1/projects/${projectId}/invoices`);
       if (res.ok) {
         const data = await res.json();
         setInvoices(Array.isArray(data) ? data : data.data || []);
+      } else {
+        const data = await res.json().catch(() => null);
+        setFetchError(data?.error || `Failed to load invoices (${res.status})`);
       }
+    } catch {
+      setFetchError("Network error loading invoices");
     } finally {
       setLoading(false);
     }
@@ -89,9 +96,13 @@ export function InvoiceList({ projectId, milestones, currency }: Props) {
         />
       )}
 
+      {fetchError && (
+        <p className="text-sm text-danger py-2">{fetchError}</p>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted py-4 text-center">Loading invoices...</p>
-      ) : invoices.length === 0 ? (
+      ) : invoices.length === 0 && !fetchError ? (
         <p className="text-sm text-muted py-4 text-center">No invoices yet</p>
       ) : (
         <div className="space-y-2">

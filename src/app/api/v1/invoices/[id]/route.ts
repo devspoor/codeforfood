@@ -5,17 +5,7 @@ import { syncReminders } from "@/lib/reminders";
 
 type Params = { params: Promise<{ id: string }> };
 
-/**
- * GET /api/v1/invoices/[id]
- * Get invoice with items (ownership check)
- */
-export async function GET(request: NextRequest, { params }: Params) {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+async function getInvoiceWithOwnershipCheck(id: string, userId: string) {
   const supabase = await createClient();
 
   const { data: invoice, error } = await supabase
@@ -24,39 +14,61 @@ export async function GET(request: NextRequest, { params }: Params) {
     .eq("id", id)
     .single();
 
-  if (error || !invoice) {
-    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-  }
+  if (error || !invoice) return null;
 
-  // Verify ownership
+  // Verify ownership through project -> organization chain
   const { data: project } = await supabase
     .from("projects")
     .select("id, organizations!inner(user_id)")
     .eq("id", invoice.project_id)
-    .eq("organizations.user_id", user.id)
+    .eq("organizations.user_id", userId)
     .single();
 
-  if (!project) {
-    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  if (!project) return null;
+
+  return invoice;
+}
+
+/**
+ * GET /api/v1/invoices/[id]
+ * Get invoice with items (ownership check)
+ */
+export async function GET(request: NextRequest, { params }: Params) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const invoice = await getInvoiceWithOwnershipCheck(id, user.id);
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    const supabase = await createClient();
+
+    // Fetch reminders for this invoice
+    const { data: reminders } = await supabase
+      .from("reminders")
+      .select("id, type, scheduled_for, sent_at")
+      .eq("invoice_id", id)
+      .order("scheduled_for", { ascending: true });
+
+    return NextResponse.json({
+      data: {
+        ...invoice,
+        items: (invoice.invoice_items || []).sort(
+          (a: { order: number }, b: { order: number }) => a.order - b.order
+        ),
+        invoice_items: undefined,
+        reminders: reminders || [],
+      },
+    });
+  } catch (error) {
+    console.error("[GET /invoices/[id]] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  // Fetch reminders for this invoice
-  const { data: reminders } = await supabase
-    .from("reminders")
-    .select("id, type, scheduled_for, sent_at")
-    .eq("invoice_id", id)
-    .order("scheduled_for", { ascending: true });
-
-  return NextResponse.json({
-    data: {
-      ...invoice,
-      items: (invoice.invoice_items || []).sort(
-        (a: { order: number }, b: { order: number }) => a.order - b.order
-      ),
-      invoice_items: undefined,
-      reminders: reminders || [],
-    },
-  });
 }
 
 /**
@@ -64,39 +76,19 @@ export async function GET(request: NextRequest, { params }: Params) {
  * Update invoice fields
  */
 export async function PATCH(request: NextRequest, { params }: Params) {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabase = await createClient();
-
   try {
-    const body = await request.json();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Get existing invoice
-    const { data: invoice } = await supabase
-      .from("invoices")
-      .select("*, invoice_items(*)")
-      .eq("id", id)
-      .single();
-
+    const { id } = await params;
+    const invoice = await getInvoiceWithOwnershipCheck(id, user.id);
     if (!invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Verify ownership
-    const { data: project } = await supabase
-      .from("projects")
-      .select("id, organizations!inner(user_id)")
-      .eq("id", invoice.project_id)
-      .eq("organizations.user_id", user.id)
-      .single();
-
-    if (!project) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-    }
+    const body = await request.json();
 
     // Build update object with only allowed fields
     const allowedFields = [
@@ -136,6 +128,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
+    const supabase = await createClient();
+
     const { data: updated, error: updateError } = await supabase
       .from("invoices")
       .update(updates)
@@ -144,12 +138,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       .single();
 
     if (updateError || !updated) {
-      return NextResponse.json({ error: "Failed to update invoice" }, { status: 400 });
+      console.error("[PATCH /invoices/[id]] Update error:", updateError);
+      return NextResponse.json({ error: "Failed to update invoice" }, { status: 500 });
     }
 
     // Sync reminders if due_date or client_email changed
     if (body.due_date !== undefined || body.client_email !== undefined) {
-      await syncReminders(supabase, id, updated.due_date, updated.client_email);
+      try {
+        await syncReminders(supabase, id, updated.due_date, updated.client_email);
+      } catch (err) {
+        console.error("[PATCH /invoices/[id]] Reminder sync error:", err);
+      }
     }
 
     return NextResponse.json({
@@ -162,8 +161,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error("PATCH /api/v1/invoices/[id] error:", error);
-    return NextResponse.json({ error: "Request failed" }, { status: 400 });
+    console.error("[PATCH /invoices/[id]] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -172,50 +171,38 @@ export async function PATCH(request: NextRequest, { params }: Params) {
  * Delete invoice (only if status is "draft")
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
-  const { id } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const invoice = await getInvoiceWithOwnershipCheck(id, user.id);
+    if (!invoice) {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    // Only allow deleting draft invoices
+    if (invoice.status !== "draft") {
+      return NextResponse.json({ error: "Only draft invoices can be deleted" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+
+    const { error: deleteError } = await supabase
+      .from("invoices")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("[DELETE /invoices/[id]] Delete error:", deleteError);
+      return NextResponse.json({ error: "Failed to delete invoice" }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: { success: true } });
+  } catch (error) {
+    console.error("[DELETE /invoices/[id]] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const supabase = await createClient();
-
-  // Get existing invoice
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("id, project_id, status")
-    .eq("id", id)
-    .single();
-
-  if (!invoice) {
-    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-  }
-
-  // Verify ownership
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, organizations!inner(user_id)")
-    .eq("id", invoice.project_id)
-    .eq("organizations.user_id", user.id)
-    .single();
-
-  if (!project) {
-    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-  }
-
-  // Only allow deleting draft invoices
-  if (invoice.status !== "draft") {
-    return NextResponse.json({ error: "Only draft invoices can be deleted" }, { status: 400 });
-  }
-
-  const { error: deleteError } = await supabase
-    .from("invoices")
-    .delete()
-    .eq("id", id);
-
-  if (deleteError) {
-    return NextResponse.json({ error: "Failed to delete invoice" }, { status: 400 });
-  }
-
-  return NextResponse.json({ data: { success: true } });
 }

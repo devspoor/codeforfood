@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
-import { getCurrentUser } from "@/lib/db";
+import { getCurrentUser, verifyProjectOwnership } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { syncReminders } from "@/lib/reminders";
 
@@ -10,77 +10,72 @@ type Params = { params: Promise<{ id: string }> };
  * GET /api/v1/projects/[id]/invoices
  * List all invoices for a project
  */
-export async function GET(request: NextRequest, { params }: Params) {
-  const { id: projectId } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(
+  request: NextRequest,
+  { params }: Params
+) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: projectId } = await params;
+    const project = await verifyProjectOwnership(projectId, user);
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    const supabase = await createClient();
+    const { data: invoices, error } = await supabase
+      .from("invoices")
+      .select("*, invoice_items(*)")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[GET /invoices] Supabase error:", error);
+      return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
+    }
+
+    // Sort items by order within each invoice
+    const result = (invoices || []).map((inv) => ({
+      ...inv,
+      items: (inv.invoice_items || []).sort(
+        (a: { order: number }, b: { order: number }) => a.order - b.order
+      ),
+      invoice_items: undefined,
+    }));
+
+    return NextResponse.json({ data: result });
+  } catch (error) {
+    console.error("[GET /invoices] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const supabase = await createClient();
-
-  // Verify project ownership
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, organization_id, organizations!inner(user_id)")
-    .eq("id", projectId)
-    .eq("organizations.user_id", user.id)
-    .single();
-
-  if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  const { data: invoices, error } = await supabase
-    .from("invoices")
-    .select("*, invoice_items(*)")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 400 });
-  }
-
-  // Sort items by order within each invoice
-  const result = (invoices || []).map((inv) => ({
-    ...inv,
-    items: (inv.invoice_items || []).sort(
-      (a: { order: number }, b: { order: number }) => a.order - b.order
-    ),
-    invoice_items: undefined,
-  }));
-
-  return NextResponse.json({ data: result });
 }
 
 /**
  * POST /api/v1/projects/[id]/invoices
  * Create a new invoice with items
  */
-export async function POST(request: NextRequest, { params }: Params) {
-  const { id: projectId } = await params;
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const supabase = await createClient();
-
+export async function POST(
+  request: NextRequest,
+  { params }: Params
+) {
   try {
-    const { due_date, note, client_name, client_email, items } =
-      await request.json();
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Verify project ownership and get org info
-    const { data: project } = await supabase
-      .from("projects")
-      .select("id, organization_id, currency, organizations!inner(user_id)")
-      .eq("id", projectId)
-      .eq("organizations.user_id", user.id)
-      .single();
-
+    const { id: projectId } = await params;
+    const project = await verifyProjectOwnership(projectId, user);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    const { due_date, note, client_name, client_email, items } =
+      await request.json();
 
     // Validate items
     if (!Array.isArray(items) || items.length === 0) {
@@ -110,6 +105,8 @@ export async function POST(request: NextRequest, { params }: Params) {
         return NextResponse.json({ error: `Item ${i + 1}: unit_price is required and must be non-negative` }, { status: 400 });
       }
     }
+
+    const supabase = await createClient();
 
     // Generate invoice number: count existing invoices for the org + 1
     const orgId = project.organization_id;
@@ -150,7 +147,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       .single();
 
     if (invoiceError || !invoice) {
-      return NextResponse.json({ error: "Failed to create invoice" }, { status: 400 });
+      console.error("[POST /invoices] Insert error:", invoiceError);
+      return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 });
     }
 
     // Insert items
@@ -188,13 +186,19 @@ export async function POST(request: NextRequest, { params }: Params) {
       .select();
 
     if (itemsError) {
+      console.error("[POST /invoices] Items insert error:", itemsError);
       // Clean up the invoice if items failed
       await supabase.from("invoices").delete().eq("id", invoice.id);
-      return NextResponse.json({ error: "Failed to create invoice items" }, { status: 400 });
+      return NextResponse.json({ error: "Failed to create invoice items" }, { status: 500 });
     }
 
     // Sync payment reminders
-    await syncReminders(supabase, invoice.id, invoice.due_date, invoice.client_email);
+    try {
+      await syncReminders(supabase, invoice.id, invoice.due_date, invoice.client_email);
+    } catch (reminderErr) {
+      console.error("[POST /invoices] Reminder sync error:", reminderErr);
+      // Non-fatal - invoice was still created
+    }
 
     return NextResponse.json(
       {
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("POST /api/v1/projects/[id]/invoices error:", error);
-    return NextResponse.json({ error: "Request failed" }, { status: 400 });
+    console.error("[POST /invoices] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

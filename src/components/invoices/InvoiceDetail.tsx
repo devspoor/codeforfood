@@ -123,7 +123,7 @@ export function InvoiceDetail({ invoice, currency, onUpdate, onClose }: Props) {
           <tbody>
             {(invoice.items || []).map((item) => (
               <tr key={item.id} className="border-b border-border/50">
-                <td className="py-2">{item.description}</td>
+                <td className="py-2 whitespace-pre-line">{item.description}</td>
                 <td className="py-2 text-right text-muted">{item.quantity}</td>
                 <td className="py-2 text-right text-muted">{formatCurrency(item.unit_price, currency)}</td>
                 <td className="py-2 text-right">{formatCurrency(item.amount, currency)}</td>
