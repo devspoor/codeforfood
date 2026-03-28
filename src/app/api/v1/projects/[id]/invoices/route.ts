@@ -37,7 +37,7 @@ export async function GET(
 
     if (invoicesError) {
       console.error("[GET /invoices] Supabase error:", invoicesError);
-      return NextResponse.json({ error: `Failed to fetch invoices: ${invoicesError.message}` }, { status: 500 });
+      return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
     }
 
     if (!invoices || invoices.length === 0) {
@@ -73,7 +73,7 @@ export async function GET(
     return NextResponse.json({ data: result });
   } catch (error) {
     console.error("[GET /invoices] Error:", error);
-    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -175,7 +175,7 @@ export async function POST(
 
     if (invoiceError || !invoice) {
       console.error("[POST /invoices] Insert error:", invoiceError);
-      return NextResponse.json({ error: `Failed to create invoice: ${invoiceError?.message || "unknown"}` }, { status: 500 });
+      return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 });
     }
 
     // Insert items
@@ -216,7 +216,7 @@ export async function POST(
       console.error("[POST /invoices] Items insert error:", itemsError);
       // Clean up the invoice if items failed
       await supabase.from("invoices").delete().eq("id", invoice.id);
-      return NextResponse.json({ error: `Failed to create invoice items: ${itemsError.message}` }, { status: 500 });
+      return NextResponse.json({ error: "Failed to create invoice items" }, { status: 500 });
     }
 
     // Sync payment reminders
@@ -240,6 +240,6 @@ export async function POST(
     );
   } catch (error) {
     console.error("[POST /invoices] Error:", error);
-    return NextResponse.json({ error: `Internal server error: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

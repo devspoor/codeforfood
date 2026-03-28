@@ -98,6 +98,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ data: { sent: true } });
   } catch (err) {
     console.error("[POST /invoices/[id]/send] Error:", err);
-    return NextResponse.json({ error: `Internal server error: ${err instanceof Error ? err.message : String(err)}` }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

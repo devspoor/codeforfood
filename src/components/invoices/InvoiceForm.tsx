@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import type { Milestone } from "@/lib/types";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, calculateAmount, roundCurrency } from "@/lib/format";
 import { getMilestoneTotal, getPaidAmount } from "@/components/milestones/utils";
+import type { TimeEntry } from "@/lib/types";
 
 interface InvoiceItemDraft {
   description: string;
@@ -66,14 +67,23 @@ export function InvoiceForm({ projectId, milestones, currency, invoicedMilestone
     });
   };
 
-  const buildDescription = (m: Milestone, suffix?: string) => {
+  const isEntryPaid = (e: TimeEntry, rate: number): boolean => {
+    const total = calculateAmount(rate, e.hours || e.units || 0);
+    return total > 0 && Number(e.paid_amount || 0) >= total;
+  };
+
+  const getUnpaidEntries = (m: Milestone): TimeEntry[] => {
+    const rate = m.type === "hourly" ? Number(m.hourly_rate || 0) : Number(m.unit_rate || 0);
+    return (m.time_entries || []).filter((e) => !isEntryPaid(e, rate));
+  };
+
+  const buildDescription = (m: Milestone, entries: TimeEntry[], suffix?: string) => {
     const parts = [m.title];
     if (suffix) parts[0] += ` (${suffix})`;
     if (m.description) parts.push(m.description);
-    // Include time entry descriptions for hourly/per_unit milestones
-    const entries = (m.time_entries || []).filter((e) => e.description);
-    if (entries.length > 0) {
-      for (const e of entries) {
+    const withDesc = entries.filter((e) => e.description);
+    if (withDesc.length > 0) {
+      for (const e of withDesc) {
         const qty = m.type === "hourly" ? `${e.hours || 0}h` : `${e.units || 0} ${m.unit_label || "units"}`;
         parts.push(`- ${e.description} (${qty})`);
       }
@@ -87,26 +97,32 @@ export function InvoiceForm({ projectId, milestones, currency, invoicedMilestone
       if (!selectedMilestoneIds.has(m.id)) continue;
 
       if (m.type === "hourly") {
-        const totalHours = (m.time_entries || []).reduce((sum, e) => sum + (e.hours || 0), 0);
+        const entries = includePaid ? (m.time_entries || []) : getUnpaidEntries(m);
+        const totalHours = entries.reduce((sum, e) => sum + (e.hours || 0), 0);
+        if (totalHours === 0 && !includePaid) continue;
         newItems.push({
-          description: buildDescription(m, `${totalHours}h logged`),
+          description: buildDescription(m, entries, `${totalHours}h`),
           quantity: totalHours || 1,
           unit_price: m.hourly_rate || 0,
           milestone_id: m.id,
         });
       } else if (m.type === "per_unit") {
-        const totalUnits = (m.time_entries || []).reduce((sum, e) => sum + (e.units || 0), 0);
+        const entries = includePaid ? (m.time_entries || []) : getUnpaidEntries(m);
+        const totalUnits = entries.reduce((sum, e) => sum + (e.units || 0), 0);
+        if (totalUnits === 0 && !includePaid) continue;
         newItems.push({
-          description: buildDescription(m, `${totalUnits} ${m.unit_label || "units"}`),
+          description: buildDescription(m, entries, `${totalUnits} ${m.unit_label || "units"}`),
           quantity: totalUnits || 1,
           unit_price: m.unit_rate || 0,
           milestone_id: m.id,
         });
       } else {
+        const remaining = includePaid ? m.amount : roundCurrency(m.amount - (m.paid_amount || 0));
+        if (remaining <= 0 && !includePaid) continue;
         newItems.push({
-          description: buildDescription(m),
+          description: buildDescription(m, []),
           quantity: 1,
-          unit_price: m.amount,
+          unit_price: remaining,
           milestone_id: m.id,
         });
       }
