@@ -3,6 +3,7 @@ import { getOrganizations, getProjects, getProjectSummary } from "@/lib/db";
 import { formatCurrency, formatHours } from "@/lib/format";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
+import { RevenueCharts } from "@/components/dashboard/RevenueCharts";
 
 export const dynamic = "force-dynamic";
 
@@ -185,6 +186,9 @@ export default async function AdminDashboard() {
           <UpcomingDeadlines />
         </div>
       </div>
+
+      {/* Revenue Charts */}
+      <RevenueCharts />
 
       {/* Recent Projects */}
       <div>
