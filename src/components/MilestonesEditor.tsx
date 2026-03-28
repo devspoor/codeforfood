@@ -49,6 +49,22 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
 
   const editingMilestone = editingId ? milestones.find(m => m.id === editingId) : null;
 
+  const calculateNextDate = (interval: string): string => {
+    const now = new Date();
+    switch (interval) {
+      case "weekly":
+        now.setDate(now.getDate() + 7);
+        break;
+      case "monthly":
+        now.setMonth(now.getMonth() + 1);
+        break;
+      case "quarterly":
+        now.setMonth(now.getMonth() + 3);
+        break;
+    }
+    return now.toISOString().split("T")[0];
+  };
+
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
@@ -62,6 +78,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         due_date: formData.dueDate || null,
+        is_recurring: formData.isRecurring,
+        recurrence_interval: formData.isRecurring ? formData.recurrenceInterval : null,
+        recurrence_next_date: formData.isRecurring ? calculateNextDate(formData.recurrenceInterval) : null,
+        recurrence_end_date: formData.isRecurring && formData.recurrenceEndDate ? formData.recurrenceEndDate : null,
       };
       if (formData.type === "fixed") {
         updateData.amount = Number(formData.amount);
@@ -98,6 +118,10 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
         description: formData.description.trim() || undefined,
         type: formData.type,
         due_date: formData.dueDate || null,
+        is_recurring: formData.isRecurring,
+        recurrence_interval: formData.isRecurring ? formData.recurrenceInterval : null,
+        recurrence_next_date: formData.isRecurring ? calculateNextDate(formData.recurrenceInterval) : null,
+        recurrence_end_date: formData.isRecurring && formData.recurrenceEndDate ? formData.recurrenceEndDate : null,
       };
       if (formData.type === "fixed") {
         createData.amount = Number(formData.amount);
@@ -131,6 +155,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
         units_limit: formData.type === "per_unit" && formData.unitsLimit ? Number(formData.unitsLimit) : undefined,
         paid_amount: 0,
         is_paid: false,
+        is_recurring: formData.isRecurring,
+        recurrence_interval: formData.isRecurring ? formData.recurrenceInterval as "weekly" | "monthly" | "quarterly" : null,
         paid_at: undefined,
         order: milestones.length,
         time_entries: [],
@@ -534,6 +560,11 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
                               new Date(m.due_date) < new Date() && !m.is_paid ? "text-danger" : "text-muted"
                             }`}>
                               Due {formatDate(m.due_date)}
+                            </span>
+                          )}
+                          {m.is_recurring && m.recurrence_interval && (
+                            <span className="text-xs text-muted ml-2">
+                              ↻ Recurring {m.recurrence_interval}
                             </span>
                           )}
                         </div>

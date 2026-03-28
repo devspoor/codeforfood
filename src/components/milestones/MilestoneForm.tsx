@@ -21,6 +21,10 @@ export interface MilestoneFormData {
   unitLabel: string;
   estimatedUnits: string;
   unitsLimit: string;
+  // Recurring
+  isRecurring: boolean;
+  recurrenceInterval: string;
+  recurrenceEndDate: string;
 }
 
 interface Props {
@@ -43,6 +47,9 @@ const initialFormData: MilestoneFormData = {
   unitLabel: "unit",
   estimatedUnits: "",
   unitsLimit: "",
+  isRecurring: false,
+  recurrenceInterval: "monthly",
+  recurrenceEndDate: "",
 };
 
 export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel }: Props) {
@@ -65,6 +72,9 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
         unitLabel: m.type === "per_unit" ? (m.unit_label || "unit") : "unit",
         estimatedUnits: m.type === "per_unit" && m.estimated_units ? String(m.estimated_units) : "",
         unitsLimit: m.type === "per_unit" && m.units_limit ? String(m.units_limit) : "",
+        isRecurring: m.is_recurring || false,
+        recurrenceInterval: m.recurrence_interval || "monthly",
+        recurrenceEndDate: m.recurrence_end_date ? m.recurrence_end_date.split("T")[0] : "",
       });
     } else {
       setFormData(initialFormData);
@@ -276,6 +286,44 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
           onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
           className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
         />
+      </div>
+
+      {/* Recurring */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={formData.isRecurring}
+            onChange={(e) => updateField("isRecurring", e.target.checked)}
+            className="w-4 h-4 rounded border-border accent-accent"
+          />
+          <span className="text-sm font-medium">Recurring</span>
+        </label>
+        {formData.isRecurring && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-6">
+            <div>
+              <label className="block text-sm text-muted mb-1">Interval</label>
+              <select
+                value={formData.recurrenceInterval}
+                onChange={(e) => updateField("recurrenceInterval", e.target.value)}
+                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-muted mb-1">End Date <span className="text-muted font-normal">(optional)</span></label>
+              <input
+                type="date"
+                value={formData.recurrenceEndDate}
+                onChange={(e) => updateField("recurrenceEndDate", e.target.value)}
+                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
