@@ -229,12 +229,12 @@ export function OperatingExpensesEditor({ projectId, expenses: initialExpenses }
             </div>
             <div>
               <label className="block text-sm text-muted mb-1">Description</label>
-              <input
-                type="text"
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional details..."
-                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+                rows={2}
+                className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none resize-y"
               />
             </div>
           </div>

@@ -95,12 +95,12 @@ export function NewProjectForm({ organizationId }: { organizationId: string }) {
       </div>
       <div>
         <label className="block text-sm text-muted mb-1">Description (optional)</label>
-        <input
-          type="text"
+        <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Brief description"
-          className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+          rows={2}
+          className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none resize-y"
         />
       </div>
       <div className="flex gap-2">

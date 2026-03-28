@@ -577,12 +577,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 Add
                               </button>
                             </div>
-                            <input
-                              type="text"
+                            <textarea
                               value={timeEntryDesc}
                               onChange={(e) => setTimeEntryDesc(e.target.value)}
                               placeholder="Description (optional)"
-                              className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                              rows={2}
+                              className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                             />
                           </div>
                         )}
@@ -715,12 +715,12 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                 Add
                               </button>
                             </div>
-                            <input
-                              type="text"
+                            <textarea
                               value={timeEntryDesc}
                               onChange={(e) => setTimeEntryDesc(e.target.value)}
                               placeholder="Description (optional)"
-                              className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none"
+                              rows={2}
+                              className="w-full px-2 py-1 text-sm rounded bg-card border border-border focus:border-accent focus:outline-none resize-y"
                             />
                           </div>
                         )}

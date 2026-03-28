@@ -64,6 +64,23 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
     [project.milestones]
   );
 
+  // Calculate unpaid hours
+  const unpaidHours = useMemo(() => {
+    let hours = 0;
+    (project.milestones || []).forEach(m => {
+      if (m.type === "hourly") {
+        (m.time_entries || []).forEach(e => {
+          const entryAmount = Number(e.hours) * Number(m.hourly_rate || 0);
+          const entryPaid = Number(e.paid_amount || 0);
+          if (entryPaid < entryAmount) {
+            hours += Number(e.hours) - (entryPaid / Number(m.hourly_rate || 1));
+          }
+        });
+      }
+    });
+    return hours;
+  }, [project.milestones]);
+
   const hideAmounts = project.hide_amounts;
   const hidePaid = project.hide_paid;
   const showPaymentHistory = project.show_payment_history;
@@ -106,7 +123,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               </Link>
             )}
             {project.description && (
-              <p className="text-muted mt-3 text-sm max-w-md mx-auto">{project.description}</p>
+              <p className="text-muted mt-3 text-sm max-w-md mx-auto whitespace-pre-wrap">{project.description}</p>
             )}
           </div>
 
@@ -159,6 +176,12 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                   <p className="text-muted text-xs mb-1 uppercase tracking-wider">Hours Logged</p>
                   <p className="text-xl font-bold font-mono">{formatHours(summary.totalHours)}</p>
                 </div>
+                {unpaidHours > 0 && (
+                  <div className="text-center border-l border-border pl-6">
+                    <p className="text-muted text-xs mb-1 uppercase tracking-wider">Unpaid</p>
+                    <p className="text-xl font-bold text-danger font-mono">{formatHours(unpaidHours)}</p>
+                  </div>
+                )}
                 {summary.hourlyAmount > 0 && (
                   <div className="text-center border-l border-border pl-6">
                     <p className="text-muted text-xs mb-1 uppercase tracking-wider">Billed</p>
@@ -265,7 +288,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               )}
                             </div>
                             {m.description && (
-                              <p className="text-sm text-muted mt-1">{m.description}</p>
+                              <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{m.description}</p>
                             )}
                             {isHourly && (
                               <p className="text-xs text-muted mt-1">
@@ -340,7 +363,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                             </svg>
                             Time Log
                           </p>
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             {(m.time_entries || []).map((entry: TimeEntry) => {
                               const entryAmount = Number(entry.hours) * Number(m.hourly_rate || 0);
                               const entryPaid = Number(entry.paid_amount || 0);
@@ -348,13 +371,13 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               return (
                                 <div
                                   key={entry.id}
-                                  className={`flex items-start justify-between text-xs bg-background/50 rounded-lg px-2.5 py-1.5 gap-2 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
+                                  className={`flex items-start justify-between text-sm bg-background/50 rounded-lg px-3 py-2 gap-2 ${entryFullyPaid ? "border-l-2 border-success" : entryPaid > 0 ? "border-l-2 border-accent" : ""}`}
                                 >
                                   <div className="flex flex-wrap items-start gap-x-3 gap-y-1 min-w-0 flex-1">
                                     <span className="text-muted">{entry.date}</span>
                                     <span className="font-medium">{formatHours(Number(entry.hours))}</span>
                                     {entry.description && (
-                                      <span className="text-muted break-words">{entry.description}</span>
+                                      <span className="text-muted break-words whitespace-pre-wrap">{entry.description}</span>
                                     )}
                                   </div>
                                   {!hideAmounts && !hidePaid && (
@@ -396,7 +419,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                           <span className="text-xs text-muted">{formatDate(exp.date)}</span>
                         </div>
                         {exp.description && (
-                          <p className="text-sm text-muted mt-1">{exp.description}</p>
+                          <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{exp.description}</p>
                         )}
                       </div>
                       {!hideAmounts && (

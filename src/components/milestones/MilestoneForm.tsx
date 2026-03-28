@@ -255,12 +255,12 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
       {/* Description */}
       <div>
         <label className="block text-sm text-muted mb-1">Description (optional)</label>
-        <input
-          type="text"
+        <textarea
           value={formData.description}
           onChange={(e) => updateField("description", e.target.value)}
           placeholder="Brief description of this milestone"
-          className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none"
+          rows={2}
+          className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none resize-y"
         />
       </div>
 
