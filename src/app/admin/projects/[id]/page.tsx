@@ -210,6 +210,7 @@ export default async function ProjectDetailPage({
               showExpenses={project.show_expenses}
               showTasksBoard={project.tasks_board_public || false}
               hasPassword={!!project.public_password_hash}
+              currency={project.currency || "USD"}
             />
           </div>
         </div>

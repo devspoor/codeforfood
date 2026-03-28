@@ -296,7 +296,7 @@ export async function createProject(supabase: SupabaseClientType, userId: string
   return { ...project, milestones: [], comments: [], attachments: [], has_password: false, has_secure_note: false };
 }
 
-export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses">>): Promise<Project | null> {
+export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "currency">>): Promise<Project | null> {
   const { data: project } = await supabase
     .from("projects")
     .select("id, organizations!inner(user_id)")

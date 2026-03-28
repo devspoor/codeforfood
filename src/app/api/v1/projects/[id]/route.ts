@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
   return withAuth(request, async ({ user, supabase }) => {
     try {
-      const { name, description, status, hide_amounts, hide_paid, show_payment_history, show_expenses } = await request.json();
+      const { name, description, status, hide_amounts, hide_paid, show_payment_history, show_expenses, currency } = await request.json();
 
       // Validate status if provided
       if (status !== undefined && status !== null) {
@@ -67,6 +67,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       const showExpensesValidation = validateBoolean(show_expenses, "show_expenses");
       if (!showExpensesValidation.valid) return apiError(showExpensesValidation.error!);
 
+      if (currency !== undefined && currency !== null) {
+        if (typeof currency !== "string" || currency.length !== 3) {
+          return apiError("Currency must be a 3-letter code");
+        }
+      }
+
       // Validate name length if provided
       if (name !== undefined && typeof name === "string" && name.length > 500) {
         return apiError("Name must be 500 characters or less");
@@ -80,6 +86,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         hide_paid,
         show_payment_history,
         show_expenses,
+        currency,
       });
 
       if (!project) {
