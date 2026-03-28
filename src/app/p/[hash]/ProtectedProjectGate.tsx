@@ -114,6 +114,7 @@ export function ProtectedProjectGate({ hash, projectName }: Props) {
         org={projectData.org}
         summary={projectData.summary}
         statusInfo={projectData.statusInfo}
+        currency={projectData.project.currency || "USD"}
       />
     );
   }

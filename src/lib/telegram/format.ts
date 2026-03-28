@@ -1,5 +1,6 @@
 import type { Project } from "@/lib/types";
 import { getProjectSummary } from "@/lib/db";
+import { formatCurrency } from "@/lib/format";
 
 // Simplified types for bot operations
 type SimpleColumn = { id: string; name: string; is_done_column: boolean };
@@ -9,19 +10,20 @@ export function escapeMarkdown(text: string): string {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
 }
 
-export function formatMoney(amount: number): string {
-  return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+export function formatMoney(amount: number, currency: string = "USD"): string {
+  return formatCurrency(amount, currency);
 }
 
 export function formatMoneyMessage(project: Project): string {
   const summary = getProjectSummary(project);
   const milestones = project.milestones || [];
+  const currency = project.currency || "USD";
 
   let msg = `💰 *${escapeMarkdown(project.name)}* — Finances\n\n`;
 
-  msg += `Total budget: ${formatMoney(summary.totalAmount)}\n`;
-  msg += `├ Paid: ${formatMoney(summary.paidAmount)} \\(${summary.percentPaid}%\\)\n`;
-  msg += `└ Remaining: ${formatMoney(summary.remainingAmount)}\n\n`;
+  msg += `Total budget: ${formatMoney(summary.totalAmount, currency)}\n`;
+  msg += `├ Paid: ${formatMoney(summary.paidAmount, currency)} \\(${summary.percentPaid}%\\)\n`;
+  msg += `└ Remaining: ${formatMoney(summary.remainingAmount, currency)}\n\n`;
 
   if (milestones.length > 0) {
     msg += `📋 Milestones:\n`;
@@ -32,29 +34,29 @@ export function formatMoneyMessage(project: Project): string {
       if (m.type === "fixed" || !m.type) {
         const status = m.is_paid
           ? "\\(paid\\)"
-          : `\\(${formatMoney(m.paid_amount)} of ${formatMoney(m.amount)}\\)`;
-        msg += `${icon} ${escapeMarkdown(m.title)} — ${formatMoney(m.amount)} ${status}\n`;
+          : `\\(${formatMoney(m.paid_amount, currency)} of ${formatMoney(m.amount, currency)}\\)`;
+        msg += `${icon} ${escapeMarkdown(m.title)} — ${formatMoney(m.amount, currency)} ${status}\n`;
       } else if (m.type === "hourly") {
         const entries = m.time_entries || [];
         const hours = entries.reduce((sum, e) => sum + Number(e.hours || 0), 0);
         const amount = hours * Number(m.hourly_rate || 0);
         const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
-        msg += `${icon} ${escapeMarkdown(m.title)} \\(hourly\\) — ${formatMoney(paid)} of ${formatMoney(amount)}\n`;
-        msg += `   └ ${hours}h logged, rate ${formatMoney(Number(m.hourly_rate || 0))}/h\n`;
+        msg += `${icon} ${escapeMarkdown(m.title)} \\(hourly\\) — ${formatMoney(paid, currency)} of ${formatMoney(amount, currency)}\n`;
+        msg += `   └ ${hours}h logged, rate ${formatMoney(Number(m.hourly_rate || 0), currency)}/h\n`;
       } else if (m.type === "per_unit") {
         const entries = m.time_entries || [];
         const units = entries.reduce((sum, e) => sum + Number(e.units || 0), 0);
         const amount = units * Number(m.unit_rate || 0);
         const paid = entries.reduce((sum, e) => sum + Number(e.paid_amount || 0), 0);
         const label = m.unit_label || "units";
-        msg += `${icon} ${escapeMarkdown(m.title)} \\(per ${escapeMarkdown(label)}\\) — ${formatMoney(paid)} of ${formatMoney(amount)}\n`;
-        msg += `   └ ${units} ${escapeMarkdown(label)}, rate ${formatMoney(Number(m.unit_rate || 0))}/${escapeMarkdown(label)}\n`;
+        msg += `${icon} ${escapeMarkdown(m.title)} \\(per ${escapeMarkdown(label)}\\) — ${formatMoney(paid, currency)} of ${formatMoney(amount, currency)}\n`;
+        msg += `   └ ${units} ${escapeMarkdown(label)}, rate ${formatMoney(Number(m.unit_rate || 0), currency)}/${escapeMarkdown(label)}\n`;
       }
     }
   }
 
   if (summary.totalExpenses > 0) {
-    msg += `\n💸 Expenses: ${formatMoney(summary.totalExpenses)}`;
+    msg += `\n💸 Expenses: ${formatMoney(summary.totalExpenses, currency)}`;
   }
 
   return msg;
@@ -95,7 +97,8 @@ export function formatStatusMessage(project: Project, taskCount?: { total: numbe
   };
 
   msg += `Status: ${statusLabels[project.status] || project.status}\n`;
-  msg += `Budget: ${formatMoney(summary.paidAmount)} / ${formatMoney(summary.totalAmount)} \\(${summary.percentPaid}%\\)\n`;
+  const currency = project.currency || "USD";
+  msg += `Budget: ${formatMoney(summary.paidAmount, currency)} / ${formatMoney(summary.totalAmount, currency)} \\(${summary.percentPaid}%\\)\n`;
 
   if (taskCount) {
     msg += `Tasks: ${taskCount.done}/${taskCount.total} done`;

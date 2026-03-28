@@ -77,13 +77,13 @@ export default async function OrganizationDetailPage({
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold font-mono">{formatCurrency(summary.totalAmount)}</p>
+                      <p className="font-semibold font-mono">{formatCurrency(summary.totalAmount, project.currency || "USD")}</p>
                       <p className="text-sm font-mono">
-                        <span className="text-success">{formatCurrency(summary.paidAmount)}</span>
+                        <span className="text-success">{formatCurrency(summary.paidAmount, project.currency || "USD")}</span>
                         {summary.remainingAmount > 0 && (
                           <>
                             <span className="text-muted"> / </span>
-                            <span className="text-danger">{formatCurrency(summary.remainingAmount)}</span>
+                            <span className="text-danger">{formatCurrency(summary.remainingAmount, project.currency || "USD")}</span>
                           </>
                         )}
                       </p>

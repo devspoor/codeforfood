@@ -18,9 +18,10 @@ import {
 interface Props {
   projectId: string;
   milestones: Milestone[];
+  currency?: string;
 }
 
-export function MilestonesEditor({ projectId, milestones: initialMilestones }: Props) {
+export function MilestonesEditor({ projectId, milestones: initialMilestones, currency = "USD" }: Props) {
   const router = useRouter();
   const [milestones, setMilestones] = useState(initialMilestones);
   const [showForm, setShowForm] = useState(false);
@@ -532,7 +533,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         )}
                         {isHourly && (
                           <p className="text-xs text-muted mt-1">
-                            {formatCurrency(Number(m.hourly_rate || 0))}/hr
+                            {formatCurrency(Number(m.hourly_rate || 0), currency)}/hr
                             {m.estimated_hours && ` · Est. ${formatHours(Number(m.estimated_hours))}`}
                             {m.hours_limit && ` · Max ${formatHours(Number(m.hours_limit))}`}
                             {` · Logged: ${formatHours(totalHours)}`}
@@ -540,7 +541,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         )}
                         {isPerUnit && (
                           <p className="text-xs text-muted mt-1">
-                            {formatCurrency(Number(m.unit_rate || 0))}/{m.unit_label || "unit"}
+                            {formatCurrency(Number(m.unit_rate || 0), currency)}/{m.unit_label || "unit"}
                             {m.estimated_units && ` · Est. ${m.estimated_units}`}
                             {m.units_limit && ` · Max ${m.units_limit}`}
                             {` · Logged: ${totalUnits}`} {m.unit_label || "unit"}{totalUnits !== 1 ? "s" : ""}
@@ -548,7 +549,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg tabular-nums font-mono">{formatCurrency(total)}</p>
+                        <p className="font-bold text-lg tabular-nums font-mono">{formatCurrency(total, currency)}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <button
                             onClick={() => handleEdit(m)}
@@ -569,8 +570,8 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                     {/* Progress bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-success tabular-nums font-mono">{formatCurrency(paidAmount)} paid</span>
-                        <span className="text-muted tabular-nums font-mono">{formatCurrency(remaining)} remaining</span>
+                        <span className="text-success tabular-nums font-mono">{formatCurrency(paidAmount, currency)} paid</span>
+                        <span className="text-muted tabular-nums font-mono">{formatCurrency(remaining, currency)} remaining</span>
                       </div>
                       <div className="h-2 bg-border rounded-full overflow-hidden">
                         <div
@@ -728,7 +729,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                           <span className="text-muted">{entry.date}</span>
                                           <span className="font-medium">{formatHours(Number(entry.hours || 0))}</span>
                                           <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
-                                            {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                            {formatCurrency(entryPaid, currency)}/{formatCurrency(entryAmount, currency)}
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -921,7 +922,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                                           <span className="text-muted">{entry.date}</span>
                                           <span className="font-medium">{Number(entry.units || 0)} {m.unit_label || "unit"}{Number(entry.units || 0) !== 1 ? "s" : ""}</span>
                                           <span className={isPaid ? "text-success" : entryPaid > 0 ? "text-accent" : "text-muted"}>
-                                            {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                            {formatCurrency(entryPaid, currency)}/{formatCurrency(entryAmount, currency)}
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -1068,7 +1069,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
                               >
                                 <span className="text-muted">{formatDate(entry.created_at)}</span>
                                 <span className={entry.amount >= 0 ? "text-success" : "text-danger"}>
-                                  {entry.amount >= 0 ? "+" : ""}{formatCurrency(entry.amount)}
+                                  {entry.amount >= 0 ? "+" : ""}{formatCurrency(entry.amount, currency)}
                                 </span>
                               </div>
                             ))}
@@ -1091,7 +1092,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones }: P
               </button>
               {milestones.length > 0 && (
                 <button
-                  onClick={() => exportMilestonesToCSV(milestones, "milestones")}
+                  onClick={() => exportMilestonesToCSV(milestones, "milestones", currency)}
                   className="px-4 py-3 border border-border rounded-lg text-muted hover:border-accent hover:text-accent transition-colors flex items-center gap-1.5 text-sm"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

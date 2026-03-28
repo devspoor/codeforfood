@@ -85,15 +85,15 @@ export default async function ProjectDetailPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
           <p className="text-muted text-xs sm:text-sm mb-1">Total</p>
-          <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount, project.currency || "USD")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
           <p className="text-muted text-xs sm:text-sm mb-1">Paid</p>
-          <p className="text-lg sm:text-2xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount, project.currency || "USD")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
           <p className="text-muted text-xs sm:text-sm mb-1">Remaining</p>
-          <p className="text-lg sm:text-2xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount, project.currency || "USD")}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
           <p className="text-muted text-xs sm:text-sm mb-1">Progress</p>
@@ -110,7 +110,7 @@ export default async function ProjectDetailPage({
           </div>
           <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
             <p className="text-muted text-xs sm:text-sm mb-1">Hourly Revenue</p>
-            <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount, project.currency || "USD")}</p>
           </div>
         </div>
       )}
@@ -124,7 +124,7 @@ export default async function ProjectDetailPage({
           </div>
           <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
             <p className="text-muted text-xs sm:text-sm mb-1">Per-Unit Revenue</p>
-            <p className="text-lg sm:text-2xl font-bold text-accent">{formatCurrency(summary.unitAmount)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent">{formatCurrency(summary.unitAmount, project.currency || "USD")}</p>
           </div>
         </div>
       )}
@@ -148,7 +148,7 @@ export default async function ProjectDetailPage({
           {/* Milestones */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Milestones</h2>
-            <MilestonesEditor projectId={project.id} milestones={project.milestones || []} />
+            <MilestonesEditor projectId={project.id} milestones={project.milestones || []} currency={project.currency || "USD"} />
           </div>
 
           {/* Task Board */}
@@ -173,7 +173,7 @@ export default async function ProjectDetailPage({
           {/* Operating Expenses */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Operating Expenses</h2>
-            <OperatingExpensesEditor projectId={project.id} expenses={project.operating_expenses || []} />
+            <OperatingExpensesEditor projectId={project.id} expenses={project.operating_expenses || []} currency={project.currency || "USD"} />
           </div>
 
           {/* Comments */}

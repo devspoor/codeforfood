@@ -8,9 +8,10 @@ import { AlertDialog } from "./AlertDialog";
 interface Props {
   projectId: string;
   expenses: OperatingExpense[];
+  currency?: string;
 }
 
-export function OperatingExpensesEditor({ projectId, expenses: initialExpenses }: Props) {
+export function OperatingExpensesEditor({ projectId, expenses: initialExpenses, currency = "USD" }: Props) {
   const [expenses, setExpenses] = useState(initialExpenses);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -147,7 +148,7 @@ export function OperatingExpensesEditor({ projectId, expenses: initialExpenses }
                 </div>
                 <div className="flex items-center gap-3 ml-4">
                   <span className="font-bold text-danger whitespace-nowrap">
-                    {formatCurrency(exp.amount)}
+                    {formatCurrency(exp.amount, currency)}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -178,7 +179,7 @@ export function OperatingExpensesEditor({ projectId, expenses: initialExpenses }
       {expenses.length > 0 && (
         <div className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-lg">
           <span className="text-sm text-muted">Total Expenses</span>
-          <span className="font-bold text-danger">{formatCurrency(totalExpenses)}</span>
+          <span className="font-bold text-danger">{formatCurrency(totalExpenses, currency)}</span>
         </div>
       )}
 

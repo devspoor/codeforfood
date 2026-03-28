@@ -17,6 +17,23 @@ export default async function AdminDashboard() {
   const organizations = await getOrganizations();
   const projects = await getProjects();
 
+  // Group stats by currency for multi-currency display
+  const currencyStats = projects.reduce(
+    (acc, project) => {
+      const summary = getProjectSummary(project);
+      const cur = project.currency || "USD";
+      if (!acc[cur]) acc[cur] = { total: 0, paid: 0, pending: 0, hourlyRevenue: 0 };
+      acc[cur].total += summary.totalAmount;
+      acc[cur].paid += summary.paidAmount;
+      acc[cur].pending += summary.remainingAmount;
+      acc[cur].hourlyRevenue += summary.hourlyAmount;
+      return acc;
+    },
+    {} as Record<string, { total: number; paid: number; pending: number; hourlyRevenue: number }>
+  );
+  const currencies = Object.keys(currencyStats);
+  const singleCurrency = currencies.length === 1 ? currencies[0] : null;
+
   const totalStats = projects.reduce(
     (acc, project) => {
       const summary = getProjectSummary(project);
@@ -69,19 +86,19 @@ export default async function AdminDashboard() {
           {/* Total Value */}
           <div className="lg:col-span-1">
             <p className="text-xs text-muted uppercase tracking-wider mb-1">Total Value</p>
-            <p className="text-lg sm:text-2xl font-bold text-accent tabular-nums font-mono">{formatCurrency(totalStats.total)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-accent tabular-nums font-mono">{singleCurrency ? formatCurrency(totalStats.total, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].total, c)).join(" · ")}</p>
           </div>
 
           {/* Received */}
           <div className="lg:col-span-1">
             <p className="text-xs text-muted uppercase tracking-wider mb-1">Received</p>
-            <p className="text-lg sm:text-2xl font-bold text-success tabular-nums font-mono">{formatCurrency(totalStats.paid)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-success tabular-nums font-mono">{singleCurrency ? formatCurrency(totalStats.paid, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].paid, c)).join(" · ")}</p>
           </div>
 
           {/* Outstanding */}
           <div className="lg:col-span-1">
             <p className="text-xs text-muted uppercase tracking-wider mb-1">Outstanding</p>
-            <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums font-mono">{formatCurrency(totalStats.pending)}</p>
+            <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums font-mono">{singleCurrency ? formatCurrency(totalStats.pending, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].pending, c)).join(" · ")}</p>
           </div>
 
           {/* Organizations */}
@@ -108,11 +125,11 @@ export default async function AdminDashboard() {
           <div className="flex items-center justify-between text-xs text-muted mb-2">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-success" />
-              {formatCurrency(totalStats.paid)} received
+              {singleCurrency ? formatCurrency(totalStats.paid, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].paid, c)).join(" · ")} received
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-neutral-600" />
-              {formatCurrency(totalStats.pending)} outstanding
+              {singleCurrency ? formatCurrency(totalStats.pending, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].pending, c)).join(" · ")} outstanding
             </span>
           </div>
           <div className="h-2 bg-neutral-800 rounded-full overflow-hidden">
@@ -132,7 +149,7 @@ export default async function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs text-muted uppercase tracking-wider mb-1">Hourly Revenue</p>
-              <p className="text-xl font-bold text-accent tabular-nums font-mono">{formatCurrency(totalStats.hourlyRevenue)}</p>
+              <p className="text-xl font-bold text-accent tabular-nums font-mono">{singleCurrency ? formatCurrency(totalStats.hourlyRevenue, singleCurrency) : currencies.map(c => formatCurrency(currencyStats[c].hourlyRevenue, c)).join(" · ")}</p>
             </div>
           </div>
         )}
@@ -223,11 +240,11 @@ export default async function AdminDashboard() {
                       <p className="text-sm text-muted truncate">{org?.name || "Unknown org"}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold text-accent">{formatCurrency(summary.totalAmount)}</p>
+                      <p className="font-bold text-accent">{formatCurrency(summary.totalAmount, project.currency || "USD")}</p>
                       <p className="text-xs mt-0.5">
-                        <span className="text-success">{formatCurrency(summary.paidAmount)}</span>
+                        <span className="text-success">{formatCurrency(summary.paidAmount, project.currency || "USD")}</span>
                         <span className="text-muted"> / </span>
-                        <span className="text-muted">{formatCurrency(summary.remainingAmount)}</span>
+                        <span className="text-muted">{formatCurrency(summary.remainingAmount, project.currency || "USD")}</span>
                       </p>
                     </div>
                   </div>
