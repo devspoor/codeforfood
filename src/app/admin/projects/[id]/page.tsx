@@ -10,6 +10,7 @@ import { AttachmentsEditor } from "@/components/AttachmentsEditor";
 import { ProjectSettingsEditor } from "@/components/ProjectSettingsEditor";
 import { OperatingExpensesEditor } from "@/components/OperatingExpensesEditor";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { InvoiceList } from "@/components/invoices/InvoiceList";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +175,16 @@ export default async function ProjectDetailPage({
           <div>
             <h2 className="text-lg font-semibold mb-4">Operating Expenses</h2>
             <OperatingExpensesEditor projectId={project.id} expenses={project.operating_expenses || []} currency={project.currency || "USD"} />
+          </div>
+
+          {/* Invoices */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Invoices</h2>
+            <InvoiceList
+              projectId={project.id}
+              milestones={project.milestones || []}
+              currency={project.currency || "USD"}
+            />
           </div>
 
           {/* Comments */}
