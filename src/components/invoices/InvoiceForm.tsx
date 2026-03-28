@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Milestone } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
+import { getMilestoneTotal, getPaidAmount } from "@/components/milestones/utils";
 
 interface InvoiceItemDraft {
   description: string;
@@ -39,8 +40,17 @@ export function InvoiceForm({ projectId, milestones, currency, invoicedMilestone
   const [selectedMilestoneIds, setSelectedMilestoneIds] = useState<Set<string>>(new Set());
   const [includePaid, setIncludePaid] = useState(false);
 
+  const isMilestonePaid = (m: Milestone): boolean => {
+    const isTracked = m.type === "hourly" || m.type === "per_unit";
+    if (isTracked) {
+      const total = getMilestoneTotal(m);
+      return total > 0 && getPaidAmount(m) >= total;
+    }
+    return m.is_paid;
+  };
+
   const importableMilestones = milestones.filter((m) => {
-    if (!includePaid && (m.is_paid || invoicedMilestoneIds?.has(m.id))) return false;
+    if (!includePaid && (isMilestonePaid(m) || invoicedMilestoneIds?.has(m.id))) return false;
     return true;
   });
 
@@ -261,7 +271,7 @@ export function InvoiceForm({ projectId, milestones, currency, invoicedMilestone
                     )}
                   </span>
                   <span className="text-muted text-xs whitespace-nowrap flex items-center gap-1.5">
-                    {m.is_paid && <span className="text-success">paid</span>}
+                    {isMilestonePaid(m) && <span className="text-success">paid</span>}
                     {m.type === "fixed" && formatCurrency(m.amount, currency)}
                     {m.type === "hourly" && `${m.hourly_rate}/hr`}
                     {m.type === "per_unit" && `${m.unit_rate}/${m.unit_label || "unit"}`}

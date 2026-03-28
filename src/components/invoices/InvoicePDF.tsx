@@ -1,16 +1,18 @@
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+import path from "path";
 import type { Invoice, InvoiceItem, PaymentMethod } from "@/lib/types";
 
-// Register Inter font with Cyrillic support
+// Register Inter font (TTF format, supported by react-pdf)
+const fontsDir = path.join(process.cwd(), "public", "fonts");
 Font.register({
   family: "Inter",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hjQ.woff2",
+      src: path.join(fontsDir, "Inter-Regular.ttf"),
       fontWeight: 400,
     },
     {
-      src: "https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYAZ9hjQ.woff2",
+      src: path.join(fontsDir, "Inter-Bold.ttf"),
       fontWeight: 700,
     },
   ],
