@@ -417,6 +417,7 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
   unit_label?: string;
   estimated_units?: number;
   units_limit?: number;
+  due_date?: string | null;
 }): Promise<Milestone | null> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
   if (!project) return null;
@@ -437,6 +438,7 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
     description: data.description,
     type: milestoneType,
     order: nextOrder,
+    due_date: data.due_date || null,
   };
 
   if (milestoneType === "fixed") {

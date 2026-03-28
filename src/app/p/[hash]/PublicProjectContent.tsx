@@ -287,6 +287,13 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo, 
                                   PARTIAL
                                 </span>
                               )}
+                              {m.due_date && (
+                                <span className={`text-xs ${
+                                  new Date(m.due_date) < new Date() && !isFullyPaid ? "text-danger" : "text-muted"
+                                }`}>
+                                  Due {formatDate(m.due_date)}
+                                </span>
+                              )}
                             </div>
                             {m.description && (
                               <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{m.description}</p>

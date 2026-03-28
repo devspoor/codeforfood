@@ -594,6 +594,7 @@ export async function addMilestone(projectId: string, data: {
   unit_label?: string;
   estimated_units?: number;
   units_limit?: number;
+  due_date?: string | null;
 }): Promise<Milestone | null> {
   const supabase = await createClient();
 
@@ -614,6 +615,7 @@ export async function addMilestone(projectId: string, data: {
     description: data.description,
     type: milestoneType,
     order: nextOrder,
+    due_date: data.due_date || null,
   };
 
   if (milestoneType === "fixed") {

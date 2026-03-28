@@ -9,6 +9,7 @@ export interface MilestoneFormData {
   title: string;
   description: string;
   type: MilestoneType;
+  dueDate: string;
   // Fixed
   amount: string;
   // Hourly
@@ -33,6 +34,7 @@ const initialFormData: MilestoneFormData = {
   title: "",
   description: "",
   type: "fixed",
+  dueDate: "",
   amount: "",
   hourlyRate: "",
   estimatedHours: "",
@@ -54,6 +56,7 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
         title: m.title,
         description: m.description || "",
         type: m.type || "fixed",
+        dueDate: m.due_date ? m.due_date.split("T")[0] : "",
         amount: m.type === "fixed" ? String(m.amount) : "",
         hourlyRate: m.type === "hourly" ? String(m.hourly_rate || "") : "",
         estimatedHours: m.type === "hourly" && m.estimated_hours ? String(m.estimated_hours) : "",
@@ -261,6 +264,17 @@ export function MilestoneForm({ isEditing, editingMilestone, onSubmit, onCancel 
           placeholder="Brief description of this milestone"
           rows={2}
           className="w-full px-3 py-2 rounded bg-background border border-border focus:border-accent focus:outline-none resize-y"
+        />
+      </div>
+
+      {/* Due Date */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Due Date <span className="text-muted font-normal">(optional)</span></label>
+        <input
+          type="date"
+          value={formData.dueDate}
+          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+          className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
         />
       </div>
 

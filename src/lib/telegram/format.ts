@@ -128,6 +128,32 @@ export function formatDeadlineMessage(project: Project, tasks: SimpleTask[]): st
 
   let msg = `⏰ *${escapeMarkdown(project.name)}* — Upcoming Deadlines\n\n`;
 
+  // Milestone due dates
+  const milestones = project.milestones || [];
+  const milestonesWithDueDate = milestones
+    .filter(m => m.due_date && !m.is_paid)
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+
+  if (milestonesWithDueDate.length > 0) {
+    msg += `📋 *Milestones:*\n`;
+    for (const m of milestonesWithDueDate) {
+      const deadline = new Date(m.due_date!);
+      const isOverdue = deadline < now;
+      const isTomorrow = deadline <= tomorrow;
+      const isThisWeek = deadline <= nextWeek;
+
+      const icon = isOverdue || isTomorrow ? "🔴" : isThisWeek ? "🟡" : "⚪";
+      const dateStr = deadline.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      msg += `${icon} ${escapeMarkdown(dateStr)}: ${escapeMarkdown(m.title)}\n`;
+    }
+    msg += `\n`;
+  }
+
+  if (tasksWithDeadline.length > 0 || milestonesWithDueDate.length === 0) {
+    msg += `📌 *Tasks:*\n`;
+  }
+
   if (tasksWithDeadline.length === 0) {
     msg += `No tasks with deadlines\n`;
   } else {

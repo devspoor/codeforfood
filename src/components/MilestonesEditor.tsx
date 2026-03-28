@@ -61,6 +61,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
       const updateData: Record<string, unknown> = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
+        due_date: formData.dueDate || null,
       };
       if (formData.type === "fixed") {
         updateData.amount = Number(formData.amount);
@@ -96,6 +97,7 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         type: formData.type,
+        due_date: formData.dueDate || null,
       };
       if (formData.type === "fixed") {
         createData.amount = Number(formData.amount);
@@ -525,6 +527,13 @@ export function MilestonesEditor({ projectId, milestones: initialMilestones, cur
                           {isPartiallyPaid && (
                             <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded">
                               PARTIAL
+                            </span>
+                          )}
+                          {m.due_date && (
+                            <span className={`text-xs ml-2 ${
+                              new Date(m.due_date) < new Date() && !m.is_paid ? "text-danger" : "text-muted"
+                            }`}>
+                              Due {formatDate(m.due_date)}
                             </span>
                           )}
                         </div>

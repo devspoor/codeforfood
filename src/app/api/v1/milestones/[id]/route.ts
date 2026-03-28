@@ -71,6 +71,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         estimated_hours,
         hours_limit,
         order,
+        due_date,
       } = body;
 
       // Validate all numeric fields before any update
@@ -111,6 +112,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         if (estimated_hours !== undefined) otherFields.estimated_hours = estimated_hours;
         if (hours_limit !== undefined) otherFields.hours_limit = hours_limit;
         if (order !== undefined) otherFields.order = order;
+        if (due_date !== undefined) otherFields.due_date = due_date;
 
         // Update other fields first if any exist
         if (Object.keys(otherFields).length > 0) {
@@ -137,6 +139,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       if (estimated_hours !== undefined) updateData.estimated_hours = estimated_hours;
       if (hours_limit !== undefined) updateData.hours_limit = hours_limit;
       if (order !== undefined) updateData.order = order;
+      if (due_date !== undefined) updateData.due_date = due_date;
 
       const milestone = await updateMilestone(supabase, user.id, id, updateData);
       if (!milestone) {

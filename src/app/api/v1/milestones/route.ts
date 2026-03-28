@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
         unit_label,
         estimated_units,
         units_limit,
+        due_date,
       } = await request.json();
 
       if (!project_id) {
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
         unit_label,
         estimated_units,
         units_limit,
+        due_date: due_date || null,
       });
 
       if (!milestone) {

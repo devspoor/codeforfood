@@ -50,7 +50,7 @@ export async function PATCH(
     }
 
     // Only allow specific fields to be updated
-    const allowedFields = ["title", "description", "amount", "hourly_rate", "estimated_hours", "hours_limit"];
+    const allowedFields = ["title", "description", "amount", "hourly_rate", "estimated_hours", "hours_limit", "due_date"];
     const sanitizedData: Record<string, unknown> = {};
     for (const key of allowedFields) {
       if (data[key] !== undefined) {

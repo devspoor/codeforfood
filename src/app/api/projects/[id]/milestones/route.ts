@@ -20,7 +20,7 @@ export async function POST(
     }
 
     const data = await request.json();
-    const { title, description, type = "fixed", amount, hourly_rate, estimated_hours, hours_limit, unit_rate, unit_label, estimated_units, units_limit } = data;
+    const { title, description, type = "fixed", amount, hourly_rate, estimated_hours, hours_limit, unit_rate, unit_label, estimated_units, units_limit, due_date } = data;
 
     if (!title) {
       return NextResponse.json({ error: "Title required" }, { status: 400 });
@@ -39,7 +39,7 @@ export async function POST(
         return NextResponse.json({ error: "Amount exceeds maximum allowed value" }, { status: 400 });
       }
 
-      const milestone = await addMilestone(id, { title, description, type: "fixed", amount: numAmount });
+      const milestone = await addMilestone(id, { title, description, type: "fixed", amount: numAmount, due_date: due_date || null });
       if (!milestone) {
         return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });
       }
@@ -61,6 +61,7 @@ export async function POST(
         hourly_rate: numRate,
         estimated_hours: estimated_hours ? Number(estimated_hours) : undefined,
         hours_limit: hours_limit ? Number(hours_limit) : undefined,
+        due_date: due_date || null,
       });
       if (!milestone) {
         return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });
@@ -84,6 +85,7 @@ export async function POST(
         unit_label: unit_label || "unit",
         estimated_units: estimated_units ? Number(estimated_units) : undefined,
         units_limit: units_limit ? Number(units_limit) : undefined,
+        due_date: due_date || null,
       });
       if (!milestone) {
         return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });
