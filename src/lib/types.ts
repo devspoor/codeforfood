@@ -51,6 +51,11 @@ export interface Milestone {
   payment_history?: PaymentHistoryEntry[];
   order: number;
   due_date?: string;
+  is_recurring: boolean;
+  recurrence_interval?: "weekly" | "monthly" | "quarterly" | null;
+  recurrence_next_date?: string | null;
+  recurrence_end_date?: string | null;
+  recurring_parent_id?: string | null;
   created_at: string;
 }
 
