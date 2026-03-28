@@ -10,10 +10,11 @@ function escapeCSV(value: string | number | undefined): string {
   return str;
 }
 
-export function exportMilestonesToCSV(milestones: Milestone[], filename: string) {
+export function exportMilestonesToCSV(milestones: Milestone[], filename: string, currency: string = "USD") {
   const headers = [
     "Milestone",
     "Type",
+    "Currency",
     "Date",
     "Hours",
     "Units",
@@ -59,6 +60,7 @@ export function exportMilestonesToCSV(milestones: Milestone[], filename: string)
         rows.push([
           escapeCSV(m.title),
           escapeCSV(m.type),
+          escapeCSV(currency),
           escapeCSV(entry.date),
           escapeCSV(isHourly ? formatHours(qty) : ""),
           escapeCSV(isPerUnit ? qty : ""),
@@ -74,6 +76,7 @@ export function exportMilestonesToCSV(milestones: Milestone[], filename: string)
       rows.push([
         escapeCSV(m.title),
         escapeCSV(m.type),
+        escapeCSV(currency),
         "",
         "",
         "",

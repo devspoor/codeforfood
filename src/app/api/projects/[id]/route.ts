@@ -41,7 +41,7 @@ export async function PATCH(
     const data = await request.json();
 
     // Validate and sanitize input
-    const allowedFields = ["name", "description", "status", "hide_amounts", "hide_paid", "show_payment_history", "show_expenses", "tasks_board_public"];
+    const allowedFields = ["name", "description", "status", "hide_amounts", "hide_paid", "show_payment_history", "show_expenses", "tasks_board_public", "currency"];
     const sanitizedData: Record<string, unknown> = {};
 
     for (const key of allowedFields) {
@@ -51,6 +51,9 @@ export async function PATCH(
         }
         if ((key === "hide_amounts" || key === "hide_paid" || key === "show_payment_history" || key === "show_expenses" || key === "tasks_board_public") && typeof data[key] !== "boolean") {
           return NextResponse.json({ error: `${key} must be a boolean` }, { status: 400 });
+        }
+        if (key === "currency" && (typeof data[key] !== "string" || data[key].length !== 3)) {
+          return NextResponse.json({ error: "Currency must be a 3-letter code" }, { status: 400 });
         }
         sanitizedData[key] = data[key];
       }

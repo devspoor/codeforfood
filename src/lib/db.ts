@@ -443,7 +443,7 @@ export async function getProjectByHash(hash: string): Promise<Project | null> {
   return normalizeProjectData(data, { isPublic: true });
 }
 
-export async function createProject(data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
+export async function createProject(data: { organizationId: string; name: string; description?: string; currency?: string }): Promise<Project | null> {
   const supabase = await createClient();
 
   // Get organization owner for subscription check
@@ -469,6 +469,7 @@ export async function createProject(data: { organizationId: string; name: string
       hash: generateHash(),
       name: data.name,
       description: data.description,
+      ...(data.currency ? { currency: data.currency } : {}),
     })
     .select()
     .single();
@@ -484,7 +485,7 @@ export async function createProject(data: { organizationId: string; name: string
   return { ...project, milestones: [] };
 }
 
-export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public">>): Promise<Project | null> {
+export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public" | "currency">>): Promise<Project | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return null;
@@ -593,6 +594,12 @@ export async function addMilestone(projectId: string, data: {
   unit_label?: string;
   estimated_units?: number;
   units_limit?: number;
+  due_date?: string | null;
+  // Recurring
+  is_recurring?: boolean;
+  recurrence_interval?: string | null;
+  recurrence_next_date?: string | null;
+  recurrence_end_date?: string | null;
 }): Promise<Milestone | null> {
   const supabase = await createClient();
 
@@ -613,6 +620,11 @@ export async function addMilestone(projectId: string, data: {
     description: data.description,
     type: milestoneType,
     order: nextOrder,
+    due_date: data.due_date || null,
+    is_recurring: data.is_recurring || false,
+    recurrence_interval: data.is_recurring ? data.recurrence_interval : null,
+    recurrence_next_date: data.is_recurring ? data.recurrence_next_date : null,
+    recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
   };
 
   if (milestoneType === "fixed") {

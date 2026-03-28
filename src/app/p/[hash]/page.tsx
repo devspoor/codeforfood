@@ -133,6 +133,7 @@ export default async function PublicProjectPage({
       org={org}
       summary={summary}
       statusInfo={statusInfo}
+      currency={project.currency || "USD"}
     />
   );
 }

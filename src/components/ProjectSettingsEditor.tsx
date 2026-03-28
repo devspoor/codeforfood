@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ProjectStatus } from "@/lib/types";
+import { CURRENCIES } from "@/lib/currencies";
 
 interface Props {
   projectId: string;
@@ -13,6 +14,7 @@ interface Props {
   showExpenses: boolean;
   showTasksBoard: boolean;
   hasPassword: boolean;
+  currency: string;
 }
 
 const STATUS_OPTIONS: { value: ProjectStatus; label: string; color: string }[] = [
@@ -32,6 +34,7 @@ export function ProjectSettingsEditor({
   showExpenses: initialShowExpenses,
   showTasksBoard: initialShowTasksBoard,
   hasPassword: initialHasPassword,
+  currency: initialCurrency,
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState(initialStatus);
@@ -40,9 +43,24 @@ export function ProjectSettingsEditor({
   const [showPaymentHistory, setShowPaymentHistory] = useState(initialShowPaymentHistory);
   const [showExpenses, setShowExpenses] = useState(initialShowExpenses);
   const [showTasksBoard, setShowTasksBoard] = useState(initialShowTasksBoard);
+  const [currency, setCurrency] = useState(initialCurrency);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [password, setPassword] = useState("");
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    const previousCurrency = currency;
+    setCurrency(newCurrency);
+
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currency: newCurrency }),
+    });
+    if (!res.ok) {
+      setCurrency(previousCurrency);
+    }
+  };
 
   const handleStatusChange = async (newStatus: ProjectStatus) => {
     // Optimistic update
@@ -136,6 +154,22 @@ export function ProjectSettingsEditor({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Currency */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3">Currency</h3>
+        <select
+          value={currency}
+          onChange={(e) => handleCurrencyChange(e.target.value)}
+          className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-accent"
+        >
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code} — {c.symbol} — {c.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Visibility Settings */}

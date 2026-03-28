@@ -273,7 +273,7 @@ export async function getProjectById(supabase: SupabaseClientType, userId: strin
   return normalizeProjectData(data);
 }
 
-export async function createProject(supabase: SupabaseClientType, userId: string, data: { organizationId: string; name: string; description?: string }): Promise<Project | null> {
+export async function createProject(supabase: SupabaseClientType, userId: string, data: { organizationId: string; name: string; description?: string; currency?: string }): Promise<Project | null> {
   const org = await getOrganizationById(supabase, userId, data.organizationId);
   if (!org) return null;
 
@@ -284,6 +284,7 @@ export async function createProject(supabase: SupabaseClientType, userId: string
       hash: generateHash(),
       name: data.name,
       description: data.description,
+      ...(data.currency ? { currency: data.currency } : {}),
     })
     .select()
     .single();
@@ -295,7 +296,7 @@ export async function createProject(supabase: SupabaseClientType, userId: string
   return { ...project, milestones: [], comments: [], attachments: [], has_password: false, has_secure_note: false };
 }
 
-export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses">>): Promise<Project | null> {
+export async function updateProject(supabase: SupabaseClientType, userId: string, id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "currency">>): Promise<Project | null> {
   const { data: project } = await supabase
     .from("projects")
     .select("id, organizations!inner(user_id)")
@@ -416,6 +417,11 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
   unit_label?: string;
   estimated_units?: number;
   units_limit?: number;
+  due_date?: string | null;
+  is_recurring?: boolean;
+  recurrence_interval?: string | null;
+  recurrence_next_date?: string | null;
+  recurrence_end_date?: string | null;
 }): Promise<Milestone | null> {
   const project = await verifyProjectOwnership(supabase, userId, projectId);
   if (!project) return null;
@@ -436,6 +442,11 @@ export async function addMilestone(supabase: SupabaseClientType, userId: string,
     description: data.description,
     type: milestoneType,
     order: nextOrder,
+    due_date: data.due_date || null,
+    is_recurring: data.is_recurring || false,
+    recurrence_interval: data.is_recurring ? data.recurrence_interval : null,
+    recurrence_next_date: data.is_recurring ? data.recurrence_next_date : null,
+    recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
   };
 
   if (milestoneType === "fixed") {

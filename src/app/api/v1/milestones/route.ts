@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
         unit_label,
         estimated_units,
         units_limit,
+        due_date,
+        is_recurring,
+        recurrence_interval,
+        recurrence_next_date,
+        recurrence_end_date,
       } = await request.json();
 
       if (!project_id) {
@@ -112,6 +117,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Validate recurring fields
+      if (is_recurring) {
+        const validIntervals = ["weekly", "monthly", "quarterly"];
+        if (!recurrence_interval || !validIntervals.includes(recurrence_interval)) {
+          return apiError("recurrence_interval must be one of: weekly, monthly, quarterly");
+        }
+      }
+
       const milestone = await addMilestone(supabase, user.id, project_id, {
         title,
         description,
@@ -124,6 +137,11 @@ export async function POST(request: NextRequest) {
         unit_label,
         estimated_units,
         units_limit,
+        due_date: due_date || null,
+        is_recurring: is_recurring || false,
+        recurrence_interval: is_recurring ? recurrence_interval : null,
+        recurrence_next_date: is_recurring ? recurrence_next_date : null,
+        recurrence_end_date: is_recurring && recurrence_end_date ? recurrence_end_date : null,
       });
 
       if (!milestone) {

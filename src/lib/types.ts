@@ -50,6 +50,12 @@ export interface Milestone {
   time_entries?: TimeEntry[];
   payment_history?: PaymentHistoryEntry[];
   order: number;
+  due_date?: string;
+  is_recurring: boolean;
+  recurrence_interval?: "weekly" | "monthly" | "quarterly" | null;
+  recurrence_next_date?: string | null;
+  recurrence_end_date?: string | null;
+  recurring_parent_id?: string | null;
   created_at: string;
 }
 
@@ -103,6 +109,7 @@ export interface Project {
   secure_note_encrypted?: string | null;
   secure_note_password_hash?: string | null;
   tasks_board_public?: boolean;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -258,5 +265,45 @@ export interface TelegramChatBinding {
   project_id: string;
   bound_by: string;
   access_mode: TelegramAccessMode;
+  created_at: string;
+}
+
+// Invoice types
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+
+export interface InvoiceItem {
+  id: string;
+  invoice_id: string;
+  milestone_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+  order: number;
+  created_at: string;
+}
+
+export interface Reminder {
+  id: string;
+  type: "before_due" | "on_due" | "overdue";
+  scheduled_for: string;
+  sent_at?: string | null;
+}
+
+export interface Invoice {
+  id: string;
+  project_id: string;
+  hash: string;
+  number: string;
+  status: InvoiceStatus;
+  due_date?: string | null;
+  issued_at?: string | null;
+  paid_at?: string | null;
+  note?: string | null;
+  client_name?: string | null;
+  client_email?: string | null;
+  currency: string;
+  items?: InvoiceItem[];
+  reminders?: Reminder[];
   created_at: string;
 }

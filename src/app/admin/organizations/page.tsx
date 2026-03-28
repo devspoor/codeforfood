@@ -9,15 +9,18 @@ export default async function OrganizationsPage() {
   const organizations = await getOrganizationsWithProjects();
 
   const orgsWithProjects = organizations.map((org) => {
+    const currencies = new Set(org.projects.map(p => p.currency || "USD"));
+    const singleCurrency = currencies.size === 1 ? [...currencies][0] : "USD";
     const totals = org.projects.reduce(
       (acc, p) => {
         const s = getProjectSummary(p);
         return {
           total: acc.total + s.totalAmount,
           paid: acc.paid + s.paidAmount,
+          currency: acc.currency,
         };
       },
-      { total: 0, paid: 0 }
+      { total: 0, paid: 0, currency: singleCurrency }
     );
     return { org, projects: org.projects, totals };
   });
@@ -111,8 +114,8 @@ export default async function OrganizationsPage() {
                   {/* Right side - Stats */}
                   <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 sm:text-right shrink-0">
                     <div className="min-w-0">
-                      <p className="text-base sm:text-xl font-bold text-accent font-mono truncate">{formatCurrency(totals.total)}</p>
-                      <p className="text-xs text-success font-mono truncate">{formatCurrency(totals.paid)} paid</p>
+                      <p className="text-base sm:text-xl font-bold text-accent font-mono truncate">{formatCurrency(totals.total, totals.currency)}</p>
+                      <p className="text-xs text-success font-mono truncate">{formatCurrency(totals.paid, totals.currency)} paid</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold font-mono">{progressPercent}%</span>

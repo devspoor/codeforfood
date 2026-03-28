@@ -66,6 +66,21 @@ export default async function PublicOrganizationPage({
   }
 
   const projects = await getProjectsByOrganization(org.id);
+  // Group totals by currency
+  const currencyTotals = projects.reduce(
+    (acc, p) => {
+      const s = getProjectSummary(p);
+      const cur = p.currency || "USD";
+      if (!acc[cur]) acc[cur] = { total: 0, paid: 0, remaining: 0 };
+      acc[cur].total += s.totalAmount;
+      acc[cur].paid += s.paidAmount;
+      acc[cur].remaining += s.remainingAmount;
+      return acc;
+    },
+    {} as Record<string, { total: number; paid: number; remaining: number }>
+  );
+  const currencies = Object.keys(currencyTotals);
+  const singleCurrency = currencies.length === 1 ? currencies[0] : null;
   const totals = projects.reduce(
     (acc, p) => {
       const s = getProjectSummary(p);
@@ -108,15 +123,15 @@ export default async function PublicOrganizationPage({
           <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8 animate-fade-in-up stagger-1 opacity-0">
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Total</p>
-              <p className="text-lg sm:text-xl font-bold text-accent font-mono">{formatCurrency(totals.total)}</p>
+              <p className="text-lg sm:text-xl font-bold text-accent font-mono">{singleCurrency ? formatCurrency(totals.total, singleCurrency) : currencies.map(c => formatCurrency(currencyTotals[c].total, c)).join(" · ")}</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Paid</p>
-              <p className="text-lg sm:text-xl font-bold text-success font-mono">{formatCurrency(totals.paid)}</p>
+              <p className="text-lg sm:text-xl font-bold text-success font-mono">{singleCurrency ? formatCurrency(totals.paid, singleCurrency) : currencies.map(c => formatCurrency(currencyTotals[c].paid, c)).join(" · ")}</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
               <p className="text-muted text-xs mb-1 uppercase tracking-wider">Due</p>
-              <p className="text-lg sm:text-xl font-bold text-foreground font-mono">{formatCurrency(totals.remaining)}</p>
+              <p className="text-lg sm:text-xl font-bold text-foreground font-mono">{singleCurrency ? formatCurrency(totals.remaining, singleCurrency) : currencies.map(c => formatCurrency(currencyTotals[c].remaining, c)).join(" · ")}</p>
             </div>
           </div>
 
@@ -169,13 +184,13 @@ export default async function PublicOrganizationPage({
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-accent">{formatCurrency(summary.totalAmount)}</p>
+                          <p className="font-bold text-accent">{formatCurrency(summary.totalAmount, project.currency || "USD")}</p>
                           <p className="text-xs mt-0.5">
-                            <span className="text-success">{formatCurrency(summary.paidAmount)}</span>
+                            <span className="text-success">{formatCurrency(summary.paidAmount, project.currency || "USD")}</span>
                             {summary.remainingAmount > 0 && (
                               <>
                                 <span className="text-muted"> / </span>
-                                <span className="text-muted">{formatCurrency(summary.remainingAmount)}</span>
+                                <span className="text-muted">{formatCurrency(summary.remainingAmount, project.currency || "USD")}</span>
                               </>
                             )}
                           </p>

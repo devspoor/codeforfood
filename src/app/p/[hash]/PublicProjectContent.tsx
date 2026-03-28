@@ -40,6 +40,7 @@ interface Props {
   } | null;
   summary: ProjectSummary;
   statusInfo: { label: string; color: string };
+  currency?: string;
 }
 
 const ATTACHMENT_ICONS: Record<string, { icon: string; color: string }> = {
@@ -57,7 +58,7 @@ const STATUS_STYLES: Record<string, string> = {
   on_hold: "bg-neutral-500/10 text-muted border-neutral-500/20",
 };
 
-export function PublicProjectContent({ hash, project, org, summary, statusInfo }: Props) {
+export function PublicProjectContent({ hash, project, org, summary, statusInfo, currency = "USD" }: Props) {
   // Memoize sorted milestones
   const sortedMilestones = useMemo(() =>
     [...(project.milestones || [])].sort((a, b) => a.order - b.order),
@@ -132,17 +133,17 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
             <div className={`grid gap-3 sm:gap-4 mb-8 ${hidePaid ? 'grid-cols-2' : 'grid-cols-3'}`}>
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-muted text-xs mb-1 uppercase tracking-wider">Total</p>
-                <p className="text-lg sm:text-xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount)}</p>
+                <p className="text-lg sm:text-xl font-bold text-accent font-mono">{formatCurrency(summary.totalAmount, currency)}</p>
               </div>
               {!hidePaid && (
                 <div className="bg-card border border-border rounded-xl p-4 text-center">
                   <p className="text-muted text-xs mb-1 uppercase tracking-wider">Paid</p>
-                  <p className="text-lg sm:text-xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount)}</p>
+                  <p className="text-lg sm:text-xl font-bold text-success font-mono">{formatCurrency(summary.paidAmount, currency)}</p>
                 </div>
               )}
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-muted text-xs mb-1 uppercase tracking-wider">Due</p>
-                <p className="text-lg sm:text-xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount)}</p>
+                <p className="text-lg sm:text-xl font-bold text-danger font-mono">{formatCurrency(summary.remainingAmount, currency)}</p>
               </div>
             </div>
           )}
@@ -185,7 +186,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                 {summary.hourlyAmount > 0 && (
                   <div className="text-center border-l border-border pl-6">
                     <p className="text-muted text-xs mb-1 uppercase tracking-wider">Billed</p>
-                    <p className="text-xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount)}</p>
+                    <p className="text-xl font-bold text-accent font-mono">{formatCurrency(summary.hourlyAmount, currency)}</p>
                   </div>
                 )}
               </div>
@@ -216,7 +217,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               </h2>
               {sortedMilestones.length > 0 && (
                 <button
-                  onClick={() => exportMilestonesToCSV(sortedMilestones, `${project.name || "project"}-milestones`)}
+                  onClick={() => exportMilestonesToCSV(sortedMilestones, `${project.name || "project"}-milestones`, currency)}
                   className="text-xs text-muted hover:text-foreground transition-colors flex items-center gap-1"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,13 +287,20 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                                   PARTIAL
                                 </span>
                               )}
+                              {m.due_date && (
+                                <span className={`text-xs ${
+                                  new Date(m.due_date) < new Date() && !isFullyPaid ? "text-danger" : "text-muted"
+                                }`}>
+                                  Due {formatDate(m.due_date)}
+                                </span>
+                              )}
                             </div>
                             {m.description && (
                               <p className="text-sm text-muted mt-1 whitespace-pre-wrap">{m.description}</p>
                             )}
                             {isHourly && (
                               <p className="text-xs text-muted mt-1">
-                                {!hideAmounts && `${formatCurrency(Number(m.hourly_rate || 0))}/hr`}
+                                {!hideAmounts && `${formatCurrency(Number(m.hourly_rate || 0), currency)}/hr`}
                                 {!hideAmounts && " - "}
                                 {formatHours(totalHours)} logged
                               </p>
@@ -302,7 +310,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                         {!hideAmounts && (
                           <div className="text-right flex-shrink-0">
                             <p className={`font-bold text-lg ${!hidePaid && isFullyPaid ? "text-success" : "text-accent"}`}>
-                              {formatCurrency(total)}
+                              {formatCurrency(total, currency)}
                             </p>
                             {!hidePaid && !isHourly && isFullyPaid && m.paid_at && (
                               <p className="text-xs text-muted">{formatDate(m.paid_at)}</p>
@@ -315,9 +323,9 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                       {!hidePaid && !hideAmounts && (isPartial || isFullyPaid) && (
                         <div className="mt-3">
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-success">{formatCurrency(paidAmount)} paid</span>
+                            <span className="text-success">{formatCurrency(paidAmount, currency)} paid</span>
                             {!isFullyPaid && (
-                              <span className="text-muted">{formatCurrency(remaining)} remaining</span>
+                              <span className="text-muted">{formatCurrency(remaining, currency)} remaining</span>
                             )}
                           </div>
                           <div className="h-1.5 bg-border rounded-full overflow-hidden">
@@ -346,7 +354,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                               >
                                 <span className="text-muted">{formatDate(entry.created_at)}</span>
                                 <span className={entry.amount >= 0 ? "text-success font-medium" : "text-danger font-medium"}>
-                                  {entry.amount >= 0 ? "+" : ""}{formatCurrency(entry.amount)}
+                                  {entry.amount >= 0 ? "+" : ""}{formatCurrency(entry.amount, currency)}
                                 </span>
                               </div>
                             ))}
@@ -380,11 +388,11 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                                     </div>
                                     {!hideAmounts && !hidePaid && (
                                       <span className={`flex-shrink-0 ${entryFullyPaid ? "text-success font-medium" : entryPaid > 0 ? "text-accent font-medium" : "text-muted"}`}>
-                                        {formatCurrency(entryPaid)}/{formatCurrency(entryAmount)}
+                                        {formatCurrency(entryPaid, currency)}/{formatCurrency(entryAmount, currency)}
                                       </span>
                                     )}
                                     {!hideAmounts && hidePaid && (
-                                      <span className="text-muted flex-shrink-0">{formatCurrency(entryAmount)}</span>
+                                      <span className="text-muted flex-shrink-0">{formatCurrency(entryAmount, currency)}</span>
                                     )}
                                   </div>
                                   {entry.description && (
@@ -426,7 +434,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
                       </div>
                       {!hideAmounts && (
                         <span className="font-bold text-danger ml-4">
-                          {formatCurrency(exp.amount)}
+                          {formatCurrency(exp.amount, currency)}
                         </span>
                       )}
                     </div>
@@ -436,7 +444,7 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo }
               {!hideAmounts && (
                 <div className="mt-4 flex items-center justify-between px-4 py-3 bg-card border border-border rounded-xl">
                   <span className="text-sm text-muted">Total Expenses</span>
-                  <span className="font-bold text-danger">{formatCurrency(summary.totalExpenses)}</span>
+                  <span className="font-bold text-danger">{formatCurrency(summary.totalExpenses, currency)}</span>
                 </div>
               )}
             </div>
