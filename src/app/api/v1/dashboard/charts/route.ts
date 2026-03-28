@@ -3,6 +3,62 @@ import { withAuth, apiSuccess, handleApiError } from "@/lib/api-auth";
 
 type Period = "3m" | "6m" | "12m" | "all";
 
+interface PaymentHistoryRow {
+  id: string;
+  amount: number;
+  created_at: string;
+  milestones: {
+    id: string;
+    project_id: string;
+    projects: {
+      id: string;
+      name: string;
+      currency: string;
+      organizations: { id: string; name: string; user_id: string };
+    };
+  };
+}
+
+interface TimeEntryRow {
+  hours: number | null;
+  units: number | null;
+  paid_amount: number;
+}
+
+interface MilestoneRow {
+  id: string;
+  amount: number;
+  paid_amount: number;
+  type: string;
+  hourly_rate: number | null;
+  unit_rate?: number | null;
+  time_entries: TimeEntryRow[];
+}
+
+interface ProjectRow {
+  id: string;
+  name: string;
+  currency: string;
+  milestones: MilestoneRow[];
+  organizations: { id: string; user_id: string };
+}
+
+interface InvoiceItemRow {
+  amount: number;
+}
+
+interface InvoiceRow {
+  id: string;
+  status: string;
+  due_date: string | null;
+  currency: string;
+  items: InvoiceItemRow[];
+  projects: {
+    id: string;
+    organizations: { id: string; user_id: string };
+  };
+}
+
 function getDateRange(period: Period): string | null {
   if (period === "all") return null;
   const now = new Date();
@@ -77,7 +133,7 @@ export async function GET(request: NextRequest) {
       const monthMap = new Map<string, number>();
 
       if (paymentHistoryResult.data) {
-        for (const entry of paymentHistoryResult.data as any[]) {
+        for (const entry of paymentHistoryResult.data as unknown as PaymentHistoryRow[]) {
           const createdAt = new Date(entry.created_at);
           if (startDate && createdAt < new Date(startDate)) continue;
 
@@ -102,7 +158,7 @@ export async function GET(request: NextRequest) {
       const orgMap = new Map<string, number>();
 
       if (paymentHistoryResult.data) {
-        for (const entry of paymentHistoryResult.data as any[]) {
+        for (const entry of paymentHistoryResult.data as unknown as PaymentHistoryRow[]) {
           const createdAt = new Date(entry.created_at);
           if (startDate && createdAt < new Date(startDate)) continue;
 
@@ -127,7 +183,7 @@ export async function GET(request: NextRequest) {
       const outstandingByProject: Array<{ name: string; paid: number; remaining: number; currency: string }> = [];
 
       if (projectsResult.data) {
-        for (const project of projectsResult.data as any[]) {
+        for (const project of projectsResult.data as unknown as ProjectRow[]) {
           const currency = project.currency || "USD";
           let totalPaid = 0;
           let totalAmount = 0;
@@ -170,10 +226,10 @@ export async function GET(request: NextRequest) {
       const forecastMap = new Map<string, number>();
 
       if (invoicesResult.data) {
-        for (const invoice of invoicesResult.data as any[]) {
+        for (const invoice of invoicesResult.data as unknown as InvoiceRow[]) {
           if (!invoice.due_date) continue;
           const currency = invoice.currency || "USD";
-          const total = (invoice.items || []).reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+          const total = (invoice.items || []).reduce((sum: number, item: InvoiceItemRow) => sum + (item.amount || 0), 0);
           const key = `${invoice.due_date}:${currency}`;
           forecastMap.set(key, (forecastMap.get(key) || 0) + total);
         }
