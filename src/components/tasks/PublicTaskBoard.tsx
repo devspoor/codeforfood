@@ -470,30 +470,10 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }
     isDragging,
   } = useSortable({ id: task.id });
 
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  };
-
-  const combinedPointerDown = (e: React.PointerEvent) => {
-    pointerStart.current = { x: e.clientX, y: e.clientY };
-    // Call dnd-kit's original handler
-    const originalHandler = listeners?.onPointerDown as ((e: React.PointerEvent) => void) | undefined;
-    originalHandler?.(e);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (pointerStart.current) {
-      const dx = e.clientX - pointerStart.current.x;
-      const dy = e.clientY - pointerStart.current.y;
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
-        onClick();
-      }
-      pointerStart.current = null;
-    }
   };
 
   return (
@@ -502,8 +482,7 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }
       style={style}
       {...attributes}
       {...listeners}
-      onPointerDown={combinedPointerDown}
-      onPointerUp={handlePointerUp}
+      onClick={onClick}
       className={`
         bg-background border border-border rounded-lg p-3 cursor-pointer
         hover:border-accent/50 transition-colors
@@ -621,9 +600,9 @@ function PublicTaskModal({
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={onClose}
     >
-      <div className="bg-card border border-border rounded-t-xl sm:rounded-lg w-full sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+      <div className="bg-card border border-border rounded-t-xl sm:rounded-lg w-full sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="p-4 border-b border-border flex items-center justify-between">
