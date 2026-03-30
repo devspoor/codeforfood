@@ -10,6 +10,7 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  useDroppable,
   pointerWithin,
   rectIntersection,
   DragOverlay,
@@ -376,15 +377,10 @@ function PublicColumn({
   onTaskClick: (task: Task) => void;
   onAddTask: (columnId: string) => void;
 }) {
-  const { setNodeRef, isOver } = useSortable({
-    id: column.id,
-    data: { type: "column" },
-    disabled: true,
-  });
+  const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
     <div
-      ref={setNodeRef}
       className={`flex-shrink-0 w-[85vw] sm:w-72 bg-card border rounded-lg flex flex-col max-h-[500px] snap-center sm:snap-align-none transition-colors ${
         isOver && editable ? "border-accent/50" : "border-border"
       }`}
@@ -411,8 +407,8 @@ function PublicColumn({
       </div>
 
       {/* Tasks */}
-      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 space-y-2">
+        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             editable ? (
               <SortableTaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
@@ -422,11 +418,11 @@ function PublicColumn({
               </div>
             )
           ))}
-          {tasks.length === 0 && (
-            <p className="text-xs text-muted text-center py-4">No tasks</p>
-          )}
-        </div>
-      </SortableContext>
+        </SortableContext>
+        {tasks.length === 0 && (
+          <p className="text-xs text-muted text-center py-4">No tasks</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -444,17 +440,45 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <PublicTaskCard task={task} onClick={onClick} />
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className={`
+        bg-background border border-border rounded-lg p-3 cursor-pointer
+        hover:border-accent/50 transition-colors
+        border-t-4 ${PRIORITY_COLORS[task.priority]}
+        ${isDragging ? "shadow-lg" : ""}
+      `}
+    >
+      <TaskCardContent task={task} />
     </div>
   );
 }
 
 function PublicTaskCard({ task, onClick, isDragOverlay }: { task: Task; onClick: () => void; isDragOverlay?: boolean }) {
+  return (
+    <div
+      onClick={onClick}
+      className={`
+        bg-background border border-border rounded-lg p-3 cursor-pointer
+        hover:border-accent/50 transition-colors
+        border-t-4 ${PRIORITY_COLORS[task.priority]}
+        ${isDragOverlay ? "shadow-lg shadow-black/30 rotate-2" : ""}
+      `}
+    >
+      <TaskCardContent task={task} />
+    </div>
+  );
+}
+
+function TaskCardContent({ task }: { task: Task }) {
   const checklists = task.checklists || [];
   const totalItems = checklists.reduce((sum, c) => sum + (c.items?.length || 0), 0);
   const completedItems = checklists.reduce(
@@ -470,15 +494,7 @@ function PublicTaskCard({ task, onClick, isDragOverlay }: { task: Task; onClick:
   }
 
   return (
-    <div
-      onClick={onClick}
-      className={`
-        bg-background border border-border rounded-lg p-3 cursor-pointer
-        hover:border-accent/50 transition-colors
-        border-t-4 ${PRIORITY_COLORS[task.priority]}
-        ${isDragOverlay ? "shadow-lg shadow-black/30 rotate-2" : ""}
-      `}
-    >
+    <>
       <p className="text-sm font-medium line-clamp-2">{task.title}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
@@ -506,7 +522,7 @@ function PublicTaskCard({ task, onClick, isDragOverlay }: { task: Task; onClick:
           </span>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
