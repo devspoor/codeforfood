@@ -1,7 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import type { Task, TaskColumn, TaskBoardData, TaskChecklist } from "@/lib/types";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  pointerWithin,
+  rectIntersection,
+  DragOverlay,
+  type CollisionDetection,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import type { Task, TaskColumn, TaskBoardData, TaskChecklist, TaskPriority } from "@/lib/types";
+import { Select } from "@/components/ui/Select";
 
 interface PublicTaskBoardProps {
   hash: string;
@@ -15,36 +33,38 @@ const PRIORITY_COLORS = {
 
 export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
   const [data, setData] = useState<TaskBoardData | null>(null);
+  const [editable, setEditable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeColumnIndex, setActiveColumnIndex] = useState(0);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [modalColumnId, setModalColumnId] = useState<string | null>(null);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function fetchTasks() {
-      try {
-        const res = await fetch(`/api/public/projects/${hash}/tasks`);
-        if (!res.ok) {
-          if (res.status === 403) {
-            setError("Tasks board is not available");
-          } else {
-            setError("Failed to load tasks");
-          }
-          return;
-        }
-        const result = await res.json();
-        setData(result);
-      } catch {
-        setError("Failed to load tasks");
-      } finally {
-        setLoading(false);
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/public/projects/${hash}/tasks`);
+      if (!res.ok) {
+        if (res.status === 403) setError("Tasks board is not available");
+        else setError("Failed to load tasks");
+        return;
       }
+      const result = await res.json();
+      setData({ columns: result.columns, tasks: result.tasks });
+      setEditable(!!result.editable);
+    } catch {
+      setError("Failed to load tasks");
+    } finally {
+      setLoading(false);
     }
-    fetchTasks();
   }, [hash]);
 
-  // Track scroll position for mobile indicator
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
   const columnsLength = data?.columns.length ?? 0;
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -62,6 +82,17 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [columnsLength]);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: editable ? 8 : Infinity } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: editable ? 200 : 999999, tolerance: 5 } })
+  );
+
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) return pointerCollisions;
+    return rectIntersection(args);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -70,9 +101,7 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
     );
   }
 
-  if (error || !data) {
-    return null; // Silently hide if not available
-  }
+  if (error || !data) return null;
 
   const sortedColumns = [...data.columns].sort((a, b) => {
     if (a.is_done_column) return 1;
@@ -83,22 +112,214 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
   const getTasksByColumn = (columnId: string) =>
     data.tasks.filter((t) => t.column_id === columnId).sort((a, b) => a.position - b.position);
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const task = data.tasks.find((t) => t.id === event.active.id);
+    if (task) setActiveTask(task);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const activeTaskItem = data.tasks.find((t) => t.id === activeId);
+    if (!activeTaskItem) return;
+
+    const overColumn = data.columns.find((c) => c.id === overId);
+    if (overColumn && activeTaskItem.column_id !== overId) {
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.map((t) =>
+            t.id === activeId ? { ...t, column_id: overId } : t
+          ),
+        };
+      });
+      return;
+    }
+
+    const overTask = data.tasks.find((t) => t.id === overId);
+    if (overTask && activeTaskItem.column_id !== overTask.column_id) {
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.map((t) =>
+            t.id === activeId ? { ...t, column_id: overTask.column_id } : t
+          ),
+        };
+      });
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveTask(null);
+    if (!over || !data) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const activeTaskItem = data.tasks.find((t) => t.id === activeId);
+    if (!activeTaskItem) return;
+
+    let targetColumnId = activeTaskItem.column_id;
+    const overColumn = data.columns.find((c) => c.id === overId);
+    const overTask = data.tasks.find((t) => t.id === overId);
+
+    if (overColumn) targetColumnId = overColumn.id;
+    else if (overTask) targetColumnId = overTask.column_id;
+
+    const columnTasks = data.tasks
+      .filter((t) => t.column_id === targetColumnId && t.id !== activeId)
+      .sort((a, b) => a.position - b.position);
+
+    let newPosition = columnTasks.length;
+    if (overTask && overTask.id !== activeId) {
+      const overIndex = columnTasks.findIndex((t) => t.id === overId);
+      if (overIndex >= 0) newPosition = overIndex;
+    }
+
+    const previousData = data;
+
+    // Optimistic update
+    setData((prev) => {
+      if (!prev) return prev;
+      const updated = prev.tasks.map((t) => {
+        if (t.id === activeId) return { ...t, column_id: targetColumnId, position: newPosition };
+        return t;
+      });
+      const columnTasksUpdated = updated
+        .filter((t) => t.column_id === targetColumnId)
+        .sort((a, b) => {
+          if (a.id === activeId) return newPosition - b.position;
+          if (b.id === activeId) return a.position - newPosition;
+          return a.position - b.position;
+        });
+      return {
+        ...prev,
+        tasks: updated.map((t) => {
+          if (t.column_id === targetColumnId) {
+            const idx = columnTasksUpdated.findIndex((ct) => ct.id === t.id);
+            return { ...t, position: idx };
+          }
+          return t;
+        }),
+      };
+    });
+
+    try {
+      const res = await fetch(`/api/public/projects/${hash}/tasks/${activeId}/move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ column_id: targetColumnId, position: newPosition }),
+      });
+      if (!res.ok) setData(previousData);
+    } catch {
+      setData(previousData);
+    }
+  };
+
+  const handleAddTask = (columnId: string) => {
+    if (!editable) return;
+    setSelectedTask(null);
+    setModalColumnId(columnId);
+    setModalMode("edit");
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setModalColumnId(null);
+    setModalMode("view");
+  };
+
+  const handleSaveTask = async (formData: { title: string; description: string; priority: TaskPriority }) => {
+    if (selectedTask) {
+      // Update
+      const prev = data;
+      setData((d) => {
+        if (!d) return d;
+        return { ...d, tasks: d.tasks.map((t) => (t.id === selectedTask.id ? { ...t, ...formData } : t)) };
+      });
+      setSelectedTask(null);
+      setModalColumnId(null);
+
+      const res = await fetch(`/api/public/projects/${hash}/tasks/${selectedTask.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) setData(prev);
+    } else if (modalColumnId) {
+      // Create
+      setSelectedTask(null);
+      setModalColumnId(null);
+
+      const res = await fetch(`/api/public/projects/${hash}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, column_id: modalColumnId }),
+      });
+      if (res.ok) {
+        const newTask = await res.json();
+        setData((d) => {
+          if (!d) return d;
+          return { ...d, tasks: [...d.tasks, { ...newTask, checklists: [], attachments: [] }] };
+        });
+      }
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selectedTask || !data) return;
+    const prev = data;
+    setData((d) => {
+      if (!d) return d;
+      return { ...d, tasks: d.tasks.filter((t) => t.id !== selectedTask.id) };
+    });
+    setSelectedTask(null);
+    setModalColumnId(null);
+
+    const res = await fetch(`/api/public/projects/${hash}/tasks/${selectedTask.id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) setData(prev);
+  };
+
+  const isModalOpen = selectedTask !== null || modalColumnId !== null;
+
   return (
     <div>
-      {/* Scrollable columns */}
-      <div
-        ref={scrollContainerRef}
-        className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none scroll-smooth"
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       >
-        {sortedColumns.map((column) => (
-          <PublicColumn
-            key={column.id}
-            column={column}
-            tasks={getTasksByColumn(column.id)}
-            onTaskClick={setSelectedTask}
-          />
-        ))}
-      </div>
+        <div
+          ref={scrollContainerRef}
+          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory sm:snap-none scroll-smooth"
+        >
+          {sortedColumns.map((column) => (
+            <PublicColumn
+              key={column.id}
+              column={column}
+              tasks={getTasksByColumn(column.id)}
+              editable={editable}
+              onTaskClick={handleTaskClick}
+              onAddTask={handleAddTask}
+            />
+          ))}
+        </div>
+
+        <DragOverlay modifiers={[snapCenterToCursor]}>
+          {activeTask && (
+            <PublicTaskCard task={activeTask} onClick={() => {}} isDragOverlay />
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {/* Mobile scroll indicator dots */}
       <div className="flex justify-center gap-1.5 py-2 sm:hidden">
@@ -123,11 +344,19 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
         ))}
       </div>
 
-      {/* Task detail modal */}
-      {selectedTask && (
+      {/* Task modal */}
+      {isModalOpen && (
         <PublicTaskModal
           task={selectedTask}
-          onClose={() => setSelectedTask(null)}
+          mode={modalMode}
+          editable={editable}
+          onSave={handleSaveTask}
+          onDelete={selectedTask && editable ? handleDeleteTask : undefined}
+          onClose={() => {
+            setSelectedTask(null);
+            setModalColumnId(null);
+          }}
+          onEditClick={() => setModalMode("edit")}
         />
       )}
     </div>
@@ -137,36 +366,95 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
 function PublicColumn({
   column,
   tasks,
+  editable,
   onTaskClick,
+  onAddTask,
 }: {
   column: TaskColumn;
   tasks: Task[];
+  editable: boolean;
   onTaskClick: (task: Task) => void;
+  onAddTask: (columnId: string) => void;
 }) {
+  const { setNodeRef, isOver } = useSortable({
+    id: column.id,
+    data: { type: "column" },
+    disabled: true,
+  });
+
   return (
-    <div className="flex-shrink-0 w-[85vw] sm:w-72 bg-card border border-border rounded-lg flex flex-col max-h-[400px] snap-center sm:snap-align-none">
+    <div
+      ref={setNodeRef}
+      className={`flex-shrink-0 w-[85vw] sm:w-72 bg-card border rounded-lg flex flex-col max-h-[500px] snap-center sm:snap-align-none transition-colors ${
+        isOver && editable ? "border-accent/50" : "border-border"
+      }`}
+    >
       {/* Header */}
-      <div className="p-3 border-b border-border flex items-center gap-2">
-        <h3 className="font-medium text-sm">{column.name}</h3>
-        <span className="text-xs text-muted bg-muted/10 px-1.5 py-0.5 rounded">
-          {tasks.length}
-        </span>
+      <div className="p-3 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-sm">{column.name}</h3>
+          <span className="text-xs text-muted bg-muted/10 px-1.5 py-0.5 rounded">
+            {tasks.length}
+          </span>
+        </div>
+        {editable && (
+          <button
+            onClick={() => onAddTask(column.id)}
+            className="text-muted hover:text-accent transition-colors p-0.5"
+            title="Add task"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Tasks */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {tasks.map((task) => (
-          <PublicTaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
-        ))}
-        {tasks.length === 0 && (
-          <p className="text-xs text-muted text-center py-4">No tasks</p>
-        )}
-      </div>
+      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {tasks.map((task) => (
+            editable ? (
+              <SortableTaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            ) : (
+              <div key={task.id}>
+                <PublicTaskCard task={task} onClick={() => onTaskClick(task)} />
+              </div>
+            )
+          ))}
+          {tasks.length === 0 && (
+            <p className="text-xs text-muted text-center py-4">No tasks</p>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 }
 
-function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
+function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <PublicTaskCard task={task} onClick={onClick} />
+    </div>
+  );
+}
+
+function PublicTaskCard({ task, onClick, isDragOverlay }: { task: Task; onClick: () => void; isDragOverlay?: boolean }) {
   const checklists = task.checklists || [];
   const totalItems = checklists.reduce((sum, c) => sum + (c.items?.length || 0), 0);
   const completedItems = checklists.reduce(
@@ -175,18 +463,6 @@ function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) 
   );
 
   const isOverdue = task.deadline && new Date(task.deadline) < new Date();
-  const isToday = task.deadline && isSameDay(new Date(task.deadline), new Date());
-  const isTomorrow = task.deadline && isSameDay(new Date(task.deadline), addDays(new Date(), 1));
-
-  function isSameDay(d1: Date, d2: Date) {
-    return d1.toDateString() === d2.toDateString();
-  }
-
-  function addDays(date: Date, days: number) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  }
 
   function formatDeadline(deadline: string) {
     const date = new Date(deadline);
@@ -200,12 +476,12 @@ function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) 
         bg-background border border-border rounded-lg p-3 cursor-pointer
         hover:border-accent/50 transition-colors
         border-t-4 ${PRIORITY_COLORS[task.priority]}
+        ${isDragOverlay ? "shadow-lg shadow-black/30 rotate-2" : ""}
       `}
     >
       <p className="text-sm font-medium line-clamp-2">{task.title}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
-        {/* Checklist indicator */}
         {totalItems > 0 && (
           <span
             className={`flex items-center gap-1 ${
@@ -224,15 +500,8 @@ function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) 
           </span>
         )}
 
-        {/* Deadline */}
         {task.deadline && (
-          <span
-            className={`
-              ${isOverdue ? "text-danger bg-danger/10 px-1 rounded" : ""}
-              ${isToday ? "text-accent" : ""}
-              ${isTomorrow ? "text-muted" : ""}
-            `}
-          >
+          <span className={isOverdue ? "text-danger bg-danger/10 px-1 rounded" : ""}>
             {formatDeadline(task.deadline)}
           </span>
         )}
@@ -241,26 +510,43 @@ function PublicTaskCard({ task, onClick }: { task: Task; onClick: () => void }) 
   );
 }
 
-function PublicTaskModal({ task, onClose }: { task: Task; onClose: () => void }) {
-  const checklists = task.checklists || [];
-  const attachments = task.attachments || [];
+function PublicTaskModal({
+  task,
+  mode,
+  editable,
+  onSave,
+  onDelete,
+  onClose,
+  onEditClick,
+}: {
+  task: Task | null;
+  mode: "view" | "edit";
+  editable: boolean;
+  onSave: (data: { title: string; description: string; priority: TaskPriority }) => void;
+  onDelete?: () => void;
+  onClose: () => void;
+  onEditClick: () => void;
+}) {
+  const isViewMode = mode === "view" && task;
+  const [title, setTitle] = useState(task?.title || "");
+  const [description, setDescription] = useState(task?.description || "");
+  const [priority, setPriority] = useState<TaskPriority>(task?.priority || "medium");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const isOverdue = task.deadline && new Date(task.deadline) < new Date();
+  useEffect(() => {
+    setTitle(task?.title || "");
+    setDescription(task?.description || "");
+    setPriority(task?.priority || "medium");
+    setShowDeleteConfirm(false);
+  }, [task]);
 
-  const getAttachmentIcon = (attachment: { type: string; name: string; url: string }) => {
-    if (attachment.type === "file") {
-      const ext = attachment.name.split(".").pop()?.toLowerCase();
-      if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || "")) return "🖼️";
-      if (["pdf"].includes(ext || "")) return "📄";
-      if (["doc", "docx"].includes(ext || "")) return "📝";
-      return "📎";
-    }
-    const url = attachment.url.toLowerCase();
-    if (url.includes("figma.com")) return "🎨";
-    if (url.includes("github.com")) return "🐙";
-    if (url.includes("notion.so") || url.includes("notion.com")) return "📓";
-    return "🔗";
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSave({ title: title.trim(), description: description.trim(), priority });
   };
+
+  const checklists = task?.checklists || [];
 
   return (
     <div
@@ -268,105 +554,168 @@ function PublicTaskModal({ task, onClose }: { task: Task; onClose: () => void })
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="bg-card border border-border rounded-t-xl sm:rounded-lg w-full sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h2 className="font-semibold">Task Details</h2>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-foreground"
-          >
-            ✕
-          </button>
-        </div>
+        <form onSubmit={handleSubmit}>
+          {/* Header */}
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <h2 className="font-semibold">
+              {isViewMode ? "Task Details" : task ? "Edit Task" : "New Task"}
+            </h2>
+            <button type="button" onClick={onClose} className="text-muted hover:text-foreground">
+              ✕
+            </button>
+          </div>
 
-        {/* Body */}
-        <div className="p-4 space-y-4">
-          {/* Title */}
-          <h3 className="text-lg font-medium">{task.title}</h3>
-
-          {/* Description */}
-          {task.description && (
-            <div>
-              <label className="block text-sm text-muted mb-1">Description</label>
-              <p className="text-sm whitespace-pre-wrap">{task.description}</p>
-            </div>
-          )}
-
-          {/* Priority & Deadline */}
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div>
-              <span className="text-muted">Priority: </span>
-              <span className={`capitalize ${
-                task.priority === "high" ? "text-danger" :
-                task.priority === "medium" ? "text-accent" : "text-muted"
-              }`}>
-                {task.priority}
-              </span>
-            </div>
-
-            {task.deadline && (
-              <div>
-                <span className="text-muted">Deadline: </span>
-                <span className={isOverdue ? "text-danger" : ""}>
-                  {new Date(task.deadline).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
+          {/* Body */}
+          <div className="p-4 space-y-4">
+            {isViewMode ? (
+              <>
+                <h3 className="text-lg font-medium">{task.title}</h3>
+                {task.description && (
+                  <div>
+                    <label className="block text-sm text-muted mb-1">Description</label>
+                    <p className="text-sm whitespace-pre-wrap">{task.description}</p>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-muted">Priority: </span>
+                    <span className={`capitalize ${
+                      task.priority === "high" ? "text-danger" :
+                      task.priority === "medium" ? "text-accent" : "text-muted"
+                    }`}>
+                      {task.priority}
+                    </span>
+                  </div>
+                  {task.deadline && (
+                    <div>
+                      <span className="text-muted">Deadline: </span>
+                      <span className={new Date(task.deadline) < new Date() ? "text-danger" : ""}>
+                        {new Date(task.deadline).toLocaleDateString("en-US", {
+                          month: "short", day: "numeric", year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {/* Checklists (read-only) */}
+                {checklists.length > 0 && (
+                  <div>
+                    <label className="block text-sm text-muted mb-2">Checklists</label>
+                    <div className="space-y-3">
+                      {checklists.map((checklist) => (
+                        <PublicChecklist key={checklist.id} checklist={checklist} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Task title..."
+                    className="w-full bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                    autoFocus={!task}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add description..."
+                    rows={3}
+                    className="w-full bg-background border border-border rounded px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Priority</label>
+                  <Select
+                    value={priority}
+                    onChange={(v) => setPriority(v as TaskPriority)}
+                    options={[
+                      { value: "low", label: "Low" },
+                      { value: "medium", label: "Medium" },
+                      { value: "high", label: "High" },
+                    ]}
+                  />
+                </div>
+              </>
             )}
           </div>
 
-          {/* Checklists */}
-          {checklists.length > 0 && (
-            <div>
-              <label className="block text-sm text-muted mb-2">Checklists</label>
-              <div className="space-y-3">
-                {checklists.map((checklist) => (
-                  <PublicChecklist key={checklist.id} checklist={checklist} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Attachments */}
-          {attachments.length > 0 && (
-            <div>
-              <label className="block text-sm text-muted mb-2">Attachments</label>
-              <div className="space-y-2">
-                {attachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="flex items-center gap-2 bg-background/50 rounded px-3 py-2"
+          {/* Footer */}
+          <div className="p-4 border-t border-border flex items-center justify-between">
+            {isViewMode ? (
+              <>
+                <div />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
                   >
-                    <span className="text-sm">{getAttachmentIcon(attachment)}</span>
-                    <a
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 text-sm text-accent hover:text-accent-hover truncate"
+                    Close
+                  </button>
+                  {editable && (
+                    <button
+                      type="button"
+                      onClick={onEditClick}
+                      className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors"
                     >
-                      {attachment.name}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-border flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-sm text-muted hover:text-foreground transition-colors"
-          >
-            Close
-          </button>
-        </div>
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  {task && onDelete && (
+                    <>
+                      {showDeleteConfirm ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted">Delete?</span>
+                          <button type="button" onClick={onDelete} className="text-sm text-danger hover:text-danger/80">
+                            Yes
+                          </button>
+                          <button type="button" onClick={() => setShowDeleteConfirm(false)} className="text-sm text-muted hover:text-foreground">
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => setShowDeleteConfirm(true)} className="text-sm text-danger hover:text-danger/80">
+                          Delete
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm text-muted hover:text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!title.trim()}
+                    className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+                  >
+                    {task ? "Save" : "Create"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -379,7 +728,6 @@ function PublicChecklist({ checklist }: { checklist: TaskChecklist }) {
 
   return (
     <div className="bg-background/50 rounded-lg p-3">
-      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-medium">{checklist.name}</h4>
         <span className="text-xs text-muted">
@@ -387,7 +735,6 @@ function PublicChecklist({ checklist }: { checklist: TaskChecklist }) {
         </span>
       </div>
 
-      {/* Progress bar */}
       {items.length > 0 && (
         <div className="h-1.5 bg-border rounded-full mb-3 overflow-hidden">
           <div
@@ -397,7 +744,6 @@ function PublicChecklist({ checklist }: { checklist: TaskChecklist }) {
         </div>
       )}
 
-      {/* Items */}
       <div className="space-y-1">
         {items.map((item) => (
           <div key={item.id} className="flex items-center gap-2">

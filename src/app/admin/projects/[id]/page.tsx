@@ -220,6 +220,7 @@ export default async function ProjectDetailPage({
               showPaymentHistory={project.show_payment_history}
               showExpenses={project.show_expenses}
               showTasksBoard={project.tasks_board_public || false}
+              tasksBoardEditable={project.tasks_board_editable || false}
               hasPassword={!!project.public_password_hash}
               currency={project.currency || "USD"}
             />

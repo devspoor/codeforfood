@@ -485,7 +485,7 @@ export async function createProject(data: { organizationId: string; name: string
   return { ...project, milestones: [] };
 }
 
-export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public" | "currency">>): Promise<Project | null> {
+export async function updateProject(id: string, data: Partial<Pick<Project, "name" | "description" | "status" | "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public" | "tasks_board_editable" | "currency">>): Promise<Project | null> {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return null;

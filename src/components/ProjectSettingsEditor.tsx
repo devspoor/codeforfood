@@ -14,6 +14,7 @@ interface Props {
   showPaymentHistory: boolean;
   showExpenses: boolean;
   showTasksBoard: boolean;
+  tasksBoardEditable: boolean;
   hasPassword: boolean;
   currency: string;
 }
@@ -34,6 +35,7 @@ export function ProjectSettingsEditor({
   showPaymentHistory: initialShowPaymentHistory,
   showExpenses: initialShowExpenses,
   showTasksBoard: initialShowTasksBoard,
+  tasksBoardEditable: initialTasksBoardEditable,
   hasPassword: initialHasPassword,
   currency: initialCurrency,
 }: Props) {
@@ -44,6 +46,7 @@ export function ProjectSettingsEditor({
   const [showPaymentHistory, setShowPaymentHistory] = useState(initialShowPaymentHistory);
   const [showExpenses, setShowExpenses] = useState(initialShowExpenses);
   const [showTasksBoard, setShowTasksBoard] = useState(initialShowTasksBoard);
+  const [tasksBoardEditable, setTasksBoardEditable] = useState(initialTasksBoardEditable);
   const [currency, setCurrency] = useState(initialCurrency);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -79,19 +82,27 @@ export function ProjectSettingsEditor({
     }
   };
 
-  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public", value: boolean) => {
+  const handleVisibilityChange = async (field: "hide_amounts" | "hide_paid" | "show_payment_history" | "show_expenses" | "tasks_board_public" | "tasks_board_editable", value: boolean) => {
     // Optimistic update
-    const previousValues = { hideAmounts, hidePaid, showPaymentHistory, showExpenses, showTasksBoard };
+    const previousValues = { hideAmounts, hidePaid, showPaymentHistory, showExpenses, showTasksBoard, tasksBoardEditable };
     if (field === "hide_amounts") setHideAmounts(value);
     if (field === "hide_paid") setHidePaid(value);
     if (field === "show_payment_history") setShowPaymentHistory(value);
     if (field === "show_expenses") setShowExpenses(value);
     if (field === "tasks_board_public") setShowTasksBoard(value);
+    if (field === "tasks_board_editable") setTasksBoardEditable(value);
+
+    // If disabling tasks board, also disable editable
+    const extra: Record<string, boolean> = {};
+    if (field === "tasks_board_public" && !value && tasksBoardEditable) {
+      setTasksBoardEditable(false);
+      extra.tasks_board_editable = false;
+    }
 
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [field]: value }),
+      body: JSON.stringify({ [field]: value, ...extra }),
     });
     if (!res.ok) {
       // Rollback on error
@@ -100,6 +111,7 @@ export function ProjectSettingsEditor({
       setShowPaymentHistory(previousValues.showPaymentHistory);
       setShowExpenses(previousValues.showExpenses);
       setShowTasksBoard(previousValues.showTasksBoard);
+      setTasksBoardEditable(previousValues.tasksBoardEditable);
     }
   };
 
@@ -228,9 +240,23 @@ export function ProjectSettingsEditor({
             />
             <div>
               <span className="text-sm">Show tasks board</span>
-              <p className="text-xs text-muted">Display task board on public page (read-only)</p>
+              <p className="text-xs text-muted">Display task board on public page</p>
             </div>
           </label>
+          {showTasksBoard && (
+            <label className="flex items-center gap-3 cursor-pointer ml-8">
+              <input
+                type="checkbox"
+                checked={tasksBoardEditable}
+                onChange={(e) => handleVisibilityChange("tasks_board_editable", e.target.checked)}
+                className="w-5 h-5 shrink-0 rounded border-border bg-background accent-accent"
+              />
+              <div>
+                <span className="text-sm">Allow visitors to edit tasks</span>
+                <p className="text-xs text-muted">Anyone can add, edit, move, and delete tasks</p>
+              </div>
+            </label>
+          )}
         </div>
       </div>
 
