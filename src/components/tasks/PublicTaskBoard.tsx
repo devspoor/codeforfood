@@ -16,7 +16,7 @@ import {
   DragOverlay,
   type CollisionDetection,
 } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import type { Task, TaskColumn, TaskBoardData, TaskChecklist, TaskPriority } from "@/lib/types";
@@ -172,53 +172,86 @@ export function PublicTaskBoard({ hash }: PublicTaskBoardProps) {
     if (overColumn) targetColumnId = overColumn.id;
     else if (overTask) targetColumnId = overTask.column_id;
 
-    const columnTasks = data.tasks
-      .filter((t) => t.column_id === targetColumnId && t.id !== activeId)
-      .sort((a, b) => a.position - b.position);
-
-    let newPosition = columnTasks.length;
-    if (overTask && overTask.id !== activeId) {
-      const overIndex = columnTasks.findIndex((t) => t.id === overId);
-      if (overIndex >= 0) newPosition = overIndex;
-    }
-
     const previousData = data;
+    const isSameColumn = activeTaskItem.column_id === targetColumnId;
 
-    // Optimistic update
-    setData((prev) => {
-      if (!prev) return prev;
-      const updated = prev.tasks.map((t) => {
-        if (t.id === activeId) return { ...t, column_id: targetColumnId, position: newPosition };
-        return t;
-      });
-      const columnTasksUpdated = updated
+    if (isSameColumn) {
+      // Same-column reorder using arrayMove
+      const columnTasks = data.tasks
         .filter((t) => t.column_id === targetColumnId)
-        .sort((a, b) => {
-          if (a.id === activeId) return newPosition - b.position;
-          if (b.id === activeId) return a.position - newPosition;
-          return a.position - b.position;
-        });
-      return {
-        ...prev,
-        tasks: updated.map((t) => {
-          if (t.column_id === targetColumnId) {
-            const idx = columnTasksUpdated.findIndex((ct) => ct.id === t.id);
-            return { ...t, position: idx };
-          }
-          return t;
-        }),
-      };
-    });
+        .sort((a, b) => a.position - b.position);
 
-    try {
-      const res = await fetch(`/api/public/projects/${hash}/tasks/${activeId}/move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ column_id: targetColumnId, position: newPosition }),
+      const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
+      let newIndex = overTask ? columnTasks.findIndex((t) => t.id === overId) : columnTasks.length - 1;
+      if (newIndex < 0) newIndex = columnTasks.length - 1;
+      if (oldIndex === newIndex) return;
+
+      const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.map((t) => {
+            if (t.column_id !== targetColumnId) return t;
+            const idx = reordered.findIndex((rt) => rt.id === t.id);
+            return { ...t, position: idx };
+          }),
+        };
       });
-      if (!res.ok) setData(previousData);
-    } catch {
-      setData(previousData);
+
+      try {
+        const res = await fetch(`/api/public/projects/${hash}/tasks/${activeId}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column_id: targetColumnId, position: newIndex }),
+        });
+        if (!res.ok) setData(previousData);
+      } catch {
+        setData(previousData);
+      }
+    } else {
+      // Cross-column move
+      const columnTasks = data.tasks
+        .filter((t) => t.column_id === targetColumnId && t.id !== activeId)
+        .sort((a, b) => a.position - b.position);
+
+      let newPosition = columnTasks.length;
+      if (overTask && overTask.id !== activeId) {
+        const overIndex = columnTasks.findIndex((t) => t.id === overId);
+        if (overIndex >= 0) newPosition = overIndex;
+      }
+
+      const newColumnTasks = [...columnTasks];
+      newColumnTasks.splice(newPosition, 0, { ...activeTaskItem, column_id: targetColumnId });
+
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tasks: prev.tasks.map((t) => {
+            if (t.id === activeId) {
+              return { ...t, column_id: targetColumnId, position: newPosition };
+            }
+            if (t.column_id === targetColumnId) {
+              const idx = newColumnTasks.findIndex((ct) => ct.id === t.id);
+              return { ...t, position: idx >= 0 ? idx : t.position };
+            }
+            return t;
+          }),
+        };
+      });
+
+      try {
+        const res = await fetch(`/api/public/projects/${hash}/tasks/${activeId}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column_id: targetColumnId, position: newPosition }),
+        });
+        if (!res.ok) setData(previousData);
+      } catch {
+        setData(previousData);
+      }
     }
   };
 
@@ -437,10 +470,30 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }
     isDragging,
   } = useSortable({ id: task.id });
 
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+  };
+
+  const combinedPointerDown = (e: React.PointerEvent) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    // Call dnd-kit's original handler
+    const originalHandler = listeners?.onPointerDown as ((e: React.PointerEvent) => void) | undefined;
+    originalHandler?.(e);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (pointerStart.current) {
+      const dx = e.clientX - pointerStart.current.x;
+      const dy = e.clientY - pointerStart.current.y;
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+        onClick();
+      }
+      pointerStart.current = null;
+    }
   };
 
   return (
@@ -449,7 +502,8 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick: () => void }
       style={style}
       {...attributes}
       {...listeners}
-      onClick={onClick}
+      onPointerDown={combinedPointerDown}
+      onPointerUp={handlePointerUp}
       className={`
         bg-background border border-border rounded-lg p-3 cursor-pointer
         hover:border-accent/50 transition-colors

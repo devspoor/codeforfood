@@ -234,67 +234,87 @@ export function TaskBoard({ projectId, columns: initialColumns, tasks: initialTa
       targetColumnId = overTask.column_id;
     }
 
-    // Get tasks in target column
-    const columnTasks = tasks
-      .filter((t) => t.column_id === targetColumnId && t.id !== activeId)
-      .sort((a, b) => a.position - b.position);
-
-    // Calculate new position
-    let newPosition = 0;
-    if (overTask && overTask.id !== activeId) {
-      const overIndex = columnTasks.findIndex((t) => t.id === overId);
-      newPosition = overIndex >= 0 ? overIndex : columnTasks.length;
-    } else {
-      newPosition = columnTasks.length;
-    }
-
     // Save previous state for rollback
     const previousTasks = tasks;
+    const isSameColumn = activeTaskItem.column_id === targetColumnId;
 
-    // Optimistic update
-    setTasks((prev) => {
-      const updated = prev.map((t) => {
-        if (t.id === activeId) {
-          return { ...t, column_id: targetColumnId, position: newPosition };
-        }
-        return t;
-      });
-
-      // Reorder positions in target column
-      const columnTasksUpdated = updated
+    if (isSameColumn) {
+      // Same-column reorder using arrayMove
+      const columnTasks = tasks
         .filter((t) => t.column_id === targetColumnId)
-        .sort((a, b) => {
-          if (a.id === activeId) return newPosition - b.position;
-          if (b.id === activeId) return a.position - newPosition;
-          return a.position - b.position;
-        });
+        .sort((a, b) => a.position - b.position);
 
-      return updated.map((t) => {
-        if (t.column_id === targetColumnId) {
-          const idx = columnTasksUpdated.findIndex((ct) => ct.id === t.id);
+      const oldIndex = columnTasks.findIndex((t) => t.id === activeId);
+      let newIndex = overTask ? columnTasks.findIndex((t) => t.id === overId) : columnTasks.length - 1;
+      if (newIndex < 0) newIndex = columnTasks.length - 1;
+      if (oldIndex === newIndex) return;
+
+      const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.column_id !== targetColumnId) return t;
+          const idx = reordered.findIndex((rt) => rt.id === t.id);
           return { ...t, position: idx };
-        }
-        return t;
-      });
-    });
+        })
+      );
 
-    // API call with error handling
-    try {
-      const res = await fetch(`/api/v1/tasks/${activeId}/move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          column_id: targetColumnId,
-          position: newPosition,
-        }),
-      });
-      if (!res.ok) {
-        console.error("Failed to move task");
-        setTasks(previousTasks); // Rollback
+      try {
+        const res = await fetch(`/api/v1/tasks/${activeId}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column_id: targetColumnId, position: newIndex }),
+        });
+        if (!res.ok) {
+          console.error("Failed to move task");
+          setTasks(previousTasks);
+        }
+      } catch (error) {
+        console.error("Error moving task:", error);
+        setTasks(previousTasks);
       }
-    } catch (error) {
-      console.error("Error moving task:", error);
-      setTasks(previousTasks); // Rollback
+    } else {
+      // Cross-column move
+      const columnTasks = tasks
+        .filter((t) => t.column_id === targetColumnId && t.id !== activeId)
+        .sort((a, b) => a.position - b.position);
+
+      let newPosition = columnTasks.length;
+      if (overTask && overTask.id !== activeId) {
+        const overIndex = columnTasks.findIndex((t) => t.id === overId);
+        if (overIndex >= 0) newPosition = overIndex;
+      }
+
+      const newColumnTasks = [...columnTasks];
+      newColumnTasks.splice(newPosition, 0, { ...activeTaskItem, column_id: targetColumnId });
+
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === activeId) {
+            return { ...t, column_id: targetColumnId, position: newPosition };
+          }
+          if (t.column_id === targetColumnId) {
+            const idx = newColumnTasks.findIndex((ct) => ct.id === t.id);
+            return { ...t, position: idx >= 0 ? idx : t.position };
+          }
+          return t;
+        })
+      );
+
+      try {
+        const res = await fetch(`/api/v1/tasks/${activeId}/move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column_id: targetColumnId, position: newPosition }),
+        });
+        if (!res.ok) {
+          console.error("Failed to move task");
+          setTasks(previousTasks);
+        }
+      } catch (error) {
+        console.error("Error moving task:", error);
+        setTasks(previousTasks);
+      }
     }
   };
 
