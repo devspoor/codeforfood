@@ -589,8 +589,7 @@ function PublicTaskModal({
     setShowDeleteConfirm(false);
   }, [task]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (!title.trim()) return;
     onSave({ title: title.trim(), description: description.trim(), priority });
   };
@@ -603,7 +602,7 @@ function PublicTaskModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-card border border-border rounded-t-xl sm:rounded-lg w-full sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+        <div>
           {/* Header */}
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h2 className="font-semibold">
@@ -754,7 +753,8 @@ function PublicTaskModal({
                     Cancel
                   </button>
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleSave}
                     disabled={!title.trim()}
                     className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
                   >
@@ -764,7 +764,7 @@ function PublicTaskModal({
               </>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
