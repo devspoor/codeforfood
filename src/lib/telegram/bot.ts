@@ -23,6 +23,10 @@ import {
   formatDeadlineMessage,
 } from "./format";
 import type { TelegramChatBinding, Project } from "@/lib/types";
+import { isAiEnabled } from "@/lib/0g/broker";
+import { askAboutProject, generateSummary } from "@/lib/0g/ai";
+import type { ProjectContext } from "@/lib/0g/types";
+import { getProjectSummary } from "@/lib/db";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -218,6 +222,44 @@ if (bot) {
     return binding;
   }
 
+  // Helper to build AI project context
+  async function buildProjectContext(projectId: string): Promise<ProjectContext | null> {
+    const project = await botGetProjectById(projectId);
+    if (!project) return null;
+
+    const { columns, tasks } = await botGetTaskBoardData(projectId);
+    const summary = getProjectSummary(project);
+
+    return {
+      name: project.name,
+      description: project.description,
+      status: project.status,
+      currency: project.currency || "USD",
+      milestones: (project.milestones || []).map((m) => ({
+        title: m.title,
+        type: m.type,
+        amount: m.amount,
+        paid_amount: m.paid_amount,
+        is_paid: m.is_paid,
+        due_date: m.due_date,
+      })),
+      tasks: tasks
+        .filter((t) => !t.is_archived)
+        .map((t) => ({
+          title: t.title,
+          column: columns.find((c) => c.id === t.column_id)?.name || "Unknown",
+          priority: t.priority,
+          deadline: t.deadline || undefined,
+        })),
+      summary: {
+        totalAmount: summary.totalAmount,
+        paidAmount: summary.paidAmount,
+        remainingAmount: summary.remainingAmount,
+        percentPaid: summary.percentPaid,
+      },
+    };
+  }
+
   // /money command
   bot.command("money", async (ctx) => {
     const binding = await getBindingWithAccess(ctx);
@@ -360,6 +402,66 @@ if (bot) {
     }
   });
 
+  // /ask command — AI-powered project Q&A
+  bot.command("ask", async (ctx) => {
+    if (!isAiEnabled()) {
+      await ctx.reply("AI features are not configured.");
+      return;
+    }
+
+    const binding = await getBindingWithAccess(ctx);
+    if (!binding) return;
+
+    const question = ctx.match?.trim();
+    if (!question) {
+      await ctx.reply("Usage: /ask <your question>\n\nExample: /ask how much is left to pay?");
+      return;
+    }
+
+    await ctx.reply("Thinking...");
+
+    try {
+      const context = await buildProjectContext(binding.project_id);
+      if (!context) {
+        await ctx.reply("Failed to load project data.");
+        return;
+      }
+
+      const answer = await askAboutProject(question, context);
+      await ctx.reply(answer.slice(0, 4096));
+    } catch (e) {
+      console.error("AI ask error:", e);
+      await ctx.reply("AI is temporarily unavailable. Please try again later.");
+    }
+  });
+
+  // /summary command — AI-generated project report
+  bot.command("summary", async (ctx) => {
+    if (!isAiEnabled()) {
+      await ctx.reply("AI features are not configured.");
+      return;
+    }
+
+    const binding = await getBindingWithAccess(ctx);
+    if (!binding) return;
+
+    await ctx.reply("Generating summary...");
+
+    try {
+      const context = await buildProjectContext(binding.project_id);
+      if (!context) {
+        await ctx.reply("Failed to load project data.");
+        return;
+      }
+
+      const summary = await generateSummary(context);
+      await ctx.reply(summary.slice(0, 4096));
+    } catch (e) {
+      console.error("AI summary error:", e);
+      await ctx.reply("AI is temporarily unavailable. Please try again later.");
+    }
+  });
+
   // /payment command
   bot.command("payment", async (ctx) => {
     const binding = await getBindingWithAccess(ctx);
@@ -414,6 +516,9 @@ if (bot) {
       .row()
       .text("💳 Payment", "cmd:payment")
       .text("🔗 Link", "cmd:link")
+      .row()
+      .text("🤖 Ask AI", "cmd:ask")
+      .text("📝 Summary", "cmd:summary")
       .row()
       .text("❓ Help", "cmd:help");
 
@@ -521,6 +626,30 @@ if (bot) {
           await ctx.reply(msg, { parse_mode: "MarkdownV2" });
           break;
         }
+        case "ask": {
+          await ctx.reply("Use /ask followed by your question.\n\nExample: /ask how much is left to pay?");
+          break;
+        }
+        case "summary": {
+          if (!isAiEnabled()) {
+            await ctx.reply("AI features are not configured.");
+            break;
+          }
+          await ctx.reply("Generating summary...");
+          try {
+            const pctx = await buildProjectContext(binding.project_id);
+            if (!pctx) {
+              await ctx.reply("Failed to load project data.");
+              break;
+            }
+            const summaryText = await generateSummary(pctx);
+            await ctx.reply(summaryText.slice(0, 4096));
+          } catch (e) {
+            console.error("AI summary button error:", e);
+            await ctx.reply("AI is temporarily unavailable.");
+          }
+          break;
+        }
         case "help": {
           await ctx.reply(
             "📚 *codeforfood Bot*\n\n" +
@@ -531,6 +660,8 @@ if (bot) {
             "`/deadline` — Upcoming deadlines\n" +
             "`/payment` — Payment methods\n" +
             "`/link` — Public page URL\n" +
+            "`/ask <question>` — Ask AI about project\n" +
+            "`/summary` — AI project report\n" +
             "`/addtask <title>` — Create task\n" +
             "`/buttons` — Command menu",
             { parse_mode: "MarkdownV2" }
@@ -557,7 +688,9 @@ if (bot) {
       "`/status` — Project status overview\n" +
       "`/link` — Public page URL\n" +
       "`/deadline` — Tasks with upcoming deadlines\n" +
-      "`/payment` — Payment methods \\(tap to copy\\)\n\n" +
+      "`/payment` — Payment methods \\(tap to copy\\)\n" +
+      "`/ask <question>` — Ask AI about your project\n" +
+      "`/summary` — AI\\-generated project report\n\n" +
       "*Actions:*\n" +
       "`/addtask Fix login bug` — Create new task\n" +
       "`/buttons` — Command menu \\(pin for quick access\\)\n\n" +
