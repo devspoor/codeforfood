@@ -455,13 +455,6 @@ export async function createProject(data: { organizationId: string; name: string
 
   if (!org) return null;
 
-  // Check subscription limits
-  const canCreate = await canUserCreateProject(org.user_id, data.organizationId);
-  if (!canCreate) {
-    console.error("Subscription limit reached: cannot create project");
-    return null;
-  }
-
   const { data: project, error } = await supabase
     .from("projects")
     .insert({

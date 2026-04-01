@@ -8,8 +8,12 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const projects = await getProjects();
-  return NextResponse.json(projects);
+  try {
+    const projects = await getProjects();
+    return NextResponse.json(projects);
+  } catch {
+    return NextResponse.json({ error: "Failed to load projects" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const project = await createProject({ organizationId, name, description, currency });
     if (!project) {
-      return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to create project. Check that the organization exists and try again." }, { status: 500 });
     }
 
     return NextResponse.json(project, { status: 201 });
