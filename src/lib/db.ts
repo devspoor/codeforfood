@@ -4,7 +4,7 @@ import type { User } from "@supabase/supabase-js";
 import type { Organization, Project, Milestone, PaymentMethod, ProjectSummary, TimeEntry, Comment, Attachment, PaymentHistoryEntry, OperatingExpense, TaskColumn, Task, TaskBoardData, TaskPriority, TaskChecklist, TaskChecklistItem, TaskAttachment, TaskAttachmentType } from "./types";
 import { normalizeProjectData } from "./db/normalize";
 import { roundCurrency, calculateAmount, sumCurrency, calculatePercent } from "./format";
-import { canUserCreateOrganization, canUserCreateProject } from "@/lib/paddle/access";
+import { canUserCreateOrganization } from "@/lib/paddle/access";
 
 /**
  * Generates a cryptographically secure URL-safe hash
