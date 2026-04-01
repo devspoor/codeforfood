@@ -4,15 +4,28 @@ import type { ChatMessage } from "./types";
 const ZERO_G_RPC_URL = process.env.ZERO_G_RPC_URL || "https://evmrpc.0g.ai";
 const ZERO_G_PRIVATE_KEY = process.env.ZERO_G_PRIVATE_KEY;
 const ZERO_G_MODEL = process.env.ZERO_G_MODEL || "deepseek-chat";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 let cachedClient: { openai: OpenAI; model: string } | null = null;
 
+/**
+ * AI features are available if either:
+ * - 0G Compute is configured (ZERO_G_PRIVATE_KEY), or
+ * - OpenAI API fallback is configured (OPENAI_API_KEY) for development/testing
+ */
 export function isAiEnabled(): boolean {
-  return !!ZERO_G_PRIVATE_KEY;
+  return !!ZERO_G_PRIVATE_KEY || !!OPENAI_API_KEY;
 }
 
 async function getClient(): Promise<{ openai: OpenAI; model: string }> {
   if (cachedClient) return cachedClient;
+
+  // Fallback: use OpenAI API directly for development/testing
+  if (!ZERO_G_PRIVATE_KEY && OPENAI_API_KEY) {
+    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+    cachedClient = { openai, model: "gpt-4o-mini" };
+    return cachedClient;
+  }
 
   if (!ZERO_G_PRIVATE_KEY) {
     throw new Error("ZERO_G_PRIVATE_KEY is not configured");
