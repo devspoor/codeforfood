@@ -44,6 +44,8 @@ CREATE TABLE public.projects (
   description TEXT,
   secure_note_encrypted TEXT,
   secure_note_password_hash TEXT,
+  ai_summary TEXT,
+  ai_summary_generated_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

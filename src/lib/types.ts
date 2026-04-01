@@ -110,6 +110,8 @@ export interface Project {
   secure_note_password_hash?: string | null;
   tasks_board_public?: boolean;
   tasks_board_editable?: boolean;
+  ai_summary?: string | null;
+  ai_summary_generated_at?: string | null;
   currency: string;
   created_at: string;
   updated_at: string;
