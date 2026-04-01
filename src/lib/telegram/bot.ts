@@ -244,7 +244,6 @@ if (bot) {
         due_date: m.due_date,
       })),
       tasks: tasks
-        .filter((t) => !t.is_archived)
         .map((t) => ({
           title: t.title,
           column: columns.find((c) => c.id === t.column_id)?.name || "Unknown",
