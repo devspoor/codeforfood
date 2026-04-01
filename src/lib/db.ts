@@ -653,7 +653,7 @@ export async function addMilestone(projectId: string, data: {
     .single();
 
   if (error) {
-    console.error("Error creating milestone:", error.code || "unknown");
+    console.error("Error creating milestone:", error.code, error.message, error.details, error.hint);
     return null;
   }
 

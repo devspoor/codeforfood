@@ -50,13 +50,15 @@ Rules:
 - Return a JSON object with a "milestones" array
 - Each milestone has: title (string), description (string), type ("fixed"), amount (number in ${currency})
 - Create 3-8 milestones depending on project complexity
-- Amounts should be reasonable estimates for software development work
+- Total project cost should typically be between 500 and 20000 ${currency} for most freelance projects
+- Individual milestone amounts should range from 100 to 5000 ${currency}
+- Keep amounts realistic for freelance/contract software development
 - First milestone should be a deposit/upfront payment (20-30% of total)
 - Last milestone should be final delivery/launch
 - Include clear deliverables in each description
 
 Example response:
-{"milestones": [{"title": "Project Setup & Deposit", "description": "Initial setup, architecture planning, repository configuration", "type": "fixed", "amount": 2000}]}`;
+{"milestones": [{"title": "Project Setup & Deposit", "description": "Initial setup, architecture planning, repository configuration", "type": "fixed", "amount": 500}, {"title": "Core Features", "description": "Implementation of main functionality", "type": "fixed", "amount": 1500}, {"title": "Final Delivery", "description": "Testing, deployment, documentation", "type": "fixed", "amount": 500}]}`;
 
   const result = await getJsonCompletion<{ milestones: GeneratedMilestone[] }>([
     { role: "system", content: systemPrompt },

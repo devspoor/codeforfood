@@ -41,6 +41,7 @@ export async function POST(
 
       const milestone = await addMilestone(id, { title, description, type: "fixed", amount: numAmount, due_date: due_date || null, is_recurring: is_recurring || false, recurrence_interval: is_recurring ? recurrence_interval : null, recurrence_next_date: is_recurring ? recurrence_next_date : null, recurrence_end_date: is_recurring && recurrence_end_date ? recurrence_end_date : null });
       if (!milestone) {
+        console.error("addMilestone returned null for project", id, "type: fixed, amount:", numAmount);
         return NextResponse.json({ error: "Failed to add milestone" }, { status: 500 });
       }
       return NextResponse.json(milestone, { status: 201 });
