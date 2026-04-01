@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser, verifyProjectOwnership, getProjectSummary } from "@/lib/db";
+import { getCurrentUser, verifyProjectOwnership, getProjectById, getProjectSummary } from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { isAiEnabled } from "@/lib/0g/broker";
 import { generateSummary } from "@/lib/0g/ai";
@@ -19,7 +19,12 @@ export async function POST(
   }
 
   const { id } = await params;
-  const project = await verifyProjectOwnership(id, user);
+  const ownership = await verifyProjectOwnership(id, user);
+  if (!ownership) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  const project = await getProjectById(id);
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }

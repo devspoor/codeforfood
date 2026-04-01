@@ -616,12 +616,16 @@ export async function addMilestone(projectId: string, data: {
     description: data.description,
     type: milestoneType,
     order: nextOrder,
-    due_date: data.due_date || null,
-    is_recurring: data.is_recurring || false,
-    recurrence_interval: data.is_recurring ? data.recurrence_interval : null,
-    recurrence_next_date: data.is_recurring ? data.recurrence_next_date : null,
-    recurrence_end_date: data.is_recurring && data.recurrence_end_date ? data.recurrence_end_date : null,
   };
+
+  // Only include optional columns if they have values (columns may not exist if migrations weren't run)
+  if (data.due_date) insertData.due_date = data.due_date;
+  if (data.is_recurring) {
+    insertData.is_recurring = true;
+    if (data.recurrence_interval) insertData.recurrence_interval = data.recurrence_interval;
+    if (data.recurrence_next_date) insertData.recurrence_next_date = data.recurrence_next_date;
+    if (data.recurrence_end_date) insertData.recurrence_end_date = data.recurrence_end_date;
+  }
 
   if (milestoneType === "fixed") {
     insertData.amount = data.amount || 0;

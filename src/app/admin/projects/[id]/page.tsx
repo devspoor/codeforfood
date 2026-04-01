@@ -162,7 +162,7 @@ export default async function ProjectDetailPage({
                 />
               )}
             </div>
-            <MilestonesEditor projectId={project.id} milestones={project.milestones || []} currency={project.currency || "USD"} />
+            <MilestonesEditor key={project.milestones?.map(m => m.id).join(',') ?? ''} projectId={project.id} milestones={project.milestones || []} currency={project.currency || "USD"} />
           </div>
 
           {/* Task Board */}
