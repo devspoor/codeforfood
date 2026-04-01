@@ -453,7 +453,10 @@ export async function createProject(data: { organizationId: string; name: string
     .eq("id", data.organizationId)
     .single();
 
-  if (!org) return null;
+  if (!org) {
+    console.error("createProject: organization not found:", data.organizationId);
+    return null;
+  }
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -468,7 +471,7 @@ export async function createProject(data: { organizationId: string; name: string
     .single();
 
   if (error) {
-    console.error("Error creating project:", error.code || "unknown");
+    console.error("Error creating project:", error.code, error.message, error.details);
     return null;
   }
 
