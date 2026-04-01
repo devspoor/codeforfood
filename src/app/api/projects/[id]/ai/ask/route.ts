@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser, verifyProjectOwnership, getProjectSummary, getTaskBoardData } from "@/lib/db";
+import { getCurrentUser, verifyProjectOwnership, getProjectById, getProjectSummary, getTaskBoardData } from "@/lib/db";
 import { isAiEnabled } from "@/lib/0g/broker";
 import { askAboutProject } from "@/lib/0g/ai";
 import type { ProjectContext } from "@/lib/0g/types";
@@ -18,7 +18,12 @@ export async function POST(
   }
 
   const { id } = await params;
-  const project = await verifyProjectOwnership(id, user);
+  const ownership = await verifyProjectOwnership(id, user);
+  if (!ownership) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  const project = await getProjectById(id);
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }

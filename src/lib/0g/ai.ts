@@ -37,6 +37,13 @@ function serializeContext(context: ProjectContext): string {
     }
   }
 
+  if (context.paymentMethods && context.paymentMethods.length > 0) {
+    parts.push("\nPayment Methods:");
+    for (const pm of context.paymentMethods) {
+      parts.push(`- ${pm.label}: ${pm.value} (${pm.type})`);
+    }
+  }
+
   return truncateText(parts.join("\n"), MAX_CONTEXT_LENGTH);
 }
 

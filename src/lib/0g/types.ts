@@ -28,6 +28,11 @@ export interface ProjectContext {
     priority: string;
     deadline?: string;
   }>;
+  paymentMethods?: Array<{
+    label: string;
+    value: string;
+    type: string;
+  }>;
   summary: {
     totalAmount: number;
     paidAmount: number;

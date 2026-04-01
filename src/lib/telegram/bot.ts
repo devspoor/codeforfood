@@ -227,7 +227,10 @@ if (bot) {
     const project = await botGetProjectById(projectId);
     if (!project) return null;
 
-    const { columns, tasks } = await botGetTaskBoardData(projectId);
+    const [{ columns, tasks }, methods] = await Promise.all([
+      botGetTaskBoardData(projectId),
+      botGetPaymentMethods(projectId),
+    ]);
     const summary = getProjectSummary(project);
 
     return {
@@ -250,6 +253,11 @@ if (bot) {
           priority: t.priority,
           deadline: t.deadline || undefined,
         })),
+      paymentMethods: methods.map((pm) => ({
+        label: pm.label,
+        value: pm.value,
+        type: pm.type,
+      })),
       summary: {
         totalAmount: summary.totalAmount,
         paidAmount: summary.paidAmount,
