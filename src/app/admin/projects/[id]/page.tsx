@@ -11,6 +11,9 @@ import { ProjectSettingsEditor } from "@/components/ProjectSettingsEditor";
 import { OperatingExpensesEditor } from "@/components/OperatingExpensesEditor";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { InvoiceList } from "@/components/invoices/InvoiceList";
+import { AiMilestoneGenerator } from "@/components/AiMilestoneGenerator";
+import { AiSummaryGenerator } from "@/components/AiSummaryGenerator";
+import { isAiEnabled } from "@/lib/0g/broker";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +46,7 @@ export default async function ProjectDetailPage({
     taskBoardData = await getTaskBoardData(project.id);
   }
   const publicUrl = `/p/${project.hash}`;
+  const aiEnabled = isAiEnabled();
   const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.in_progress;
 
   return (
@@ -148,7 +152,16 @@ export default async function ProjectDetailPage({
         <div className="lg:col-span-2 space-y-8">
           {/* Milestones */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Milestones</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Milestones</h2>
+              {aiEnabled && (
+                <AiMilestoneGenerator
+                  projectId={project.id}
+                  projectDescription={project.description}
+                  currency={project.currency || "USD"}
+                />
+              )}
+            </div>
             <MilestonesEditor projectId={project.id} milestones={project.milestones || []} currency={project.currency || "USD"} />
           </div>
 
@@ -176,6 +189,18 @@ export default async function ProjectDetailPage({
             <h2 className="text-lg font-semibold mb-4">Operating Expenses</h2>
             <OperatingExpensesEditor projectId={project.id} expenses={project.operating_expenses || []} currency={project.currency || "USD"} />
           </div>
+
+          {/* AI Summary */}
+          {aiEnabled && (
+            <div>
+              <h2 className="text-lg font-semibold mb-4">AI Summary</h2>
+              <AiSummaryGenerator
+                projectId={project.id}
+                initialSummary={project.ai_summary}
+                initialGeneratedAt={project.ai_summary_generated_at}
+              />
+            </div>
+          )}
 
           {/* Invoices */}
           <div>
