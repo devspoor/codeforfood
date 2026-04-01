@@ -9,6 +9,7 @@ import { exportMilestonesToCSV } from "@/lib/exportCsv";
 import { CopyButton } from "@/components/CopyButton";
 import { SecureNoteUnlock } from "@/components/SecureNoteUnlock";
 import { PublicTaskBoard } from "@/components/tasks/PublicTaskBoard";
+import { AiSummaryBlock } from "@/components/AiSummaryBlock";
 
 // Helper functions moved outside component to avoid recreation
 const getMilestoneTotal = (m: Milestone) => {
@@ -127,6 +128,16 @@ export function PublicProjectContent({ hash, project, org, summary, statusInfo, 
               <p className="text-muted mt-3 text-sm max-w-md mx-auto whitespace-pre-wrap">{project.description}</p>
             )}
           </div>
+
+          {/* AI Summary */}
+          {project.ai_summary && (
+            <div className="mb-8">
+              <AiSummaryBlock
+                summary={project.ai_summary}
+                generatedAt={project.ai_summary_generated_at || undefined}
+              />
+            </div>
+          )}
 
           {/* Summary Cards */}
           {!hideAmounts && (
