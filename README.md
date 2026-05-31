@@ -92,4 +92,6 @@ run `npm run build && npm run start`.
 
 ## License
 
-Private project — all rights reserved unless a license file is added.
+Open source under the [MIT License](LICENSE) — free to use, modify, and
+distribute, for any purpose including commercial use. See the [LICENSE](LICENSE)
+file for details.
